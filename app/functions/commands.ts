@@ -518,6 +518,12 @@ bot.command("/delete", checkGroup, async (ctx) => {
 	}
 });
 
+bot.on("message", (ctx) => {
+	const chatId = ctx.message.chat.id;
+	console.log(chatId);
+	// You can perform other actions or reply to the message here if needed
+});
+
 const coinActions = () => {};
 bot.command("/buy", async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
