@@ -182,7 +182,7 @@ const checkGroupIdMiddleware: MiddlewareFn<Context> = (ctx, next) => {
 	if (!ctx.chat) return;
 	const messageGroupId = ctx.chat?.id;
 
-	if (messageGroupId.toString() !== allowedGroupId.toString()) {
+	if (messageGroupId !== allowedGroupId) {
 		// If the message is not from the allowed group, do nothing
 		ctx.reply("This command can only be used in the Nova base trade group");
 		return;
