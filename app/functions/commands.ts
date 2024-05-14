@@ -315,7 +315,21 @@ export const neww = async () => {
 			if (isEmpty(coin))
 				return ctx.reply("I couldn't find the token, please check the contract address and try again.");
 			selectedCoin = coin;
-			return ctx.reply(`${selectedCoin.name} with contract address ${selectedCoin.address} has been called`);
+			const data = await fetchDxToolsPairData(selectedCoin.address, res.chain);
+			//console.log(data);
+			if (!data) return ctx.reply("An error occurred please try again");
+			const newData = {
+				...data,
+				mcap: data.fdv,
+			};
+			const response = await queryAi(
+				`give the information provided here ${JSON.stringify({
+					...coin,
+					...newData,
+				})}. in a paragraph and send it back alone as a paragraph`,
+			);
+			ctx.reply(`${selectedCoin.name} with contract address ${selectedCoin.address} has been called`);
+			return ctx.reply(response);
 			//console.log(selectedCoin);
 		} else {
 			//console.log(contractAddress);
