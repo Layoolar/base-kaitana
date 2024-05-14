@@ -1,0 +1,38 @@
+// Olaiwola Ayoola
+// 9:04 AM
+// bot.start(async (ctx) => {
+// 		if (ctx.update.message.chat.type === "private") {
+// 			if (ctx.update.message.from.is_bot) {
+// 				return;
+// 			}
+// 			databases.writeUser(ctx.update.message.from);
+// 			const isSubmitWallet = await databases.checkUserWallet(ctx.update.message.from.id);
+// 			if (!isSubmitWallet) {
+// 				const response = await createWallet(ctx.update.message.from.id);
+// 				if (response && response.walletKeyPair && response.privateKeyBase58 && response.publicKey) {
+// 					// Assuming 'id' is the user's
+// Olaiwola Ayoola
+// 9:06 AM
+// const checkUserExistence = async (ctx: Context, next: () => Promise<void>) => {
+// 	if (!ctx.from) {
+// 		return;
+// 	}
+// 	const user = await databases.getUserByUserId(ctx.from.id);
+// 	if (!user) {
+// 		ctx.reply("You have to initiate a personal conversation with the bot first.");
+// 		return;
+// 	}
+// 	await next();
+// };
+
+// Olaiwola Ayoola
+// 9:07 AM
+// bot.action(/^view_wallet/, checkUserExistence, async (ctx) => {
+// Olaiwola Ayoola
+// 9:08 AM
+// const checkBotName = async (): Promise<void> => {
+// 	bot.command("bot", (ctx) => {
+// 		const botUsername = ctx.me;
+// 		ctx.reply(`@${botUsername}`);
+// 	});
+// };
