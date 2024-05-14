@@ -178,7 +178,7 @@ const checkGroup: MiddlewareFn<Context> = (ctx, next) => {
 };
 const checkGroupIdMiddleware: MiddlewareFn<Context> = (ctx, next) => {
 	// Replace 'YOUR_GROUP_ID' with the actual group ID
-	const allowedGroupId = -4106607552;
+	const allowedGroupId = -1002064195192;
 	if (!ctx.chat) return;
 	const messageGroupId = ctx.chat?.id;
 
@@ -516,12 +516,6 @@ bot.command("/delete", checkGroup, async (ctx) => {
 	} else {
 		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
 	}
-});
-
-bot.on("message", (ctx) => {
-	const chatId = ctx.message.chat.id;
-	console.log(chatId);
-	// You can perform other actions or reply to the message here if needed
 });
 
 const coinActions = () => {};
