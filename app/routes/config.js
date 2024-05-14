@@ -6,8 +6,8 @@ module.exports = {
 
 	telegram: {
 		// from @botfather on telegram
-		username: "Cryptogame1234_bot",
-		token: "6748077007:AAHxMh8OdsrtcrOY9pkGeoc6wFPLO2mCI7s",
+		username: "nova_trader_bot",
+		token: "7004234737:AAFb556GQWj3-pBOEIFQhv77Yjv1KHliT9E",
 	},
 
 	mode: "poll", // or webhook
