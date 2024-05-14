@@ -653,12 +653,6 @@ const quit = async (): Promise<void> => {
  * Send welcome message
  *
  */
-bot.on("message", (ctx) => {
-	const chatId = ctx.message.chat.id;
-	console.log(chatId);
-	// 	console.log(Received a message from group with ID: ${chatId});
-	// 	// You can perform other actions or reply to the message here if needed
-});
 
 const buttons = Markup.inlineKeyboard([
 	[Markup.button.callback("💼 Wallet", "wallet")],
