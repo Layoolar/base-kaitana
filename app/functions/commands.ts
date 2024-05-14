@@ -176,12 +176,27 @@ const checkGroup: MiddlewareFn<Context> = (ctx, next) => {
 		next();
 	}
 };
+const checkGroupIdMiddleware: MiddlewareFn<Context> = (ctx, next) => {
+	// Replace 'YOUR_GROUP_ID' with the actual group ID
+	const allowedGroupId = chatId.toString();
+	const messageGroupId = ctx.chat?.id;
+
+	if (messageGroupId?.toString() !== allowedGroupId) {
+		// If the message is not from the allowed group, do nothing
+
+		return;
+	}
+
+	// If the message is from the allowed group, continue with the next middleware
+	return next();
+};
 
 const commands = {
 	"/start": "Send this command privately to the bot to register and get started",
-	"/call":
-		"This command is used to query a token and put it in focus for getting the details or trading.It cannot be used privately.\nUsage Format: /call {contract address}",
-	"/ask": "This command is used to ask questions about the called token and/or trade the called token.It cannot be used privately.\nUsage Format: /ask {your question}",
+	"/call <b>(CAN ONLY BE USED IN GROUPS)</b>":
+		"This command is used to query a token and put it in focus for getting the details or trading.\nUsage Format: /call {contract address}",
+	"/ask <b>(CAN ONLY BE USED IN GROUPS)</b>":
+		"This command is used to ask questions about the called token and <b>trade</b> the called token, when you indicate buy or sell in your prompt.\nUsage Format: /ask {your question}",
 	"/schedule":
 		"This command is used to schedule trading.\nUsage format: /schedule i want to buy/sell {contract address} in one hour",
 	"/import": "This command is used to import tokens into your wallet.\nUsage format: /import {contract address}",
@@ -196,7 +211,7 @@ bot.help((ctx) => {
 		.map(([command, description]) => `${command}: ${description}`)
 		.join("\n\n");
 
-	ctx.reply(`Here are some available commands:\n\n${commandsList}`);
+	ctx.replyWithHTML(`Here are some available commands:\n\n${commandsList}`);
 });
 
 bot.action("genwallet", async (ctx) => {
@@ -287,7 +302,7 @@ bot.command("/wallet", checkUserExistence, checkGroup, async (ctx) => {
 });
 
 export const neww = async () => {
-	bot.command("/call", async (ctx) => {
+	bot.command("/call", checkUserExistence, checkGroupIdMiddleware, async (ctx) => {
 		if (ctx.update.message.chat.type === "private") {
 			if (ctx.update.message.from.is_bot) {
 				return;
@@ -316,17 +331,20 @@ export const neww = async () => {
 			if (isEmpty(coin))
 				return ctx.reply("I couldn't find the token, please check the contract address and try again.");
 			selectedCoin = coin;
-			const data = await fetchDxToolsPairData(selectedCoin.address, res.chain);
-			//console.log(data);
-			if (!data) return ctx.reply("An error occurred please try again");
-			const newData = {
-				...data,
-				mcap: data.fdv,
-			};
+
+			//	console.log(selectedCoin);
+
+			// const data = await fetchDxToolsPairData(selectedCoin.address, res.chain);
+			// //console.log(data);
+			// if (!data) return ctx.reply("An error occurred please try again");
+			// const newData = {
+			// 	...data,
+			// 	mcap: data.fdv,
+			// };
+			console.log(coin);
 			const response = await queryAi(
 				`give a summary of the important information provided here ${JSON.stringify({
 					...coin,
-					...newData,
 				})}. in a paragraph and send it back alone as a paragraph`,
 			);
 			ctx.reply(`${selectedCoin.name} with contract address ${selectedCoin.address} has been called`);
@@ -337,7 +355,13 @@ export const neww = async () => {
 			return ctx.reply("I couldn't find the token, please check the contract address and try again.");
 		}
 	});
-	bot.command("/ask", checkUserExistence, async (ctx) => {
+	bot.command("/ask", checkUserExistence, checkGroupIdMiddleware, async (ctx) => {
+		if (ctx.update.message.chat.type === "private") {
+			if (ctx.update.message.from.is_bot) {
+				return;
+			}
+			return ctx.reply("This command cannot be used privately, only in Groups/Channels");
+		}
 		const commandArgs = ctx.message.text.split(" ").slice(1);
 		const prompt = commandArgs.join(" ");
 		if (!prompt) return ctx.reply("You need to send a message with your command");
@@ -354,9 +378,9 @@ export const neww = async () => {
 		//const coin = await fetchCoin(selectedCoin.address, "ethereum");
 		//console.log(res?.chain, selectedCoin.address);
 		//const data = await getTokenInfo(selectedCoin.symbol);
-		const data = await fetchDxToolsPairData(selectedCoin.address, res.chain);
-		//console.log(data);
-		if (!data) return ctx.reply("An error occurred please try again");
+		// const data = await fetchDxToolsPairData(selectedCoin.address, res.chain);
+		// //console.log(data);
+		// if (!data) return ctx.reply("An error occurred please try again");
 
 		const userid = ctx.from.id;
 
@@ -378,7 +402,7 @@ export const neww = async () => {
 					}, You have not initialised your wallet, send a dm with /wallet to initialise it`,
 				);
 			}
-
+			ctx.reply(`@${ctx.from.username} Check your dm for confirmation`);
 			const message = await ctx.telegram.sendMessage(
 				ctx.from?.id,
 				`You are about to buy ${selectedCoin.name} with contract address ${selectedCoin.address}`,
@@ -426,14 +450,13 @@ export const neww = async () => {
 
 				//return ctx.scene.enter("sell-wizard", { address: selectedCoin.address, token: selectedCoin });
 			}
-			const newData = {
-				...data,
-				mcap: data.fdv,
-			};
+			// const newData = {
+			// 	...data,
+			// 	mcap: data.fdv,
+			// };
 			const answer = await queryAi(
 				`Answer this question "${prompt}" using information provided here ${JSON.stringify({
 					...coin,
-					...newData,
 				})}. if you can't answer reply with a message indicating that you don't know`,
 			);
 			return ctx.reply(answer);
@@ -494,59 +517,58 @@ bot.command("/delete", checkGroup, async (ctx) => {
 	}
 });
 
-const coinActions = () => {
-	bot.command("/buy", async (ctx) => {
-		const commandArgs = ctx.message.text.split(" ").slice(1);
-		const ca = commandArgs.join(" ");
-		if (!ca) return ctx.reply("You need to send a contract address with your command.");
+const coinActions = () => {};
+bot.command("/buy", async (ctx) => {
+	const commandArgs = ctx.message.text.split(" ").slice(1);
+	const ca = commandArgs.join(" ");
+	if (!ca) return ctx.reply("You need to send a contract address with your command.");
 
-		const token = await processToken(ca);
-		if (!token) {
-			return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
-		}
-		if (token.chain.toLowerCase() !== "base")
-			return ctx.reply(
-				"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
-			);
-		const message = await ctx.telegram.sendMessage(
-			ctx.from?.id,
-			`You are about to buy ${token.token.name}`,
-			Markup.inlineKeyboard([
-				Markup.button.callback(`Proceed`, `proceedbuy_${token?.address}`),
-				Markup.button.callback("Cancel", "cancel"),
-			]),
+	const token = await processToken(ca);
+	if (!token) {
+		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+	}
+	if (token.chain.toLowerCase() !== "base")
+		return ctx.reply(
+			"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
 		);
-		bot.action("cancel", (ctx) => {
-			ctx.deleteMessage(message.message_id);
-			return ctx.reply("This operation has been cancelled.");
-		});
+	const message = await ctx.telegram.sendMessage(
+		ctx.from?.id,
+		`You are about to buy ${token.token.name}`,
+		Markup.inlineKeyboard([
+			Markup.button.callback(`Proceed`, `proceedbuy_${token?.address}`),
+			Markup.button.callback("Cancel", "cancel"),
+		]),
+	);
+	bot.action("cancel", (ctx) => {
+		ctx.deleteMessage(message.message_id);
+		return ctx.reply("This operation has been cancelled.");
 	});
-	bot.command("/sell", async (ctx) => {
-		const commandArgs = ctx.message.text.split(" ").slice(1);
-		const ca = commandArgs.join(" ");
-		if (!ca) return ctx.reply("You need to send a contract address with your command.");
-		const token = await processToken(ca);
-		if (!token) {
-			return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
-		}
-		if (token.chain.toLowerCase() !== "base")
-			return ctx.reply(
-				"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
-			);
-		const message = await ctx.telegram.sendMessage(
-			ctx.from?.id,
-			`You are about to sell ${token.token.name}`,
-			Markup.inlineKeyboard([
-				Markup.button.callback("Proceed", `proceedsell_${token?.address}`),
-				Markup.button.callback("Cancel", "cancel"),
-			]),
+});
+bot.command("/sell", async (ctx) => {
+	const commandArgs = ctx.message.text.split(" ").slice(1);
+	const ca = commandArgs.join(" ");
+	if (!ca) return ctx.reply("You need to send a contract address with your command.");
+	const token = await processToken(ca);
+	if (!token) {
+		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+	}
+	if (token.chain.toLowerCase() !== "base")
+		return ctx.reply(
+			"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
 		);
-		bot.action("cancel", (ctx) => {
-			ctx.deleteMessage(message.message_id);
-			return ctx.reply("This operation has been cancelled.");
-		});
+	const message = await ctx.telegram.sendMessage(
+		ctx.from?.id,
+		`You are about to sell ${token.token.name}`,
+		Markup.inlineKeyboard([
+			Markup.button.callback("Proceed", `proceedsell_${token?.address}`),
+			Markup.button.callback("Cancel", "cancel"),
+		]),
+	);
+	bot.action("cancel", (ctx) => {
+		ctx.deleteMessage(message.message_id);
+		return ctx.reply("This operation has been cancelled.");
 	});
-};
+});
 bot.command("/schedule", async (ctx) => {
 	const currentUnixTime = Math.floor(Date.now() / 1000);
 	const commandArgs = ctx.message.text.split(" ").slice(1);
@@ -631,6 +653,11 @@ const quit = async (): Promise<void> => {
  * Send welcome message
  *
  */
+bot.on("message", (ctx) => {
+	chatId = ctx.message.chat.id;
+	// 	console.log(Received a message from group with ID: ${chatId});
+	// 	// You can perform other actions or reply to the message here if needed
+});
 
 const buttons = Markup.inlineKeyboard([
 	[Markup.button.callback("💼 Wallet", "wallet")],
@@ -653,6 +680,7 @@ const menu = async (): Promise<void> => {
 
 const start = async (): Promise<void> => {
 	bot.start((ctx) => {
+		const groupId = ctx.chat.id;
 		if (ctx.update.message.chat.type === "private") {
 			if (ctx.update.message.from.is_bot) {
 				return;
@@ -666,11 +694,8 @@ const start = async (): Promise<void> => {
 				holding: [],
 			});
 
-			chatId = ctx.message.chat.id;
-			ctx.telegram.sendMessage(
-				ctx.message.chat.id,
-				`Welcome you have been sucessfully registered use /help to get started`,
-			);
+			//	chatId = ctx.message.chat.id;
+			ctx.reply(`Welcome you have been sucessfully registered use /help to get started`);
 		} else {
 			ctx.reply(
 				`@${

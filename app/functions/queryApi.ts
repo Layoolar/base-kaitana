@@ -1,4 +1,4 @@
-const openaiApiKey = "";
+const openaiApiKey = "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";
 import OpenAI from "openai";
 import type { ChatCompletionUserMessageParam } from "openai/resources";
 
