@@ -180,14 +180,15 @@ const checkGroup: MiddlewareFn<Context> = (ctx, next) => {
 const commands = {
 	"/start": "Send this command privately to the bot to register and get started",
 	"/call":
-		"This command is used to query a token and put it in focus for getting the details or trading.\nUsage Format: /call your question",
-	"/ask": "This command is used to ask questions about the called token and/or trade the called token",
+		"This command is used to query a token and put it in focus for getting the details or trading.It cannot be used privately.\nUsage Format: /call {contract address}",
+	"/ask": "This command is used to ask questions about the called token and/or trade the called token.It cannot be used privately.\nUsage Format: /ask {your question}",
 	"/schedule":
 		"This command is used to schedule trading.\nUsage format: /schedule i want to buy/sell {contract address} in one hour",
 	"/import": "This command is used to import tokens into your wallet.\nUsage format: /import {contract address}",
 	"/delete": "This command to delete tokens from your wallet.\nUsage format: /delete {contract address}",
 	"/buy": "This command can be used to buy tokens.\nUsage format: /buy {contract address}",
 	"/sell": "This command can be used to sell tokens.\nUsage format: /sell {contract address}",
+	"/wallet": "This command can be used to  manange your wallet.\nUsage format: /wallet",
 };
 
 bot.help((ctx) => {
@@ -323,7 +324,7 @@ export const neww = async () => {
 				mcap: data.fdv,
 			};
 			const response = await queryAi(
-				`give the information provided here ${JSON.stringify({
+				`give a summary of the important information provided here ${JSON.stringify({
 					...coin,
 					...newData,
 				})}. in a paragraph and send it back alone as a paragraph`,
@@ -668,7 +669,7 @@ const start = async (): Promise<void> => {
 			chatId = ctx.message.chat.id;
 			ctx.telegram.sendMessage(
 				ctx.message.chat.id,
-				`Welcome you have been sucessfully registered use /menu to get started`,
+				`Welcome you have been sucessfully registered use /help to get started`,
 			);
 		} else {
 			ctx.reply(
