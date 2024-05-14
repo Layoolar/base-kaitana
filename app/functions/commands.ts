@@ -179,11 +179,12 @@ const checkGroup: MiddlewareFn<Context> = (ctx, next) => {
 const checkGroupIdMiddleware: MiddlewareFn<Context> = (ctx, next) => {
 	// Replace 'YOUR_GROUP_ID' with the actual group ID
 	const allowedGroupId = -4106607552;
+	if (!ctx.chat) return;
 	const messageGroupId = ctx.chat?.id;
 
-	if (messageGroupId !== allowedGroupId) {
+	if (messageGroupId.toString() !== allowedGroupId.toString()) {
 		// If the message is not from the allowed group, do nothing
-
+		ctx.reply("This command can only be used in the Nova base trade group");
 		return;
 	}
 
