@@ -178,10 +178,10 @@ const checkGroup: MiddlewareFn<Context> = (ctx, next) => {
 };
 const checkGroupIdMiddleware: MiddlewareFn<Context> = (ctx, next) => {
 	// Replace 'YOUR_GROUP_ID' with the actual group ID
-	const allowedGroupId = chatId.toString();
+	const allowedGroupId = -4106607552;
 	const messageGroupId = ctx.chat?.id;
 
-	if (messageGroupId?.toString() !== allowedGroupId) {
+	if (messageGroupId !== allowedGroupId) {
 		// If the message is not from the allowed group, do nothing
 
 		return;
@@ -654,7 +654,8 @@ const quit = async (): Promise<void> => {
  *
  */
 bot.on("message", (ctx) => {
-	chatId = ctx.message.chat.id;
+	const chatId = ctx.message.chat.id;
+	console.log(chatId);
 	// 	console.log(Received a message from group with ID: ${chatId});
 	// 	// You can perform other actions or reply to the message here if needed
 });
