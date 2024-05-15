@@ -1,7 +1,7 @@
 import OpenAI from "openai";
 import type { ChatCompletionUserMessageParam } from "openai/resources";
 
-const openaiApiKey = "sk-proj-KSRzkUY13pcpnOilTjy1T3BlbkFJ93fOCylXoj2nSYRQDD9N";
+const openaiApiKey = process.env.OPENAI_API_KEY;
 export const queryAi = async (text: string): Promise<string> => {
 	let aiReply = "";
 	await fetch("https://api.openai.com/v1/chat/completions", {
