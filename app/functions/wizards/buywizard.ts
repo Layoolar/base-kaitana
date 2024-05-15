@@ -44,15 +44,32 @@ const stepHandler = new Composer<WizardContext>();
 const stepHandler2 = new Composer<WizardContext>();
 
 stepHandler.action("sendbuy", async (ctx) => {
-	const { buyAddress, amount, currency, token, time } = ctx.scene.session.buyStore;
+	const { buyAddress, amount, token, time } = ctx.scene.session.buyStore;
 	// if (!buyAddress || !amount) {
 	// 	return ctx.wizard.next();
 	// }
-	if (!buyAddress || !amount || !currency || !token) {
+	if (!buyAddress || !amount || !token) {
 		ctx.reply("An error occurred please try again");
 		return ctx.scene.leave();
 	}
+	//const amount = ctx.scene.session.buyStore.amount;
+
+	ctx.scene.session.buyStore.currency = amount.toLowerCase().includes("$") ? "usd" : "eth";
+	const currency = ctx.scene.session.buyStore.currency;
+	console.log(amount, currency);
+	const regex = /-?\d+(\.\d+)?/;
+
+	const matches = amount.match(regex);
+	console.log(matches);
+	if (matches?.[0]) {
+		ctx.scene.session.buyStore.amount = matches?.[0];
+	} else {
+		ctx.reply("An error occurred please try again");
+		return ctx.scene.leave();
+	}
+
 	//console.log(amount);
+
 	let receipt;
 	if (time) {
 		if (parseFloat(time) > 86400000) {
@@ -65,8 +82,12 @@ stepHandler.action("sendbuy", async (ctx) => {
 		//await delay(parseFloat(time));
 		setTimeout(async () => {
 			try {
-				console.log(ctx.from, currency, amount, token, buyAddress);
-				receipt = await executeBuy(ctx, currency, amount, token, buyAddress);
+				if (!ctx.scene.session.buyStore.amount) {
+					ctx.reply("An error occurred please try again");
+					return ctx.scene.leave();
+				}
+				//console.log(ctx.from, currency, ctx.scene.session.buyStore.amount, token, buyAddress);
+				receipt = await executeBuy(ctx, currency, ctx.scene.session.buyStore.amount, token, buyAddress);
 				//console.log(receipt);
 			} catch (error) {
 				console.log(error);
@@ -77,7 +98,11 @@ stepHandler.action("sendbuy", async (ctx) => {
 	} else {
 		ctx.reply(`Buying ${ctx.scene.session.buyStore.token?.name} ...`);
 		try {
-			receipt = await executeBuy(ctx, currency, amount, token, buyAddress);
+			if (!ctx.scene.session.buyStore.amount) {
+				ctx.reply("An error occurred please try again");
+				return ctx.scene.leave();
+			}
+			receipt = await executeBuy(ctx, currency, ctx.scene.session.buyStore.amount, token, buyAddress);
 			//console.log(receipt);
 		} catch (error) {
 			console.log(error);
@@ -106,7 +131,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			ctx.reply("An error occurred please try again");
 			return ctx.scene.leave();
 		}
-		ctx.scene.session.buyStore = initialData;
+		ctx.scene.session.buyStore = JSON.parse(JSON.stringify(initialData));
 		//@ts-ignore
 		ctx.scene.session.buyStore.buyAddress = ctx.scene.state.address;
 		//@ts-ignore
@@ -114,6 +139,9 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 
 		//@ts-ignore
 		ctx.scene.session.buyStore.time = ctx.scene.state.time;
+
+		//@ts-ignore
+		ctx.scene.session.buyStore.amount = ctx.scene.state.amount;
 
 		const wallet = getUserWalletDetails(ctx.from.id);
 		//const buyAddress = ctx.scene.session.buyStore.buyAddress;
@@ -126,14 +154,30 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			return ctx.scene.leave();
 		}
 		const userBalanceInUsd = parseFloat(userBalance) * parseFloat(ethprice);
-		await ctx.replyWithHTML(
-			`What amount(ETH, USD) of ${ctx.scene.session.buyStore.token?.name} do you want to buy, your balance is ${userBalance} ETH($${userBalanceInUsd}) `,
-			Markup.inlineKeyboard([Markup.button.callback("Cancel", "cancel")]),
-		);
+
+		if (ctx.scene.session.buyStore.amount) {
+			await ctx.replyWithHTML(
+				`Are you sure you want to buy ${ctx.scene.session.buyStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.buyStore.buyAddress}</b>
+			\nAmount: <b>${ctx.scene.session.buyStore.amount}</b>\nCurrent Price: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+				Markup.inlineKeyboard([
+					Markup.button.callback("Yes I am sure", "sendbuy"),
+					Markup.button.callback("Cancel", "cancel"),
+				]),
+			);
+
+			ctx.wizard.next();
+			return ctx.wizard.next();
+		} else {
+			await ctx.replyWithHTML(
+				`What amount(ETH, USD) of ${ctx.scene.session.buyStore.token?.name} do you want to buy, your balance is ${userBalance} ETH($${userBalanceInUsd}) `,
+				Markup.inlineKeyboard([Markup.button.callback("Cancel", "cancel")]),
+			);
+			return ctx.wizard.next();
+		}
+
 		//await ctx.reply("What amount(ETH, USD) of token do you want to buy");
 		//console.log("here");
 		//ctx.wizard.next();
-		return ctx.wizard.next();
 	},
 	stepHandler2,
 
@@ -157,15 +201,7 @@ stepHandler2.on("text", async (ctx) => {
 			ctx.scene.session.buyStore.amount = am;
 		}
 
-		const amount = ctx.scene.session.buyStore.amount;
 		const buyAddress = ctx.scene.session.buyStore.buyAddress;
-		ctx.scene.session.buyStore.currency = amount.toLowerCase().includes("$") ? "usd" : "eth";
-
-		const regex = /-?\d+(\.\d+)?/;
-
-		const matches = amount.match(regex);
-		if (matches?.[0]) ctx.scene.session.buyStore.amount = matches?.[0];
-
 		const token = await processToken(buyAddress);
 		if (!token) {
 			await ctx.reply("Could not find token, exiting.");
@@ -175,7 +211,7 @@ stepHandler2.on("text", async (ctx) => {
 
 		await ctx.replyWithHTML(
 			`Are you sure you want to buy ${ctx.scene.session.buyStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.buyStore.buyAddress}</b>
-			\nAmount: <b>${ctx.scene.session.buyStore.amount} ${ctx.scene.session.buyStore.currency}</b>\nCurrent Price: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+			\nAmount: <b>${ctx.scene.session.buyStore.amount}</b>\nCurrent Price: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
 			Markup.inlineKeyboard([
 				Markup.button.callback("Yes I am sure", "sendbuy"),
 				Markup.button.callback("Cancel", "cancel"),
@@ -198,7 +234,7 @@ const executeBuy = async (
 	}
 	const ethPrice = await getEthPrice();
 	if (!ethPrice) {
-		ctx.reply("An error occured please try again later");
+		ctx.reply("An error occured please try again later here");
 		return ctx.scene.leave();
 	}
 
@@ -212,7 +248,7 @@ const executeBuy = async (
 
 	const userBalance = await getEtherBalance(wallet?.walletAddress);
 	if (!userBalance) {
-		ctx.reply("An error occurred please try again");
+		ctx.reply("An error occurred please try again here");
 		return ctx.scene.leave();
 	}
 	if (parseFloat(userBalance) <= amountinEth) {

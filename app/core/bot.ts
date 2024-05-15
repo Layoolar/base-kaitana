@@ -15,7 +15,8 @@ require("dotenv").config(); // Load .env file into process.env
  * @license: MIT License
  *
  */
-(async () => {
+
+const startt = async () => {
 	await command.quit();
 	await command.start();
 	await command.neww();
@@ -25,4 +26,6 @@ require("dotenv").config(); // Load .env file into process.env
 	await command.coinActions();
 	await hears.text();
 	await command.launch();
-})();
+};
+
+startt();

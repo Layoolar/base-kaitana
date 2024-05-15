@@ -26,7 +26,7 @@ const stepHandler2 = new Composer<WizardContext>();
 export const sellWizard = new Scenes.WizardScene<WizardContext>(
 	"sell-wizard",
 	async (ctx) => {
-		ctx.scene.session.sellStore = initialData;
+		ctx.scene.session.sellStore = JSON.parse(JSON.stringify(initialData));
 		//@ts-ignore
 
 		ctx.scene.session.sellStore.sellAddress = ctx.scene.state.address;
@@ -60,12 +60,26 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 		// }
 		//const userBalanceInUsd = parseFloat(userethBalance) * parseFloat(ethprice);
 		//console.log(ctx.scene.session.sellStore.token, ctx.scene.session.sellStore.sellAddress);
-		await ctx.replyWithHTML(
-			`What amount(ETH, USD) of ${ctx.scene.session.sellStore.token?.name} do you want to sell, you have ${tokensBalance} ${ctx.scene.session.sellStore.token.name} worth $${tokensBalanceInUsd} and ${tokensBalanceInEth} ETH`,
-			Markup.inlineKeyboard([Markup.button.callback("Cancel", "cancel")]),
-		);
+		if (ctx.scene.session.sellStore.amount) {
+			await ctx.replyWithHTML(
+				`Are you sure you want to sell ${ctx.scene.session.sellStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.sellStore.sellAddress}</b>
+                \nAmount: <b>${ctx.scene.session.sellStore.amount} ${ctx.scene.session.sellStore.currency}</b>\nCurrent Price: <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+				Markup.inlineKeyboard([
+					Markup.button.callback("Yes I am sure", "sendsell"),
+					Markup.button.callback("Cancel", "cancel"),
+				]),
+			);
 
-		return ctx.wizard.next();
+			ctx.wizard.next();
+			return ctx.wizard.next();
+		} else {
+			await ctx.replyWithHTML(
+				`What amount(ETH, USD) of ${ctx.scene.session.sellStore.token?.name} do you want to sell, you have ${tokensBalance} ${ctx.scene.session.sellStore.token.name} worth $${tokensBalanceInUsd} and ${tokensBalanceInEth} ETH`,
+				Markup.inlineKeyboard([Markup.button.callback("Cancel", "cancel")]),
+			);
+
+			return ctx.wizard.next();
+		}
 	},
 	stepHandler2,
 
@@ -115,9 +129,22 @@ stepHandler2.on("text", async (ctx) => {
 	}
 });
 stepHandler.action("sendsell", async (ctx) => {
-	const { sellAddress, amount, currency, token, time } = ctx.scene.session.sellStore;
+	const { sellAddress, amount, token, time } = ctx.scene.session.sellStore;
 
-	if (!sellAddress || !amount || !currency || !token) {
+	if (!sellAddress || !amount || !token) {
+		ctx.reply("An error occurred please try again");
+		return ctx.scene.leave();
+	}
+
+	ctx.scene.session.sellStore.currency = amount.toLowerCase().includes("$") ? "usd" : "eth";
+	const currency = ctx.scene.session.sellStore.currency;
+	if (!currency) return ctx.scene.leave();
+	const regex = /-?\d+(\.\d+)?/;
+
+	const matches = amount.match(regex);
+	if (matches?.[0]) {
+		ctx.scene.session.sellStore.amount = matches?.[0];
+	} else {
 		ctx.reply("An error occurred please try again");
 		return ctx.scene.leave();
 	}
@@ -129,11 +156,15 @@ stepHandler.action("sendsell", async (ctx) => {
 		}
 
 		const date = addMillisecondsToDate(parseFloat(time));
-		ctx.reply(`Buy has been scheduled for ${date.toTimeString()}`);
+		ctx.reply(`Sell has been scheduled for ${date.toTimeString()}`);
 		//await delay(parseFloat(time));
 		setTimeout(async () => {
 			try {
-				await executeSell(ctx, currency, amount, token, sellAddress);
+				if (!ctx.scene.session.sellStore.amount) {
+					ctx.reply("An error occurred please try again");
+					return ctx.scene.leave();
+				}
+				await executeSell(ctx, currency, ctx.scene.session.sellStore.amount, token, sellAddress);
 			} catch (error) {
 				console.log(error);
 				ctx.reply("An Erorr occurred, please try again later");
@@ -142,8 +173,9 @@ stepHandler.action("sendsell", async (ctx) => {
 		}, parseFloat(time));
 	} else {
 		ctx.reply(`Selling ${ctx.scene.session.sellStore.token?.name} ...`);
+
 		try {
-			await executeSell(ctx, currency, amount, token, sellAddress);
+			await executeSell(ctx, currency, ctx.scene.session.sellStore.amount, token, sellAddress);
 		} catch (error) {
 			console.log(error);
 			ctx.reply("An Erorr occurred, please try again later");

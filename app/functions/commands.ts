@@ -25,7 +25,7 @@ import { queryAi } from "./queryApi";
 import { TokenData, generateTimeAndPriceGraph } from "./timePriceData";
 import { calculatePoint } from "mermaid/dist/utils";
 import { log } from "console";
-import { getBuyPrompt, getCaPrompt, getSellPrompt, getTimePrompt } from "./prompt";
+import { getBuyPrompt, getCaPrompt, getSellPrompt, getTimePrompt, getamountprompt } from "./prompt";
 import { createWallet, extractTimeFromPrompt, getAllTokenBalances, getEthPrice, isEmpty, processToken } from "./helper";
 import { getEtherBalance } from "./checkBalance";
 // import { getEthPrice, getTokenInfo } from "./test";
@@ -180,7 +180,8 @@ const checkGroup: MiddlewareFn<Context> = (ctx, next) => {
 };
 const checkGroupIdMiddleware: MiddlewareFn<Context> = (ctx, next) => {
 	// Replace 'YOUR_GROUP_ID' with the actual group ID
-	const allowedGroupId = -1002064195192;
+	//const allowedGroupId = -1002064195192;
+	const allowedGroupId = -4005329091;
 	if (!ctx.chat) {
 		return;
 	}
@@ -206,8 +207,8 @@ const commands = {
 		"This command is used to schedule trading.\nUsage format: /schedule i want to buy/sell {contract address} in one hour",
 	"/import": "This command is used to import tokens into your wallet.\nUsage format: /import {contract address}",
 	"/delete": "This command to delete tokens from your wallet.\nUsage format: /delete {contract address}",
-	"/buy": "This command can be used to buy tokens.\nUsage format: /buy {contract address}",
-	"/sell": "This command can be used to sell tokens.\nUsage format: /sell {contract address}",
+	"/buy": "This command can be used to buy tokens.\nUsage format: /buy {your prompt to buy}",
+	"/sell": "This command can be used to sell tokens.\nUsage format: /sell {your prompt to sell}",
 	"/wallet": "This command can be used to  manange your wallet.\nUsage format: /wallet",
 };
 
@@ -437,11 +438,14 @@ export const neww = async () => {
 			ctx.reply(
 				`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
 			);
+			const amountRes = await queryAi(getamountprompt(prompt));
+			//console.log(`proceedbuy_${selectedCoin?.address}_${amountRes}`);
+
 			const message = await ctx.telegram.sendMessage(
 				ctx.from?.id,
 				`You are about to buy ${selectedCoin.name} with contract address ${selectedCoin.address}`,
 				Markup.inlineKeyboard([
-					Markup.button.callback("Proceed", `proceedbuy_${selectedCoin?.address}`),
+					Markup.button.callback("Proceed", `proceedbuy_${selectedCoin?.address} ${amountRes}`),
 					Markup.button.callback("Cancel", "cancel"),
 				]),
 			);
@@ -469,11 +473,15 @@ export const neww = async () => {
 						}, You have not initialised your wallet, send a dm with /wallet to initialise it.`,
 					);
 				}
+				ctx.reply(
+					`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
+				);
+				const amountRes = await queryAi(getamountprompt(prompt));
 				const message = await ctx.telegram.sendMessage(
 					ctx.from?.id,
 					`You are about to sell ${selectedCoin.name}`,
 					Markup.inlineKeyboard([
-						Markup.button.callback("Proceed", `proceedsell_${selectedCoin?.address}`),
+						Markup.button.callback("Proceed", `proceedsell_${selectedCoin?.address} ${amountRes}`),
 						Markup.button.callback("Cancel", "cancel"),
 					]),
 				);
@@ -500,33 +508,41 @@ export const neww = async () => {
 };
 // const tokenName = ctx.match[1];
 /token_(.+)/;
-bot.action(/proceedbuy_([^_]+)_?(\w+)?/, async (ctx) => {
+/proceedsell_(.+)/;
+/proceedbuy_([^_]+)_?(\w+)?/;
+bot.action(/proceedbuy_(.+)/, async (ctx) => {
 	const match = ctx.match;
-	const address = match[1]; // Extract the address
-	const price = match[2] || null;
+
+	const amount = match[1].split(" ")[1] === "null" ? null : match[1].split(" ")[1];
 
 	const ca = ctx.match[1].split(" ")[0];
-	console.log(address, price, ca);
+
 	const token = await processToken(ca);
 
-	const time = ctx.match[1].split(" ")[1];
+	const time = ctx.match[1].split(" ")[2];
+	console.log(amount, ca, time);
+
 	if (!token) {
 		return ctx.reply("An error occured please try again");
 	}
-	return ctx.scene.enter("buy-wizard", { address: ca, token: token, time: time });
+	//console.log(ca, token.chain, time, amount);
+	return ctx.scene.enter("buy-wizard", { address: ca, token: token, time: time, amount: amount });
 });
 bot.action(/proceedsell_(.+)/, async (ctx) => {
+	const match = ctx.match;
+
+	const amount = match[1].split(" ")[1] === "null" ? null : match[1].split(" ")[1];
+
 	const ca = ctx.match[1].split(" ")[0];
 
-	// console.log(ca);
-	// console.log(ctx.match);
 	const token = await processToken(ca);
-	//	console.log(token);
-	const time = ctx.match[1].split(" ")[1];
+
+	const time = ctx.match[1].split(" ")[2];
+	//	console.log(amount, ca, time);
 	if (!token) {
 		return ctx.reply("An error occured please try again.");
 	}
-	return ctx.scene.enter("sell-wizard", { address: ca, token: token, time: time });
+	return ctx.scene.enter("sell-wizard", { address: ca, token: token, time: time, amount: amount });
 });
 bot.command("/import", checkGroup, async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
@@ -565,8 +581,11 @@ bot.command("/delete", checkGroup, async (ctx) => {
 const coinActions = () => {};
 bot.command("/buy", async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
-	const ca = commandArgs.join(" ");
-	if (!ca) {
+	const prompt = commandArgs.join(" ");
+
+	const ca = await queryAi(getCaPrompt(prompt));
+	const amount = await queryAi(getamountprompt(prompt));
+	if (ca.toLowerCase() === "null") {
 		return ctx.reply("You need to send a contract address with your command.");
 	}
 
@@ -579,11 +598,15 @@ bot.command("/buy", async (ctx) => {
 			"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
 		);
 	}
+
+	ctx.reply(
+		`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
+	);
 	const message = await ctx.telegram.sendMessage(
 		ctx.from?.id,
 		`You are about to buy ${token.token.name}`,
 		Markup.inlineKeyboard([
-			Markup.button.callback(`Proceed`, `proceedbuy_${token?.address}`),
+			Markup.button.callback(`Proceed`, `proceedbuy_${token?.address} ${amount}`),
 			Markup.button.callback("Cancel", "cancel"),
 		]),
 	);
@@ -594,8 +617,11 @@ bot.command("/buy", async (ctx) => {
 });
 bot.command("/sell", async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
-	const ca = commandArgs.join(" ");
-	if (!ca) {
+	const prompt = commandArgs.join(" ");
+
+	const ca = await queryAi(getCaPrompt(prompt));
+	const amount = await queryAi(getamountprompt(prompt));
+	if (ca.toLowerCase() === "null") {
 		return ctx.reply("You need to send a contract address with your command.");
 	}
 	const token = await processToken(ca);
@@ -607,11 +633,14 @@ bot.command("/sell", async (ctx) => {
 			"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
 		);
 	}
+	ctx.reply(
+		`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
+	);
 	const message = await ctx.telegram.sendMessage(
 		ctx.from?.id,
 		`You are about to sell ${token.token.name}`,
 		Markup.inlineKeyboard([
-			Markup.button.callback("Proceed", `proceedsell_${token?.address}`),
+			Markup.button.callback("Proceed", `proceedsell_${token?.address} ${amount}`),
 			Markup.button.callback("Cancel", "cancel"),
 		]),
 	);
@@ -659,12 +688,15 @@ bot.command("/schedule", async (ctx) => {
 	}
 	if (responseBuy.toLowerCase() === "buy" && responseSell.toLowerCase() !== "sell") {
 		// console.log(ca);
-
+		const amount = await queryAi(getamountprompt(prompt));
+		ctx.reply(
+			`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
+		);
 		const message = await ctx.telegram.sendMessage(
 			ctx.from?.id,
 			`You are about to schedule a buy for ${token?.token?.name}`,
 			Markup.inlineKeyboard([
-				Markup.button.callback("Proceed", `proceedbuy_${token?.address} ${time}`),
+				Markup.button.callback("Proceed", `proceedbuy_${token?.address} ${amount} ${time}`),
 				Markup.button.callback("Cancel", "cancel"),
 			]),
 		);
@@ -674,11 +706,16 @@ bot.command("/schedule", async (ctx) => {
 		});
 		return;
 	} else if (responseSell.toLowerCase() === "sell" && responseBuy.toLowerCase() !== "buy") {
+		const amount = await queryAi(getamountprompt(prompt));
+
+		ctx.reply(
+			`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
+		);
 		const message = await ctx.telegram.sendMessage(
 			ctx.from?.id,
 			`You are about to schedule a sell for ${token?.token?.name}`,
 			Markup.inlineKeyboard([
-				Markup.button.callback("Proceed", `proceedsell_${token?.address} ${time}`),
+				Markup.button.callback("Proceed", `proceedsell_${token?.address} ${amount} ${time}`),
 				Markup.button.callback("Cancel", "cancel"),
 			]),
 		);
@@ -712,6 +749,9 @@ const quit = async (): Promise<void> => {
  *
  */
 
+// bot.on("message", (ctx) => {
+// 	console.log(ctx.chat.id);
+// });
 const buttons = Markup.inlineKeyboard([
 	[Markup.button.callback("💼 Wallet", "wallet")],
 	[Markup.button.callback("🤖 Sell Tokens", "sell")],
