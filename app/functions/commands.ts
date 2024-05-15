@@ -28,7 +28,7 @@ import { log } from "console";
 import { getBuyPrompt, getCaPrompt, getSellPrompt, getTimePrompt } from "./prompt";
 import { createWallet, extractTimeFromPrompt, getAllTokenBalances, getEthPrice, isEmpty, processToken } from "./helper";
 import { getEtherBalance } from "./checkBalance";
-//import { getEthPrice, getTokenInfo } from "./test";
+// import { getEthPrice, getTokenInfo } from "./test";
 
 // interface coins extends CoinDataType{
 
@@ -108,7 +108,7 @@ export function getGreeting() {
 	const hours = now.getHours();
 
 	if (hours >= 5 && hours < 12) {
-		//Return "Good morning" with a sun emoji
+		// Return "Good morning" with a sun emoji
 
 		return "🌞 Good morning";
 	} else if (hours >= 12 && hours < 18) {
@@ -147,7 +147,9 @@ const isValidWallet = (address: string): boolean => {
 };
 
 export const checkWallet: MiddlewareFn<Context> = async (ctx: Context, next: () => Promise<void>) => {
-	if (!ctx.from) return;
+	if (!ctx.from) {
+		return;
+	}
 
 	if (databases.isWalletNull(ctx.from.id)) {
 		return next();
@@ -179,7 +181,9 @@ const checkGroup: MiddlewareFn<Context> = (ctx, next) => {
 const checkGroupIdMiddleware: MiddlewareFn<Context> = (ctx, next) => {
 	// Replace 'YOUR_GROUP_ID' with the actual group ID
 	const allowedGroupId = -1002064195192;
-	if (!ctx.chat) return;
+	if (!ctx.chat) {
+		return;
+	}
 	const messageGroupId = ctx.chat?.id;
 
 	if (messageGroupId !== allowedGroupId) {
@@ -217,13 +221,17 @@ bot.help((ctx) => {
 
 bot.action("genwallet", async (ctx) => {
 	const wallet = createWallet();
-	if (ctx.from) databases.updateWallet(ctx.from?.id, wallet.walletAddress, wallet.privateKey, wallet.mnemonic);
+	if (ctx.from) {
+		databases.updateWallet(ctx.from?.id, wallet.walletAddress, wallet.privateKey, wallet.mnemonic);
+	}
 
 	ctx.replyWithHTML(`Wallet generated sucessfully, your wallet address is: <b>${wallet.walletAddress}</b>`);
 });
 
 bot.action("exportkey", async (ctx) => {
-	if (!ctx.from) return;
+	if (!ctx.from) {
+		return;
+	}
 
 	const walletDetails = databases.getUserWalletDetails(ctx.from.id);
 
@@ -239,18 +247,24 @@ bot.action("exportkey", async (ctx) => {
 });
 
 bot.action("walletaddress", (ctx) => {
-	if (!ctx.from) return;
+	if (!ctx.from) {
+		return;
+	}
 
 	const walletDetails = databases.getUserWalletDetails(ctx.from.id);
-	//console.log(walletDetails);
+	// console.log(walletDetails);
 	ctx.replyWithHTML(`Your wallet address is <b>${walletDetails?.walletAddress}</b>`);
 });
 
 bot.action("checkbalance", checkUserExistence, async (ctx) => {
 	const user_id = ctx.from?.id;
-	if (!user_id) return;
+	if (!user_id) {
+		return;
+	}
 	const wallet = databases.getUserWalletDetails(user_id);
-	if (!wallet) return ctx.reply("No wallet found.");
+	if (!wallet) {
+		return ctx.reply("No wallet found.");
+	}
 	if (wallet?.holding.length === 0) {
 		const balance = await getEtherBalance(wallet.walletAddress);
 		const currentEthPrice = await getEthPrice();
@@ -261,19 +275,23 @@ bot.action("checkbalance", checkUserExistence, async (ctx) => {
 		const usdNetworth = parseFloat(balance) * currentEthPrice;
 		return ctx.replyWithHTML(`You have no other tokens\nBalance: ${balance} ETH\nNet Worth: $${usdNetworth}`);
 	} else {
-		if (!wallet.walletAddress) return ctx.reply("No wallet found.");
+		if (!wallet.walletAddress) {
+			return ctx.reply("No wallet found.");
+		}
 		const balancesString = await getAllTokenBalances(wallet?.walletAddress, wallet?.holding);
-		//console.log(balancesString);
-		if (balancesString) ctx.replyWithHTML(balancesString);
+		// console.log(balancesString);
+		if (balancesString) {
+			ctx.replyWithHTML(balancesString);
+		}
 	}
 });
 bot.command("/wallet", checkUserExistence, checkGroup, async (ctx) => {
 	const user_id = ctx.from?.id;
-	//console.log(user_id);
+	// console.log(user_id);
 
 	if (user_id) {
 		if (databases.isWalletNull(user_id)) {
-			//ctx.reply("generate wallet");
+			// ctx.reply("generate wallet");
 			await ctx.replyWithHTML(
 				`${getGreeting()} ${
 					ctx.from?.username || ctx.from?.first_name || ctx.from?.last_name
@@ -281,7 +299,7 @@ bot.command("/wallet", checkUserExistence, checkGroup, async (ctx) => {
 				Markup.inlineKeyboard([[Markup.button.callback("Generate wallet", "genwallet")]]),
 			);
 		} else {
-			//ctx.reply("view wallet ad, xport private key,send eth, send kai");
+			// ctx.reply("view wallet ad, xport private key,send eth, send kai");
 			await ctx.replyWithHTML(
 				`${getGreeting()} ${ctx.from?.username || ctx.from?.first_name || ctx.from?.last_name}`,
 				Markup.inlineKeyboard([
@@ -299,7 +317,7 @@ bot.command("/wallet", checkUserExistence, checkGroup, async (ctx) => {
 		}
 	}
 
-	//console.log("hey");
+	// console.log("hey");
 });
 
 export const neww = async () => {
@@ -312,25 +330,28 @@ export const neww = async () => {
 		}
 		const commandArgs = ctx.message.text.split(" ").slice(1);
 		const ca = commandArgs.join(" ");
-		if (!ca) return ctx.reply("You need to send a contract address with your command");
-		//.ath.usd
-		//market_cap.usd
-		//fetchCoinGeckoData;
-		//const contracAddress = "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE";
+		if (!ca) {
+			return ctx.reply("You need to send a contract address with your command");
+		}
+		// .ath.usd
+		// market_cap.usd
+		// fetchCoinGeckoData;
+		// const contracAddress = "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE";
 		// fetchCoinGeckoData(contractAddress)
 		// 	.then((data) => ctx.reply(data.name))
 		// 	.catch((error) => console.error("Error:", error));
 
-		//const coin = await fetchCoin(contractAddress, "base");
+		// const coin = await fetchCoin(contractAddress, "base");
 		const res = await processToken(ca);
 		const coin = res?.token;
-		//console.log(coin);
+		// console.log(coin);
 
 		if (coin) {
-			//console.log(contractAddress);
-			//const coin = await fetchCoin(contractAddress, "ethereum");
-			if (isEmpty(coin))
+			// console.log(contractAddress);
+			// const coin = await fetchCoin(contractAddress, "ethereum");
+			if (isEmpty(coin)) {
 				return ctx.reply("I couldn't find the token, please check the contract address and try again.");
+			}
 			selectedCoin = coin;
 
 			//	console.log(selectedCoin);
@@ -342,17 +363,22 @@ export const neww = async () => {
 			// 	...data,
 			// 	mcap: data.fdv,
 			// };
-			console.log(coin);
-			const response = await queryAi(
-				`give a summary of the important information provided here ${JSON.stringify({
-					...coin,
-				})}. in a paragraph and send it back alone as a paragraph`,
+			// console.log(coin);
+			ctx.replyWithHTML(
+				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${selectedCoin.name}</i>\n<b>Token Address: </b> <i>${selectedCoin.address}</i>`,
 			);
-			ctx.reply(`${selectedCoin.name} with contract address ${selectedCoin.address} has been called`);
-			return ctx.reply(response);
-			//console.log(selectedCoin);
+			const response = await queryAi(
+				`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify(
+					{
+						...coin,
+					},
+				)}. Don't make mention that you are summarizing a given data in your response. Don't say things like 'According to the data provided'. Send the summary back in few short paragraphs. Only return the summary and nothing else. Also wrap important values with HTML <b> bold tags`,
+			);
+
+			return ctx.replyWithHTML(response);
+			// console.log(selectedCoin);
 		} else {
-			//console.log(contractAddress);
+			// console.log(contractAddress);
 			return ctx.reply("I couldn't find the token, please check the contract address and try again.");
 		}
 	});
@@ -365,20 +391,24 @@ export const neww = async () => {
 		}
 		const commandArgs = ctx.message.text.split(" ").slice(1);
 		const prompt = commandArgs.join(" ");
-		if (!prompt) return ctx.reply("You need to send a message with your command");
+		if (!prompt) {
+			return ctx.reply("You need to send a message with your command");
+		}
 		if (!selectedCoin) {
-			return ctx.reply("There's no token called yet");
+			return ctx.reply("Kindly use /call ${token_address} to start conversation about a token");
 		}
 
 		const res = await processToken(selectedCoin.address);
 
-		if (!res) return ctx.reply("An error occured please try again");
+		if (!res) {
+			return ctx.reply("An error occured please try again");
+		}
 
 		const coin = res?.token;
 
-		//const coin = await fetchCoin(selectedCoin.address, "ethereum");
-		//console.log(res?.chain, selectedCoin.address);
-		//const data = await getTokenInfo(selectedCoin.symbol);
+		// const coin = await fetchCoin(selectedCoin.address, "ethereum");
+		// console.log(res?.chain, selectedCoin.address);
+		// const data = await getTokenInfo(selectedCoin.symbol);
 		// const data = await fetchDxToolsPairData(selectedCoin.address, res.chain);
 		// //console.log(data);
 		// if (!data) return ctx.reply("An error occurred please try again");
@@ -386,24 +416,27 @@ export const neww = async () => {
 		const userid = ctx.from.id;
 
 		const response = await queryAi(getBuyPrompt(prompt));
-		//console.log(response);
+		// console.log(response);
 
 		if (response.toLowerCase() === "buy") {
-			if (res.chain.toLowerCase() !== "base")
+			if (res.chain.toLowerCase() !== "base") {
 				return ctx.reply(
 					"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
 				);
-			//send confirmation
-			//console.log("buying");
-			//Markup.inlineKeyboard
+			}
+			// send confirmation
+			// console.log("buying");
+			// Markup.inlineKeyboard
 			if (databases.isWalletNull(userid)) {
 				return ctx.reply(
 					`${
 						ctx.from.username || ctx.from.first_name
-					}, You have not initialised your wallet, send a dm with /wallet to initialise it`,
+					}, You do not have an attached wallet, send a direct message with /wallet to initialise it`,
 				);
 			}
-			ctx.reply(`@${ctx.from.username} Check your dm for confirmation`);
+			ctx.reply(
+				`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
+			);
 			const message = await ctx.telegram.sendMessage(
 				ctx.from?.id,
 				`You are about to buy ${selectedCoin.name} with contract address ${selectedCoin.address}`,
@@ -418,16 +451,17 @@ export const neww = async () => {
 			});
 			return;
 
-			//return ctx.scene.enter("buy-wizard", { address: selectedCoin.address, token: selectedCoin });
+			// return ctx.scene.enter("buy-wizard", { address: selectedCoin.address, token: selectedCoin });
 			//	const confirmation = await ctx.awaitReply("Please enter the amount you want to buy:");
 		} else {
 			const response = await queryAi(getSellPrompt(prompt));
 
 			if (response.toLowerCase() === "sell") {
-				if (res.chain.toLowerCase() !== "base")
+				if (res.chain.toLowerCase() !== "base") {
 					return ctx.reply(
 						"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
 					);
+				}
 				if (databases.isWalletNull(userid)) {
 					return ctx.reply(
 						`${
@@ -449,7 +483,7 @@ export const neww = async () => {
 				});
 				return;
 
-				//return ctx.scene.enter("sell-wizard", { address: selectedCoin.address, token: selectedCoin });
+				// return ctx.scene.enter("sell-wizard", { address: selectedCoin.address, token: selectedCoin });
 			}
 			// const newData = {
 			// 	...data,
@@ -464,17 +498,21 @@ export const neww = async () => {
 		}
 	});
 };
-//const tokenName = ctx.match[1];
+// const tokenName = ctx.match[1];
 /token_(.+)/;
-bot.action(/proceedbuy_(.+)/, async (ctx) => {
+bot.action(/proceedbuy_([^_]+)_?(\w+)?/, async (ctx) => {
+	const match = ctx.match;
+	const address = match[1]; // Extract the address
+	const price = match[2] || null;
+
 	const ca = ctx.match[1].split(" ")[0];
-
-	console.log(ca);
-
+	console.log(address, price, ca);
 	const token = await processToken(ca);
 
 	const time = ctx.match[1].split(" ")[1];
-	if (!token) return ctx.reply("An error occured please try again");
+	if (!token) {
+		return ctx.reply("An error occured please try again");
+	}
 	return ctx.scene.enter("buy-wizard", { address: ca, token: token, time: time });
 });
 bot.action(/proceedsell_(.+)/, async (ctx) => {
@@ -485,17 +523,21 @@ bot.action(/proceedsell_(.+)/, async (ctx) => {
 	const token = await processToken(ca);
 	//	console.log(token);
 	const time = ctx.match[1].split(" ")[1];
-	if (!token) return ctx.reply("An error occured please try again.");
+	if (!token) {
+		return ctx.reply("An error occured please try again.");
+	}
 	return ctx.scene.enter("sell-wizard", { address: ca, token: token, time: time });
 });
 bot.command("/import", checkGroup, async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const ca = commandArgs.join(" ");
-	if (!ca) return ctx.reply("You need to send a contract address with your command.");
+	if (!ca) {
+		return ctx.reply("You need to send a contract address with your command.");
+	}
 
 	const token = await processToken(ca);
 	if (token) {
-		//check if tokens with zero balance should be blocked
+		// check if tokens with zero balance should be blocked
 		ctx.reply(`${token.token?.name} has been imported successfully.`);
 		return databases.addUserHolding(ctx.from.id, ca);
 	} else {
@@ -505,11 +547,13 @@ bot.command("/import", checkGroup, async (ctx) => {
 bot.command("/delete", checkGroup, async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const ca = commandArgs.join(" ");
-	if (!ca) return ctx.reply("You need to send a contract address with your command.");
+	if (!ca) {
+		return ctx.reply("You need to send a contract address with your command.");
+	}
 
 	const token = await processToken(ca);
 	if (token) {
-		//check if tokens with zero balance should be blocked
+		// check if tokens with zero balance should be blocked
 		databases.removeUserHolding(ctx.from.id, ca);
 		ctx.reply(`${token.token?.name} has been deleted successfully.`);
 		return;
@@ -522,16 +566,19 @@ const coinActions = () => {};
 bot.command("/buy", async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const ca = commandArgs.join(" ");
-	if (!ca) return ctx.reply("You need to send a contract address with your command.");
+	if (!ca) {
+		return ctx.reply("You need to send a contract address with your command.");
+	}
 
 	const token = await processToken(ca);
 	if (!token) {
 		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
 	}
-	if (token.chain.toLowerCase() !== "base")
+	if (token.chain.toLowerCase() !== "base") {
 		return ctx.reply(
 			"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
 		);
+	}
 	const message = await ctx.telegram.sendMessage(
 		ctx.from?.id,
 		`You are about to buy ${token.token.name}`,
@@ -548,15 +595,18 @@ bot.command("/buy", async (ctx) => {
 bot.command("/sell", async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const ca = commandArgs.join(" ");
-	if (!ca) return ctx.reply("You need to send a contract address with your command.");
+	if (!ca) {
+		return ctx.reply("You need to send a contract address with your command.");
+	}
 	const token = await processToken(ca);
 	if (!token) {
 		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
 	}
-	if (token.chain.toLowerCase() !== "base")
+	if (token.chain.toLowerCase() !== "base") {
 		return ctx.reply(
 			"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
 		);
+	}
 	const message = await ctx.telegram.sendMessage(
 		ctx.from?.id,
 		`You are about to sell ${token.token.name}`,
@@ -574,16 +624,20 @@ bot.command("/schedule", async (ctx) => {
 	const currentUnixTime = Math.floor(Date.now() / 1000);
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const prompt = commandArgs.join(" ");
-	//console.log(prompt);
-	if (!prompt) return ctx.reply("You need to send a prompt with your command.");
+	// console.log(prompt);
+	if (!prompt) {
+		return ctx.reply("You need to send a prompt with your command.");
+	}
 
 	let time: string | null;
 	time = await queryAi(getTimePrompt(prompt));
-	//let time2
+	// let time2
 	if (time.toLowerCase() === "null") {
 		time = extractTimeFromPrompt(prompt);
 
-		if (!time) return ctx.reply("There is no time interval present in your message.");
+		if (!time) {
+			return ctx.reply("There is no time interval present in your message.");
+		}
 	}
 
 	const ca = await queryAi(getCaPrompt(prompt));
@@ -594,14 +648,17 @@ bot.command("/schedule", async (ctx) => {
 	const responseBuy = await queryAi(getBuyPrompt(prompt));
 	const responseSell = await queryAi(getSellPrompt(prompt));
 	const token = await processToken(ca);
-	if (!token) return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+	if (!token) {
+		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+	}
 
-	if (token.chain.toLowerCase() !== "base")
+	if (token.chain.toLowerCase() !== "base") {
 		return ctx.reply(
 			"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
 		);
+	}
 	if (responseBuy.toLowerCase() === "buy" && responseSell.toLowerCase() !== "sell") {
-		//console.log(ca);
+		// console.log(ca);
 
 		const message = await ctx.telegram.sendMessage(
 			ctx.from?.id,

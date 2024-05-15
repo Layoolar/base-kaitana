@@ -39,10 +39,10 @@ const openai = new OpenAI({
 });
 
 export async function conversation(input: string, chatHistory: string[][]) {
-	const userInput = input; //getmessage from user
+	const userInput = input; // getmessage from user
 	try {
-		//call the api with userinput
-		//@ts-ignore
+		// call the api with userinput
+		// @ts-ignore
 		const messages: ChatCompletionUserMessageParam[] = chatHistory.map(([role, content]) => ({
 			role,
 			content,
@@ -55,13 +55,13 @@ export async function conversation(input: string, chatHistory: string[][]) {
 			temperature: 0.8,
 		});
 		const completionMessage = chatCompletion.choices[0].message.content;
-		//Goodbye! Feel free to come back if you have any more questions. Have a great day!
+		// Goodbye! Feel free to come back if you have any more questions. Have a great day!
 		return completionMessage;
-		//update history
+		// update history
 	} catch (error) {
 		console.log(error);
 	}
 	//	}
 
-	//console.log();
+	// console.log();
 }
