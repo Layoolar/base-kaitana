@@ -2,14 +2,13 @@ import OpenAI from "openai";
 import type { ChatCompletionUserMessageParam } from "openai/resources";
 import "dotenv/config";
 
-const openaiApiKey = process.env.OPENAI_API_KEY;
 export const queryAi = async (text: string): Promise<string> => {
 	let aiReply = "";
 	await fetch("https://api.openai.com/v1/chat/completions", {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
-			Authorization: `Bearer ${openaiApiKey}`,
+			Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
 		},
 		body: JSON.stringify({
 			model: "gpt-3.5-turbo",
@@ -36,7 +35,7 @@ export const queryAi = async (text: string): Promise<string> => {
 	return aiReply;
 };
 const openai = new OpenAI({
-	apiKey: openaiApiKey, // This is the default and can be omitted
+	apiKey: process.env.OPENAI_API_KEY, // This is the default and can be omitted
 });
 
 export async function conversation(input: string, chatHistory: string[][]) {
