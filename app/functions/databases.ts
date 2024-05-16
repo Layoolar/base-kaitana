@@ -26,11 +26,6 @@ import { BetData, CoinDataType } from "./commands";
 import fetchData from "./fetchCoins";
 // onst ChartJsImage = require("chartjs-to-image");
 import ChartJsImage from "chartjs-to-image";
-import { fetchOHLCVData } from "./fetchCandlestickData";
-import { generateTimeAndPriceGraph } from "./timePriceData";
-import axios from "axios";
-
-require("dotenv").config();
 
 //
 

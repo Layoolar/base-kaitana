@@ -1,8 +1,9 @@
 import * as command from "@app/functions/commands";
 import * as hears from "@app/functions/hears";
+import "dotenv/config";
 
 // index.js (or your application's entry point file)
-require("dotenv").config(); // Load .env file into process.env
+// Load .env file into process.env
 
 // Now you can start your application logic
 
