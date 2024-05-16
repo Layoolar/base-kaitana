@@ -17,7 +17,9 @@ require("dotenv").config(); // Load .env file into process.env
  */
 
 const startt = async () => {
+	await command.launch();
 	await command.quit();
+
 	await command.start();
 	await command.neww();
 
@@ -25,7 +27,6 @@ const startt = async () => {
 
 	await command.coinActions();
 	await hears.text();
-	await command.launch();
 };
 
 startt();

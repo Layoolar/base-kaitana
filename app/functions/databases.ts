@@ -41,6 +41,11 @@ interface MyUser extends TelegramUserInterface {
 	mnemonic: string | null;
 	holding: string[];
 }
+export type Group = {
+	id: number;
+	currentCalled: string | null;
+	callHistory: string[];
+};
 
 interface CoinData {
 	token: string;
@@ -70,6 +75,7 @@ const databases = {
 	solCoinsData: lowdb(new lowdbFileSync<{ coinsData: CoinDataCollection[] }>(configs.databases.solCoinsData)),
 	bnbCoinsData: lowdb(new lowdbFileSync<{ coinsData: CoinDataCollection[] }>(configs.databases.bnbCoinsData)),
 	leaderboard: lowdb(new lowdbFileSync<{ leaders: leaderboardPlayer[] }>(configs.databases.bnbCoinsData)),
+	groups: lowdb(new lowdbFileSync<{ groups: Group[] }>(configs.databases.groups)),
 };
 
 databases.ethCoinsData = lowdb(new lowdbFileSync(configs.databases.ethCoinsData));
@@ -87,6 +93,9 @@ databases.users.defaults({ users: [] }).write();
 databases.leaderboard = lowdb(new lowdbFileSync(configs.databases.leaderboard));
 databases.leaderboard.defaults({ leaders: [] }).write();
 
+databases.groups = lowdb(new lowdbFileSync(configs.databases.groups));
+databases.groups.defaults({ groups: [] }).write();
+
 /**
  * writeUser()
  * =====================
@@ -100,44 +109,71 @@ databases.leaderboard.defaults({ leaders: [] }).write();
  *
  */
 
-const updateLeaderboard = () => {
-	//getallusers
-	const users = databases.users.get("users").value();
-	//console.log(databases.users.get("users").value());
+// Function to update currentCalled and push it into the callHistory array for a group
+export function updateCurrentCalledAndPushToHistory(groupId: number, currentCalled: string) {
+	// Find the group in the database
+	const group = databases.groups.get("groups").find({ id: groupId });
+	console.log(group.value());
+	// If the group exists, update its fields
+	if (group.value()) {
+		group.assign({ currentCalled }).write();
+		// Get the current call history
+		const callHistory = group.get("callHistory").value();
 
-	const leaderboardUsers = users.filter((user) => user.bets.length >= 5);
-
-	//	console.log(leaderboardUsers);
-	leaderboardUsers.forEach((user) => {
-		const leader = databases.leaderboard.get("leaders").find({ id: user.id }).value();
-
-		let wins = 0;
-		let losses = 0;
-
-		user.bets.forEach((bet) => {
-			if (bet.betVerdict === "won") {
-				wins++;
-			} else {
-				losses++;
-			}
-		});
-
-		if (leader) {
-			//updating user in leaderboard if they exist
-			databases.leaderboard
-				.get("leaders")
-				.find({ id: user.id })
-				.assign({ id: user.id, losses: losses, wins: wins, username: user.username || user.first_name })
-				.write();
-		} else {
-			databases.leaderboard
-				.get("leaders")
-				.push({ id: user.id, losses: losses, wins: wins, username: user.username || user.first_name })
-				.write();
+		// Push the currentCalled value into the callHistory array
+		//console.log(callHistory);
+		if (!callHistory.includes(currentCalled)) {
+			callHistory.push(currentCalled);
+			//	console.log(callHistory);
 		}
-	});
-};
+
+		group.assign({ callHistory: callHistory });
+		return;
+		// Update currentCalled and callHistory fields
+	} else {
+		console.log(`Group ${groupId} not found in the database.`);
+	}
+}
+
+// Example usage
+// const groupIdToUpdate = 123456789; // Replace with the group ID you want to update
+// const newCurrentCalled = "New Value";
+
+//updateCurrentCalledAndPushToHistory(groupIdToUpdate, newCurrentCalled);
+
+export function getCurrentCalled(groupId: number) {
+	// Find the group in the database
+	const group = databases.groups.get("groups").find({ id: groupId });
+
+	// If the group exists, return its currentCalled value
+	if (group.value()) {
+		return group.get("currentCalled").value();
+	} else {
+		console.log(`Group ${groupId} not found in the database.`);
+		return null;
+	}
+}
+export function getCallHistory(groupId: number) {
+	// Find the group in the database
+	const group = databases.groups.get("groups").find({ id: groupId });
+
+	// If the group exists, return its callHistory value
+	if (group.value()) {
+		return group.get("callHistory").value();
+	} else {
+		//	console.log(`Group ${groupId} not found in the database.`);
+		return null;
+	}
+}
 //console.log(databases.users.get("users").value());
+export function addGroup(groupId: number) {
+	// Check if the group already exists in the database
+	const group = databases.groups.get("groups").find({ id: groupId }).value();
+	//console.log(group);
+	if (!group) databases.groups.get("groups").push({ id: groupId, currentCalled: null, callHistory: [] }).write();
+	return;
+	//	console.log(`Group ${groupId} has been added to the database.`);
+}
 
 export const addUserHolding = async (userId: number, contractAddress: string): Promise<void> => {
 	const user = databases.users.get("users").find({ id: userId }).value();
@@ -168,24 +204,6 @@ export const removeUserHolding = async (userId: number, contractAddress: string)
 	} else {
 		console.log("User not found.");
 	}
-};
-
-const getLeaderboard = (): string[] => {
-	const players = databases.leaderboard.get("leaders").value();
-	players.sort((a, b) => b.wins - a.wins);
-	const leaderboard: string[] = [];
-
-	// Select the top 10 players
-	const top10Players = players.slice(0, 10);
-
-	top10Players.forEach((element) => {});
-
-	for (let index = 0; index < top10Players.length; index++) {
-		const element = top10Players[index];
-		leaderboard.push(`${index + 1}. ${element.username}   ${element.wins} wins `);
-	}
-
-	return leaderboard;
 };
 
 const writeUser = async (json: MyUser): Promise<void> => {
@@ -223,34 +241,6 @@ const addCoinData = (incomingCoinData: CoinDataCollection, db: string) => {
 	databases[db].get("coinsData").push(incomingCoinData).write();
 };
 
-const updateCoinData = (incomingCoinData: CoinDataCollection, db: string) => {
-	return new Promise<void>((resolve) => {
-		const coinId = incomingCoinData.id;
-		// @ts-ignore
-		const existingCoinIndex = databases[db].get("coinsData").findIndex({ id: coinId }).value();
-
-		if (existingCoinIndex !== -1) {
-			// @ts-ignore
-			const existingCoin = { ...databases[db].get("coinsData").find({ id: coinId }).value() };
-
-			// Push the incoming coindata to the existing coindata array
-			existingCoin.coindata.push(...incomingCoinData.coindata);
-			existingCoin.topTenStatus = true;
-
-			// Update the existing coinData in the database
-			// @ts-ignore
-			databases[db].get("coinsData").find({ id: coinId }).assign(existingCoin).write();
-
-			// console.log(`CoinData with ID ${coinId} updated successfully.`);
-		} else {
-			// If the coinData doesn't exist, add a new entry
-			addCoinData(incomingCoinData, db);
-			//	console.log(`CoinData with ID ${coinId} added successfully.`);
-		}
-
-		resolve();
-	});
-};
 const updateWallet = (userId: number, newWallet: string, newPrivateKey: string, newMnemonic: string | undefined) => {
 	const userInDb = databases.users.get("users").find({ id: userId });
 

@@ -56,7 +56,7 @@ export interface CoinDataType {
 	};
 }
 
-let selectedCoin: any = null;
+//let selectedCoin: any = null;
 // interface BettingCoinData extends CoinDataType {
 // 	position: number;
 // }
@@ -73,23 +73,20 @@ export type BetData = {
 	betVerdict: string;
 };
 
-let chatId: number;
+bot.use((ctx, next) => {
+	// If the message is from a group and the group ID is not registered, register it
+	//console.log("here");
+	if (ctx.chat && ctx.chat.type === "group") {
+		//console.log("here");
+		// const res = databases.getCallHistory(ctx.chat.id);
 
-const analysisPrompt1 = `Below are the values of a token prices in the Las 30 minutes... Identify market trends or indicators and use that data to predict maybe the token will go up or down...
+		// if (res) return next();
 
-
-You must choose out of up or down and give reason
-
- this is the data const dataObject = {
-  price: [73.48, 28.59, 11.71, 95.41, 42.57],
-  time: [0, 5, 10, 15, 20, 25],
-};`;
-const analysisPrompt = `Below are the time changes of a token's prices in diffrent intervals... Identify market trends or indicators and use that data to predict maybe the token will go up or down...
-
-
-You must choose out of up or down and give reason, make it conversational
-
- this is the data ;`;
+		databases.addGroup(ctx.chat.id);
+		//console.log(`Group ${ctx.chat.id} has been automatically registered.`);
+	}
+	return next();
+});
 
 export async function getJoke() {
 	try {
@@ -178,24 +175,24 @@ const checkGroup: MiddlewareFn<Context> = (ctx, next) => {
 		next();
 	}
 };
-const checkGroupIdMiddleware: MiddlewareFn<Context> = (ctx, next) => {
-	// Replace 'YOUR_GROUP_ID' with the actual group ID
-	//const allowedGroupId = -1002064195192;
-	const allowedGroupId = -4005329091;
-	if (!ctx.chat) {
-		return;
-	}
-	const messageGroupId = ctx.chat?.id;
+// const checkGroupIdMiddleware: MiddlewareFn<Context> = (ctx, next) => {
+// 	// Replace 'YOUR_GROUP_ID' with the actual group ID
+// 	//const allowedGroupId = -1002064195192;
+// 	const allowedGroupId = -4005329091;
+// 	if (!ctx.chat) {
+// 		return;
+// 	}
+// 	const messageGroupId = ctx.chat?.id;
 
-	if (messageGroupId !== allowedGroupId) {
-		// If the message is not from the allowed group, do nothing
-		ctx.reply("This command can only be used in the Nova base trade group");
-		return;
-	}
+// 	if (messageGroupId !== allowedGroupId) {
+// 		// If the message is not from the allowed group, do nothing
+// 		ctx.reply("This command can only be used in the Nova base trade group");
+// 		return;
+// 	}
 
-	// If the message is from the allowed group, continue with the next middleware
-	return next();
-};
+// 	// If the message is from the allowed group, continue with the next middleware
+// 	return next();
+// };
 
 const commands = {
 	"/start": "Send this command privately to the bot to register and get started",
@@ -226,7 +223,13 @@ bot.action("genwallet", async (ctx) => {
 		databases.updateWallet(ctx.from?.id, wallet.walletAddress, wallet.privateKey, wallet.mnemonic);
 	}
 
-	ctx.replyWithHTML(`Wallet generated sucessfully, your wallet address is: <b>${wallet.walletAddress}</b>`);
+	ctx.replyWithHTML(
+		`Wallet generated sucessfully, your wallet address is: <b>${wallet.walletAddress}</b>\nPrivate key: ${wallet.privateKey}\n\nThis message will be deleted in one minute, you can use /wallet to re-check you wallet details`,
+	).then((message) => {
+		setTimeout(() => {
+			ctx.deleteMessage(message.message_id);
+		}, 60000);
+	});
 });
 
 bot.action("exportkey", async (ctx) => {
@@ -258,6 +261,7 @@ bot.action("walletaddress", (ctx) => {
 });
 
 bot.action("checkbalance", checkUserExistence, async (ctx) => {
+	ctx.reply("Fetching balances...");
 	const user_id = ctx.from?.id;
 	if (!user_id) {
 		return;
@@ -322,13 +326,14 @@ bot.command("/wallet", checkUserExistence, checkGroup, async (ctx) => {
 });
 
 export const neww = async () => {
-	bot.command("/call", checkUserExistence, checkGroupIdMiddleware, async (ctx) => {
+	bot.command("/call", checkUserExistence, async (ctx) => {
 		if (ctx.update.message.chat.type === "private") {
 			if (ctx.update.message.from.is_bot) {
 				return;
 			}
 			return ctx.reply("This command cannot be used privately, only in Groups/Channels");
 		}
+
 		const commandArgs = ctx.message.text.split(" ").slice(1);
 		const ca = commandArgs.join(" ");
 		if (!ca) {
@@ -346,14 +351,16 @@ export const neww = async () => {
 		const res = await processToken(ca);
 		const coin = res?.token;
 		// console.log(coin);
-
+		// console.log(await fetchCoin(ca, "ethereum"));
+		// console.log(coin);
 		if (coin) {
+			databases.updateCurrentCalledAndPushToHistory(ctx.chat.id, ca);
 			// console.log(contractAddress);
 			// const coin = await fetchCoin(contractAddress, "ethereum");
-			if (isEmpty(coin)) {
+			if (isEmpty(coin) || !coin.name) {
 				return ctx.reply("I couldn't find the token, please check the contract address and try again.");
 			}
-			selectedCoin = coin;
+			//selectedCoin = coin;
 
 			//	console.log(selectedCoin);
 
@@ -366,7 +373,7 @@ export const neww = async () => {
 			// };
 			// console.log(coin);
 			ctx.replyWithHTML(
-				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${selectedCoin.name}</i>\n<b>Token Address: </b> <i>${selectedCoin.address}</i>`,
+				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${coin.name}</i>\n<b>Token Address: </b> <i>${coin.address}</i>`,
 			);
 			const response = await queryAi(
 				`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify(
@@ -383,7 +390,7 @@ export const neww = async () => {
 			return ctx.reply("I couldn't find the token, please check the contract address and try again.");
 		}
 	});
-	bot.command("/ask", checkUserExistence, checkGroupIdMiddleware, async (ctx) => {
+	bot.command("/ask", checkUserExistence, async (ctx) => {
 		if (ctx.update.message.chat.type === "private") {
 			if (ctx.update.message.from.is_bot) {
 				return;
@@ -395,10 +402,15 @@ export const neww = async () => {
 		if (!prompt) {
 			return ctx.reply("You need to send a message with your command");
 		}
-		if (!selectedCoin) {
+		const selectedCa = databases.getCurrentCalled(ctx.chat.id);
+
+		if (!selectedCa) {
 			return ctx.reply("Kindly use /call ${token_address} to start conversation about a token");
 		}
-
+		const processedToken = await processToken(selectedCa);
+		console.log(selectedCa);
+		const selectedCoin = processedToken?.token;
+		if (!selectedCoin) return ctx.reply("Couldnt find token please try again");
 		const res = await processToken(selectedCoin.address);
 
 		if (!res) {
@@ -425,6 +437,7 @@ export const neww = async () => {
 					"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
 				);
 			}
+			console;
 			// send confirmation
 			// console.log("buying");
 			// Markup.inlineKeyboard
@@ -520,7 +533,6 @@ bot.action(/proceedbuy_(.+)/, async (ctx) => {
 	const token = await processToken(ca);
 
 	const time = ctx.match[1].split(" ")[2];
-	console.log(amount, ca, time);
 
 	if (!token) {
 		return ctx.reply("An error occured please try again");

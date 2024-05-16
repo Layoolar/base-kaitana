@@ -56,11 +56,11 @@ stepHandler.action("sendbuy", async (ctx) => {
 
 	ctx.scene.session.buyStore.currency = amount.toLowerCase().includes("$") ? "usd" : "eth";
 	const currency = ctx.scene.session.buyStore.currency;
-	console.log(amount, currency);
+	//console.log(amount, currency);
 	const regex = /-?\d+(\.\d+)?/;
 
 	const matches = amount.match(regex);
-	console.log(matches);
+	//console.log(matches);
 	if (matches?.[0]) {
 		ctx.scene.session.buyStore.amount = matches?.[0];
 	} else {
@@ -123,7 +123,7 @@ stepHandler2.action("cancel", async (ctx) => {
 
 	return await ctx.scene.leave();
 });
-
+console;
 export const buyWizard = new Scenes.WizardScene<WizardContext>(
 	"buy-wizard",
 	async (ctx) => {
@@ -262,7 +262,7 @@ const executeBuy = async (
 	//console.log(amountinEth);
 	let receipt;
 	try {
-		console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
+		//console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
 		receipt = await buy(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
 	} catch (error) {
 		ctx.reply(`An Error occured please try again later\n tx: https://basescan.org/tx/${receipt.transactionHash}`);
