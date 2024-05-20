@@ -76,15 +76,17 @@ export type BetData = {
 bot.use((ctx, next) => {
 	// If the message is from a group and the group ID is not registered, register it
 	//console.log("here");
-	if (ctx.chat && ctx.chat.type === "group") {
-		//console.log("here");
-		// const res = databases.getCallHistory(ctx.chat.id);
+	if (ctx.chat)
+		if (ctx.chat.type === "group" || ctx.chat.type === "supergroup") {
+			//console.log("here");
+			// const res = databases.getCallHistory(ctx.chat.id);
 
-		// if (res) return next();
-
-		databases.addGroup(ctx.chat.id);
-		//console.log(`Group ${ctx.chat.id} has been automatically registered.`);
-	}
+			// if (res) return next();
+			//	console.log("hi");
+			databases.addGroup(ctx.chat.id);
+			//console.log(ctx.chat.id);
+			//console.log(`Group ${ctx.chat.id} has been automatically registered.`);
+		}
 	return next();
 });
 
