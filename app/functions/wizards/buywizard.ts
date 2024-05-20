@@ -265,12 +265,12 @@ const executeBuy = async (
 		//console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
 		receipt = await buy(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
 	} catch (error) {
-		ctx.reply(`An Error occured please try again later\n tx: https://basescan.org/tx/${receipt.transactionHash}`);
+		ctx.reply(`An Error occured please try again later\n tx: https://etherscan.io/tx/${receipt.transactionHash}`);
 		return await ctx.scene.leave();
 	}
 
 	await ctx.replyWithHTML(
-		`You bought ${token.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\ntx: https://basescan.org/tx/${receipt.transactionHash}`,
+		`You bought ${token.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\ntx: https://etherscan.io/tx/${receipt.transactionHash}`,
 	);
 	addUserHolding(ctx.from?.id, buyAddress);
 	return receipt;

@@ -9,12 +9,12 @@ require("dotenv").config();
 
 export const sell = async (privateKey, tokenAddress, amountInTokens, decimal) => {
 	const provider = new ethers.providers.JsonRpcProvider(
-		`https://base-mainnet.g.alchemy.com/v2/A1lKz4G5uuXNB7q-l2tnKfz6oyqUgFTK`,
+		`https://mainnet.infura.io/v3/3534bf3949ca4b1f88e6023ff4ea3223`,
 	);
 
 	const wallet = new ethers.Wallet(privateKey, provider);
 	// Contract addresses and ABI
-	const uniswapRouterAddress = "0x4752ba5DBc23f44D87826276BF6Fd6b1C372aD24"; // Uniswap v2 Router address for mainnet
+	const uniswapRouterAddress = "0x7a250d5630B4cF539739df2C5dAcb4c659F2488D"; // Uniswap v2 Router address for mainnet
 	const uniswapRouterABI = [
 		"function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)",
 		"function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)",
@@ -28,7 +28,7 @@ export const sell = async (privateKey, tokenAddress, amountInTokens, decimal) =>
 
 	const uniswapRouterContract = new ethers.Contract(uniswapRouterAddress, uniswapRouterABI, wallet);
 	const deadline = Math.floor(Date.now() / 1000) + 60 * 10; // 10 minutes from now
-	const path = [tokenAddress, "0x4200000000000000000000000000000000000006"];
+	const path = [tokenAddress, ethers.constants.AddressZero];
 	//const path = [ethers.constants.AddressZero, tokenAddress]; // Trading ETH for token
 
 	// Approve Uniswap Router to spend tokens on behalf of the wallet

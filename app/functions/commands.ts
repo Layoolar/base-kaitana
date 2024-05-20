@@ -186,7 +186,7 @@ const checkGroup: MiddlewareFn<Context> = (ctx, next) => {
 
 // 	if (messageGroupId !== allowedGroupId) {
 // 		// If the message is not from the allowed group, do nothing
-// 		ctx.reply("This command can only be used in the Nova base trade group");
+// 		ctx.reply("This command can only be used in the Nova  trade group");
 // 		return;
 // 	}
 
@@ -347,7 +347,6 @@ export const neww = async () => {
 		// 	.then((data) => ctx.reply(data.name))
 		// 	.catch((error) => console.error("Error:", error));
 
-		// const coin = await fetchCoin(contractAddress, "base");
 		const res = await processToken(ca);
 		const coin = res?.token;
 		// console.log(coin);
@@ -432,12 +431,6 @@ export const neww = async () => {
 		// console.log(response);
 
 		if (response.toLowerCase() === "buy") {
-			if (res.chain.toLowerCase() !== "base") {
-				return ctx.reply(
-					"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
-				);
-			}
-			console;
 			// send confirmation
 			// console.log("buying");
 			// Markup.inlineKeyboard
@@ -474,11 +467,6 @@ export const neww = async () => {
 			const response = await queryAi(getSellPrompt(prompt));
 
 			if (response.toLowerCase() === "sell") {
-				if (res.chain.toLowerCase() !== "base") {
-					return ctx.reply(
-						"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
-					);
-				}
 				if (databases.isWalletNull(userid)) {
 					return ctx.reply(
 						`${
@@ -537,8 +525,13 @@ bot.action(/proceedbuy_(.+)/, async (ctx) => {
 	if (!token) {
 		return ctx.reply("An error occured please try again");
 	}
+	if (token.chain.toLowerCase() !== "ethereum") {
+		return ctx.reply(
+			"We currrently only support ETH token trading for now. Please bear with us as we are working on supporting other tokens",
+		);
+	}
 	//console.log(ca, token.chain, time, amount);
-	return ctx.scene.enter("buy-wizard", { address: ca, token: token, time: time, amount: amount });
+	return ctx.scene.enter("buy-wizard", { address: ca, token: token, chain: token.chain, time: time, amount: amount });
 });
 bot.action(/proceedsell_(.+)/, async (ctx) => {
 	const match = ctx.match;
@@ -553,6 +546,11 @@ bot.action(/proceedsell_(.+)/, async (ctx) => {
 	//	console.log(amount, ca, time);
 	if (!token) {
 		return ctx.reply("An error occured please try again.");
+	}
+	if (token.chain.toLowerCase() !== "ethereum") {
+		return ctx.reply(
+			"We currrently only support ETH token trading for now. Please bear with us as we are working on supporting other tokens",
+		);
 	}
 	return ctx.scene.enter("sell-wizard", { address: ca, token: token, time: time, amount: amount });
 });
@@ -605,11 +603,6 @@ bot.command("/buy", async (ctx) => {
 	if (!token) {
 		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
 	}
-	if (token.chain.toLowerCase() !== "base") {
-		return ctx.reply(
-			"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
-		);
-	}
 
 	ctx.reply(
 		`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
@@ -640,11 +633,7 @@ bot.command("/sell", async (ctx) => {
 	if (!token) {
 		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
 	}
-	if (token.chain.toLowerCase() !== "base") {
-		return ctx.reply(
-			"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
-		);
-	}
+
 	ctx.reply(
 		`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
 	);
@@ -693,11 +682,6 @@ bot.command("/schedule", async (ctx) => {
 		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
 	}
 
-	if (token.chain.toLowerCase() !== "base") {
-		return ctx.reply(
-			"We currrently only support base token trading for now. Please bear with us as we are working on supporting other tokens",
-		);
-	}
 	if (responseBuy.toLowerCase() === "buy" && responseSell.toLowerCase() !== "sell") {
 		// console.log(ca);
 		const amount = await queryAi(getamountprompt(prompt));

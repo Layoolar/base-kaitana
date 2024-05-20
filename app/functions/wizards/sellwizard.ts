@@ -227,13 +227,13 @@ const executeSell = async (
 	try {
 		receipt = await sell(wallet?.privateKey, token.address, amountintokens.toFixed(2).toString(), token.decimals);
 	} catch (error) {
-		ctx.reply(`An error occurred. Please try again later.\ntx: https://basescan.org/tx/${receipt.transactionHash}`);
+		ctx.reply(`An error occurred. Please try again later.\ntx: https://ethercan.io/tx/${receipt.transactionHash}`);
 		console.log(error);
 		return ctx.scene.leave();
 	}
 
 	await ctx.replyWithHTML(
-		`You sold ${token?.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTx: tx: https://basescan.org/tx/${receipt.transactionHash}`,
+		`You sold ${token?.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTx: tx: https://etherscan.io/tx/${receipt.transactionHash}`,
 	);
 
 	const balance = await getTokenBalance(wallet?.walletAddress, sellAddress);

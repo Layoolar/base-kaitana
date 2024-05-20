@@ -108,7 +108,7 @@ databases.groups.defaults({ groups: [] }).write();
 export function updateCurrentCalledAndPushToHistory(groupId: number, currentCalled: string) {
 	// Find the group in the database
 	const group = databases.groups.get("groups").find({ id: groupId });
-	console.log(group.value());
+
 	// If the group exists, update its fields
 	if (group.value()) {
 		group.assign({ currentCalled }).write();

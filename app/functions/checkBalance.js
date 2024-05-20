@@ -1,7 +1,7 @@
 const { ethers } = require("ethers");
 
 const provider = new ethers.providers.JsonRpcProvider(
-	`https://base-mainnet.g.alchemy.com/v2/A1lKz4G5uuXNB7q-l2tnKfz6oyqUgFTK`,
+	`https://mainnet.infura.io/v3/3534bf3949ca4b1f88e6023ff4ea3223`,
 );
 
 const walletAddress = "0x6B9AC3A905897F153484A801005017f8206F7567"; // Replace with the Ethereum wallet address you want to check
