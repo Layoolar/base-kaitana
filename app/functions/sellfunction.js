@@ -58,7 +58,7 @@ export const sell = async (privateKey, tokenAddress, amountInTokens, decimal) =>
 };
 
 export const sellOnEth = async (privateKey, tokenAddress, amountInTokens, decimal) => {
-	throw new Error();
+	throw new Error("The current gas is above our limit, kindly try again after some time");
 };
 // sell(
 // 	"0x0ff60d2fbc088535304adb4d3398fa6781c45cfa9eea40445d4751c3d2f8aa81",
