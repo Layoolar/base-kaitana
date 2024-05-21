@@ -118,7 +118,7 @@ export function updateCurrentCalledAndPushToHistory(groupId: number, currentCall
 		const callHistory = group.get("callHistory").value();
 
 		// Push the currentCalled value into the callHistory array
-		//console.log(callHistory);
+		// console.log(callHistory);
 		if (!callHistory.includes(currentCalled)) {
 			callHistory.push(currentCalled);
 			//	console.log(callHistory);
@@ -136,7 +136,7 @@ export function updateCurrentCalledAndPushToHistory(groupId: number, currentCall
 // const groupIdToUpdate = 123456789; // Replace with the group ID you want to update
 // const newCurrentCalled = "New Value";
 
-//updateCurrentCalledAndPushToHistory(groupIdToUpdate, newCurrentCalled);
+// updateCurrentCalledAndPushToHistory(groupIdToUpdate, newCurrentCalled);
 
 export function getCurrentCalled(groupId: number) {
 	// Find the group in the database
@@ -146,7 +146,6 @@ export function getCurrentCalled(groupId: number) {
 	if (group.value()) {
 		return group.get("currentCalled").value();
 	} else {
-		
 		return null;
 	}
 }
@@ -162,12 +161,14 @@ export function getCallHistory(groupId: number) {
 		return null;
 	}
 }
-//console.log(databases.users.get("users").value());
+// console.log(databases.users.get("users").value());
 export function addGroup(groupId: number) {
 	// Check if the group already exists in the database
 	const group = databases.groups.get("groups").find({ id: groupId }).value();
-	//console.log(group);
-	if (!group) databases.groups.get("groups").push({ id: groupId, currentCalled: null, callHistory: [] }).write();
+	// console.log(group);
+	if (!group) {
+		databases.groups.get("groups").push({ id: groupId, currentCalled: null, callHistory: [] }).write();
+	}
 	return;
 	//	console.log(`Group ${groupId} has been added to the database.`);
 }
@@ -191,16 +192,12 @@ export const addUserHolding = async (userId: number, contractAddress: string, ch
 	}
 };
 export async function sendMessageToAllGroups(message: string) {
-	const groups = databases.groups.get("groups").value();
-
-	for (const group of groups) {
-		const chatId = group.id;
-		try {
-			await bot.telegram.sendMessage(chatId, message, { parse_mode: "HTML", disable_web_page_preview: true });
-			return "ok";
-		} catch (error) {
-			return null;
-		}
+	const chatId = -1002064195192;
+	try {
+		await bot.telegram.sendMessage(chatId, message, { parse_mode: "HTML", disable_web_page_preview: true });
+		return "ok";
+	} catch (error) {
+		return null;
 	}
 }
 
@@ -214,10 +211,10 @@ export const removeUserHolding = async (userId: number, contractAddress: string,
 				user.ethholding.splice(index, 1);
 				databases.users.get("users").find({ id: userId }).assign(user).write();
 			} else {
-				//console.log("User does not hold this contract address.");
+				// console.log("User does not hold this contract address.");
 			}
 		} else {
-			//console.log("User not found.");
+			// console.log("User not found.");
 		}
 	} else {
 		if (user) {
@@ -226,10 +223,10 @@ export const removeUserHolding = async (userId: number, contractAddress: string,
 				user.baseholding.splice(index, 1);
 				databases.users.get("users").find({ id: userId }).assign(user).write();
 			} else {
-				//console.log("User does not hold this contract address.");
+				// console.log("User does not hold this contract address.");
 			}
 		} else {
-			//console.log("User not found.");
+			// console.log("User not found.");
 		}
 	}
 };
@@ -264,7 +261,7 @@ const isWalletNull = (userId: number): boolean => {
 };
 
 const addCoinData = (incomingCoinData: CoinDataCollection, db: string) => {
-	//console.log("addcoindata");
+	// console.log("addcoindata");
 	// @ts-ignore
 	databases[db].get("coinsData").push(incomingCoinData).write();
 };
@@ -296,9 +293,9 @@ const getUserWalletDetails = (userId: number) => {
 	}
 };
 
-//generateTimeAndPriceGraph();
-//console.log(`This request was made on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`);
-//console.log("hey");
+// generateTimeAndPriceGraph();
+// console.log(`This request was made on ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}`);
+// console.log("hey");
 // setInterval(async () => await updateDbWithTopTen("ethereum", "ethCoinsData"), 5000);
 // setInterval(async () => await updateDbWithTopTen("solana", "solCoinsData"), 5000);
 // setInterval(async () => await updateDbWithTopTen("bsc", "bnbCoinsData"), 5000);
@@ -376,7 +373,7 @@ const getHistoricalDataAndGraph = async (tokenName: string, chain: string) => {
 			],
 		},
 	});
-	//myPriceChart.setBackgroundColor("transparent");
+	// myPriceChart.setBackgroundColor("transparent");
 	const myMcapChart = new ChartJsImage();
 
 	myMcapChart.setConfig({
@@ -401,11 +398,11 @@ const getHistoricalDataAndGraph = async (tokenName: string, chain: string) => {
 	return { priceChartBuffer: buf, marketCapChartBuffer: capBuf, priceHistoricalData: priceHistoricalData };
 };
 
-//this should be hidden
+// this should be hidden
 
 // analyse the data and mention if there is a common market trend that can give informartion in buy or sell.
 
-//main("exit");
+// main("exit");
 
 export {
 	databases,

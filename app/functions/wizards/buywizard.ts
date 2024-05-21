@@ -52,15 +52,15 @@ stepHandler.action("sendbuy", async (ctx) => {
 		ctx.reply("An error occurred please try again");
 		return ctx.scene.leave();
 	}
-	//const amount = ctx.scene.session.buyStore.amount;
+	// const amount = ctx.scene.session.buyStore.amount;
 
 	ctx.scene.session.buyStore.currency = amount.toLowerCase().includes("$") ? "usd" : "eth";
 	const currency = ctx.scene.session.buyStore.currency;
-	//console.log(amount, currency);
+	// console.log(amount, currency);
 	const regex = /-?\d+(\.\d+)?/;
 
 	const matches = amount.match(regex);
-	//console.log(matches);
+	// console.log(matches);
 	if (matches?.[0]) {
 		ctx.scene.session.buyStore.amount = matches?.[0];
 	} else {
@@ -68,7 +68,7 @@ stepHandler.action("sendbuy", async (ctx) => {
 		return ctx.scene.leave();
 	}
 
-	//console.log(amount);
+	// console.log(amount);
 
 	let receipt;
 	if (time) {
@@ -79,16 +79,16 @@ stepHandler.action("sendbuy", async (ctx) => {
 
 		const date = addMillisecondsToDate(parseFloat(time));
 		ctx.reply(`Buy has been scheduled for ${date.toTimeString()}`);
-		//await delay(parseFloat(time));
+		// await delay(parseFloat(time));
 		setTimeout(async () => {
 			try {
 				if (!ctx.scene.session.buyStore.amount) {
 					ctx.reply("An error occurred please try again");
 					return ctx.scene.leave();
 				}
-				//console.log(ctx.from, currency, ctx.scene.session.buyStore.amount, token, buyAddress);
+				// console.log(ctx.from, currency, ctx.scene.session.buyStore.amount, token, buyAddress);
 				receipt = await executeBuy(ctx, currency, ctx.scene.session.buyStore.amount, token, buyAddress);
-				//console.log(receipt);
+				// console.log(receipt);
 			} catch (error) {
 				console.log(error);
 				ctx.reply("An Erorr occured, please try again later");
@@ -103,7 +103,7 @@ stepHandler.action("sendbuy", async (ctx) => {
 				return ctx.scene.leave();
 			}
 			receipt = await executeBuy(ctx, currency, ctx.scene.session.buyStore.amount, token, buyAddress);
-			//console.log(receipt);
+			// console.log(receipt);
 		} catch (error) {
 			console.log(error);
 			ctx.reply("An Erorr occured, please try again later");
@@ -132,23 +132,23 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			return ctx.scene.leave();
 		}
 		ctx.scene.session.buyStore = JSON.parse(JSON.stringify(initialData));
-		//@ts-ignore
+		// @ts-ignore
 		ctx.scene.session.buyStore.buyAddress = ctx.scene.state.address;
-		//@ts-ignore
+		// @ts-ignore
 		ctx.scene.session.buyStore.token = ctx.scene.state.token.token;
 
-		//@ts-ignore
+		// @ts-ignore
 		ctx.scene.session.buyStore.time = ctx.scene.state.time;
 
-		//@ts-ignore
+		// @ts-ignore
 		ctx.scene.session.buyStore.amount = ctx.scene.state.amount;
 
-		//@ts-ignore
+		// @ts-ignore
 		ctx.scene.session.buyStore.chain = ctx.scene.state.token.chain;
 
 		const wallet = getUserWalletDetails(ctx.from.id);
-		//const buyAddress = ctx.scene.session.buyStore.buyAddress;
-		//console.log(buyAddress);
+		// const buyAddress = ctx.scene.session.buyStore.buyAddress;
+		// console.log(buyAddress);
 		//	const amount = ctx.scene.session.buyStore.amount;
 		const chain = ctx.scene.session.buyStore.chain;
 		let userBalance;
@@ -188,9 +188,9 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			return ctx.wizard.next();
 		}
 
-		//await ctx.reply("What amount(ETH, USD) of token do you want to buy");
-		//console.log("here");
-		//ctx.wizard.next();
+		// await ctx.reply("What amount(ETH, USD) of token do you want to buy");
+		// console.log("here");
+		// ctx.wizard.next();
 	},
 	stepHandler2,
 
@@ -200,7 +200,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 stepHandler2.on("text", async (ctx) => {
 	if (ctx.message && "text" in ctx.message) {
 		const { text } = ctx.message;
-		//console.log(text);
+		// console.log(text);
 		const am = await queryAi(getamountprompt(text));
 		if (am.toLowerCase() === "null") {
 			// Reply with a warning emoji for invalid input
@@ -259,7 +259,7 @@ const executeBuy = async (
 
 	const wallet = getUserWalletDetails(ctx.from.id);
 
-	//const userBalance = await getEtherBalance(wallet?.walletAddress);
+	// const userBalance = await getEtherBalance(wallet?.walletAddress);
 	const chain = ctx.scene.session.buyStore.chain;
 	let userBalance;
 
@@ -278,7 +278,7 @@ const executeBuy = async (
 		ctx.reply("You have insuffient balance to make this transaction, please try again with a valid amount");
 		return ctx.scene.leave();
 	}
-	//edit this
+	// edit this
 
 	// Use buy function here
 	if (ctx.scene.session.buyStore.chain?.toLowerCase() === "ethereum") {
@@ -293,7 +293,7 @@ const executeBuy = async (
 		}
 	}
 
-	//console.log(amountinEth);
+	// console.log(amountinEth);
 	let receipt;
 	try {
 		//	console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
@@ -310,9 +310,10 @@ const executeBuy = async (
 	);
 
 	await sendMessageToAllGroups(
-		`Succssful transaction made through @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
+		`Successful transaction made through @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
 	);
-	if (receipt )
-		addUserHolding(ctx.from?.id, buyAddress, 'base');
+	if (receipt) {
+		addUserHolding(ctx.from?.id, buyAddress, "base");
+	}
 	return receipt;
 };
