@@ -191,7 +191,7 @@ export async function sendMessageToAllGroups(message: string) {
 	for (const group of groups) {
 		const chatId = group.id;
 		try {
-			await bot.telegram.sendMessage(chatId, message);
+			await bot.telegram.sendMessage(chatId, message, { parse_mode: "HTML", disable_web_page_preview: true });
 			return "ok";
 		} catch (error) {
 			return null;

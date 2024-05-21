@@ -24,7 +24,7 @@ import { v4 as uuidv4 } from "uuid";
 import { queryAi } from "./queryApi";
 import { TokenData, generateTimeAndPriceGraph } from "./timePriceData";
 import { calculatePoint } from "mermaid/dist/utils";
-import { log } from "console";
+import { error, log } from "console";
 import { getBuyPrompt, getCaPrompt, getSellPrompt, getTimePrompt, getamountprompt } from "./prompt";
 import { createWallet, extractTimeFromPrompt, getAllTokenBalances, getEthPrice, isEmpty, processToken } from "./helper";
 import { getEtherBalance } from "./checkBalance";
@@ -226,12 +226,22 @@ bot.action("genwallet", async (ctx) => {
 	}
 
 	ctx.replyWithHTML(
-		`Wallet generated sucessfully, your wallet address is: <b>${wallet.walletAddress}</b>\nPrivate key: ${wallet.privateKey}\n\nThis message will be deleted in one minute, you can use /wallet to re-check you wallet details`,
-	).then((message) => {
-		setTimeout(() => {
-			ctx.deleteMessage(message.message_id);
-		}, 60000);
-	});
+		`Wallet generated sucessfully, your wallet address is: <b><code>${wallet.walletAddress}</code></b>\nPrivate key: <code>${wallet.privateKey}</code>\n\nThis message will be deleted in one minute, you can use /wallet to re-check you wallet details`,
+	)
+		.then((message) => {
+			const messageId = message.message_id;
+
+			setTimeout(async () => {
+				try {
+					await ctx.deleteMessage(messageId);
+				} catch (error) {
+					//console.error(`Failed to delete message ${messageId}:`, error);
+				}
+			}, 60000);
+		})
+		.catch((error) => {
+			//console.log(error);
+		});
 });
 
 bot.action("exportkey", async (ctx) => {
@@ -242,14 +252,22 @@ bot.action("exportkey", async (ctx) => {
 	const walletDetails = databases.getUserWalletDetails(ctx.from.id);
 
 	ctx.replyWithHTML(
-		`Your private key is <b>${walletDetails?.privateKey}</b>\n\n This message will be deleted in one minute `,
-	).then((message) => {
-		const messageId = message.message_id;
+		`Your private key is <b><code>${walletDetails?.privateKey}</code></b>\n\n This message will be deleted in one minute `,
+	)
+		.then((message) => {
+			const messageId = message.message_id;
 
-		setTimeout(() => {
-			ctx.deleteMessage(messageId);
-		}, 60000);
-	});
+			setTimeout(async () => {
+				try {
+					await ctx.deleteMessage(messageId);
+				} catch (error) {
+					//console.error(`Failed to delete message ${messageId}:`, error);
+				}
+			}, 60000);
+		})
+		.catch((error) => {
+			//	console.log(error);
+		});
 });
 
 bot.action("walletaddress", (ctx) => {
@@ -259,7 +277,7 @@ bot.action("walletaddress", (ctx) => {
 
 	const walletDetails = databases.getUserWalletDetails(ctx.from.id);
 	// console.log(walletDetails);
-	ctx.replyWithHTML(`Your wallet address is <b>${walletDetails?.walletAddress}</b>`);
+	ctx.replyWithHTML(`Your wallet address is <b><code>${walletDetails?.walletAddress}</code></b>`);
 });
 
 bot.action("checkbalance", checkUserExistence, async (ctx) => {

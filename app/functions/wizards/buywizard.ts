@@ -207,7 +207,7 @@ stepHandler2.on("text", async (ctx) => {
 		const buyAddress = ctx.scene.session.buyStore.buyAddress;
 		const token = await processToken(buyAddress);
 		if (!token) {
-			await ctx.reply("Could not find token, exiting.");
+			await ctx.reply("The token could not be found, exiting.");
 			return ctx.scene.leave();
 		}
 		ctx.scene.session.buyStore.token = token.token;
@@ -251,7 +251,7 @@ const executeBuy = async (
 
 	const userBalance = await getEtherBalance(wallet?.walletAddress);
 	if (!userBalance) {
-		ctx.reply("An error occurred please try again here");
+		ctx.reply("An error occurred please try again");
 		return ctx.scene.leave();
 	}
 	if (parseFloat(userBalance) <= amountinEth) {
@@ -286,11 +286,11 @@ const executeBuy = async (
 	}
 
 	await ctx.replyWithHTML(
-		`You bought ${token.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\ntx: https://basescan.org/tx/${receipt.transactionHash}`,
+		`You bought ${token.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\nTransaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
 	);
 
 	await sendMessageToAllGroups(
-		`Succssful transaction made through @NOVA bot.\n Transaction hash:${receipt.transactionHash}`,
+		`Succssful transaction made through @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
 	);
 	if (receipt) addUserHolding(ctx.from?.id, buyAddress);
 	return receipt;

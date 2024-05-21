@@ -207,8 +207,8 @@ const executeSell = async (
 			: parseFloat(amount) / token.price;
 
 	if (amountintokens > tokensBalance) {
-		ctx.reply(
-			`You have insufficient balance (${tokensBalance} ${token.symbol}) to make this transaction. Operation cancelled.`,
+		ctx.replyWithHTML(
+			`You have insufficient balance (<b>${tokensBalance} ${token.symbol}</b>) to make this transaction. Operation cancelled.`,
 		);
 		return ctx.scene.leave();
 	}
@@ -231,7 +231,7 @@ const executeSell = async (
 	} catch (error: any) {
 		if (receipt) {
 			ctx.reply(
-				`An error occurred. Please try again later.\ntx: https://ethercan.io/tx/${receipt.transactionHash}`,
+				`An error occurred. Please try again later.\n Transaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
 			);
 		} else {
 			ctx.reply(`An Error occured please try again later\n
@@ -242,13 +242,13 @@ const executeSell = async (
 	}
 
 	await ctx.replyWithHTML(
-		`You sold ${token?.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTx: tx: https://basescan.org/tx/${receipt.transactionHash}`,
+		`You sold ${token?.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
 	);
 
 	const balance = await getTokenBalance(wallet?.walletAddress, sellAddress);
 	if (balance <= 0 && receipt) removeUserHolding(ctx.from?.id, sellAddress);
 	await sendMessageToAllGroups(
-		`Succssful transaction made throught @NOVA bot.\n Transaction hash:${receipt.transactionHash}`,
+		`Succssful transaction made throught @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
 	);
 	ctx.scene.leave();
 	return receipt;

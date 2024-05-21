@@ -258,9 +258,11 @@ export async function getAllTokenBalances(walletAddress: string, tokenAddresses:
 				const tokenPriceEth = tokenPriceUsd / currentEthPrice;
 				totalEth += tokenPriceEth;
 				totalUsd += tokenPriceUsd;
-				balancesString += `${i + 1}. <b>${tokenInfo.token.name}</b>\n\tValue: $${tokenPriceUsd.toFixed(
-					2,
-				)} / ${tokenPriceEth.toFixed(5)} ETH\n\n`;
+				balancesString += `${i + 1}. <b>${
+					tokenInfo.token.name
+				}</b>\n\tAmount: <b>${balance}</b>\n\tValue: <b>$${tokenPriceUsd.toFixed(2)} / ${tokenPriceEth.toFixed(
+					5,
+				)} ETH</b>\n\n`;
 			}
 		}
 		balancesString += `Balance: ${parseFloat(ethBalance).toFixed(5)} ETH\nNet Worth: ${totalEth.toFixed(
