@@ -40,6 +40,7 @@ interface MyWizardSession extends Scenes.WizardSessionData {
 		currency: string | null;
 		token: TokenData | null;
 		time: undefined | string;
+		chain: string | null;
 	};
 	sellStore: {
 		sellAddress: string | null;
@@ -47,6 +48,7 @@ interface MyWizardSession extends Scenes.WizardSessionData {
 		currency: string | null;
 		token: TokenData | null;
 		time: undefined | string;
+		chain: string | null;
 	};
 	sendStore: {
 		recipientAddress: string;

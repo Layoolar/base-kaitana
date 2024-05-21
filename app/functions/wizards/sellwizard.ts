@@ -5,10 +5,10 @@ import { Composer, Context, Markup, Scenes } from "telegraf";
 import { queryAi } from "../queryApi";
 import { getCaPrompt, getamountprompt } from "../prompt";
 import { fetchCoin } from "../fetchCoins";
-import { addUserHolding, getUserWalletDetails, removeUserHolding } from "../databases";
+import { addUserHolding, getUserWalletDetails, removeUserHolding, sendMessageToAllGroups } from "../databases";
 import { getEtherBalance, getTokenBalance } from "../checkBalance";
 import { addMillisecondsToDate, delay, getEthPrice, processToken } from "../helper";
-import { sell } from "../sellfunction";
+import { sell, sellOnEth } from "../sellfunction";
 import { TransactionReceipt } from "./buywizard";
 import { time } from "console";
 import { TokenData } from "../timePriceData";
@@ -34,32 +34,23 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 		ctx.scene.session.sellStore.token = ctx.scene.state.token.token;
 		//@ts-ignore
 		ctx.scene.session.sellStore.time = ctx.scene.state.time;
-		//console.log(!ctx.from?.id || ctx.scene.session.sellStore.token, ctx.scene.session.sellStore.sellAddress);
+
+		//@ts-ignore
+		ctx.scene.session.sellStore.chain = ctx.scene.state.token.chain;
 
 		if (!ctx.from?.id || !ctx.scene.session.sellStore.token || !ctx.scene.session.sellStore.sellAddress) {
 			ctx.reply("An error occurred please try again");
 			return ctx.scene.leave();
 		}
 
-		// if (time){
-
-		// }
 		const wallet = getUserWalletDetails(ctx.from.id);
-		//const buyAddress = ctx.scene.session.buyStore.buyAddress;
-		//console.log(buyAddress);
-		//	const amount = ctx.scene.session.buyStore.amount;
 
 		const tokensBalance = await getTokenBalance(wallet?.walletAddress, ctx.scene.session.sellStore.token.address);
 		const tokensBalanceInUsd = tokensBalance * ctx.scene.session.sellStore.token.price;
 
 		const ethprice = await getEthPrice();
 		const tokensBalanceInEth = tokensBalanceInUsd / ethprice;
-		// if (!userethBalance) {
-		// 	ctx.reply("An error occurred please try again");
-		// 	return ctx.scene.leave();
-		// }
-		//const userBalanceInUsd = parseFloat(userethBalance) * parseFloat(ethprice);
-		//console.log(ctx.scene.session.sellStore.token, ctx.scene.session.sellStore.sellAddress);
+
 		if (ctx.scene.session.sellStore.amount) {
 			await ctx.replyWithHTML(
 				`Are you sure you want to sell ${ctx.scene.session.sellStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.sellStore.sellAddress}</b>
@@ -136,7 +127,6 @@ stepHandler.action("sendsell", async (ctx) => {
 		return ctx.scene.leave();
 	}
 
-	ctx.scene.session.sellStore.currency = amount.toLowerCase().includes("$") ? "usd" : "eth";
 	const currency = ctx.scene.session.sellStore.currency;
 	if (!currency) return ctx.scene.leave();
 	const regex = /-?\d+(\.\d+)?/;
@@ -206,6 +196,7 @@ const executeSell = async (
 	const wallet = getUserWalletDetails(ctx.from.id);
 	const tokensBalance = await getTokenBalance(wallet?.walletAddress, token.address);
 	const tokensBalanceInUsd = tokensBalance * token.price;
+	//console.log(tokensBalance);
 
 	const ethPrice = await getEthPrice();
 	const tokensBalanceInEth = tokensBalanceInUsd / ethPrice;
@@ -222,32 +213,43 @@ const executeSell = async (
 		return ctx.scene.leave();
 	}
 
+	if (ctx.scene.session.sellStore.chain?.toLowerCase() === "ethereum") {
+		try {
+			await sellOnEth(wallet?.privateKey, token.address, amountintokens.toFixed(2).toString(), token.decimals);
+		} catch (error: any) {
+			await delay(5000);
+			ctx.reply(`An Error occured please try again later\nError Message: ${error.message}`);
+
+			return ctx.scene.leave();
+		}
+	}
+
 	let receipt;
 	//console.log(wallet?.privateKey, token.address, amountintokens, token.decimals);
 	try {
 		receipt = await sell(wallet?.privateKey, token.address, amountintokens.toFixed(2).toString(), token.decimals);
-	} catch (error) {
-		ctx.reply(`An error occurred. Please try again later.\ntx: https://ethercan.io/tx/${receipt.transactionHash}`);
-		console.log(error);
+	} catch (error: any) {
+		if (receipt) {
+			ctx.reply(
+				`An error occurred. Please try again later.\ntx: https://ethercan.io/tx/${receipt.transactionHash}`,
+			);
+		} else {
+			ctx.reply(`An Error occured please try again later\n
+		Error Message: ${error.message}`);
+		}
+
 		return ctx.scene.leave();
 	}
 
 	await ctx.replyWithHTML(
-		`You sold ${token?.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTx: tx: https://etherscan.io/tx/${receipt.transactionHash}`,
+		`You sold ${token?.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTx: tx: https://basescan.org/tx/${receipt.transactionHash}`,
 	);
 
 	const balance = await getTokenBalance(wallet?.walletAddress, sellAddress);
-	if (balance <= 0) removeUserHolding(ctx.from?.id, sellAddress);
-	//	console.log(receipt);
+	if (balance <= 0 && receipt) removeUserHolding(ctx.from?.id, sellAddress);
+	await sendMessageToAllGroups(
+		`Succssful transaction made throught @NOVA bot.\n Transaction hash:${receipt.transactionHash}`,
+	);
 	ctx.scene.leave();
 	return receipt;
 };
-
-// // Example usage:
-// const ctx = {}; // Assuming ctx object exists
-// const currency = "eth";
-// const amount = "1";
-// const token = { address: "token_address", price: 100, decimals: 18, symbol: "TKN" };
-// const sellAddress = "sell_address";
-
-// const delay = 5000; // Example delay in milliseconds

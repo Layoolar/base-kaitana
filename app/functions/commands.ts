@@ -97,7 +97,7 @@ export async function getJoke() {
 		return joke;
 	} catch (error) {
 		// Handle errors if any
-		console.log("Error fetching joke:", error);
+		//console.log("Error fetching joke:", error);
 		return null; // Return null or handle the error as needed
 	}
 }
@@ -527,13 +527,15 @@ bot.action(/proceedbuy_(.+)/, async (ctx) => {
 	if (!token) {
 		return ctx.reply("An error occured please try again");
 	}
-	if (token.chain.toLowerCase() !== "ethereum") {
+
+	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
 		return ctx.reply(
-			"We currrently only support ETH token trading for now. Please bear with us as we are working on supporting other tokens",
+			"We currrently only support trading on ethereum and base for now. Please bear with us as we are working on supporting other tokens",
 		);
 	}
+
 	//console.log(ca, token.chain, time, amount);
-	return ctx.scene.enter("buy-wizard", { address: ca, token: token, chain: token.chain, time: time, amount: amount });
+	return ctx.scene.enter("buy-wizard", { address: ca, token: token, time: time, amount: amount });
 });
 bot.action(/proceedsell_(.+)/, async (ctx) => {
 	const match = ctx.match;
@@ -545,13 +547,13 @@ bot.action(/proceedsell_(.+)/, async (ctx) => {
 	const token = await processToken(ca);
 
 	const time = ctx.match[1].split(" ")[2];
-	//	console.log(amount, ca, time);
+
 	if (!token) {
 		return ctx.reply("An error occured please try again.");
 	}
-	if (token.chain.toLowerCase() !== "ethereum") {
+	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
 		return ctx.reply(
-			"We currrently only support ETH token trading for now. Please bear with us as we are working on supporting other tokens",
+			"We currrently only support trading on ethereum and base for now. Please bear with us as we are working on supporting other tokens",
 		);
 	}
 	return ctx.scene.enter("sell-wizard", { address: ca, token: token, time: time, amount: amount });

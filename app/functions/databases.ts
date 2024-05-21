@@ -26,6 +26,7 @@ import { BetData, CoinDataType } from "./commands";
 import fetchData from "./fetchCoins";
 // onst ChartJsImage = require("chartjs-to-image");
 import ChartJsImage from "chartjs-to-image";
+import bot from "./telegraf";
 
 //
 
@@ -126,7 +127,7 @@ export function updateCurrentCalledAndPushToHistory(groupId: number, currentCall
 		return;
 		// Update currentCalled and callHistory fields
 	} else {
-		console.log(`Group ${groupId} not found in the database.`);
+		//	console.log(`Group ${groupId} not found in the database.`);
 	}
 }
 
@@ -178,12 +179,25 @@ export const addUserHolding = async (userId: number, contractAddress: string): P
 			user.holding.push(contractAddress);
 			databases.users.get("users").find({ id: userId }).assign(user).write();
 		} else {
-			console.log("User already holds this contract address.");
+			//console.log("User already holds this contract address.");
 		}
 	} else {
-		console.log("User not found.");
+		//console.log("User not found.");
 	}
 };
+export async function sendMessageToAllGroups(message: string) {
+	const groups = databases.groups.get("groups").value();
+
+	for (const group of groups) {
+		const chatId = group.id;
+		try {
+			await bot.telegram.sendMessage(chatId, message);
+			return "ok";
+		} catch (error) {
+			return null;
+		}
+	}
+}
 
 export const removeUserHolding = async (userId: number, contractAddress: string): Promise<void> => {
 	const user = databases.users.get("users").find({ id: userId }).value();

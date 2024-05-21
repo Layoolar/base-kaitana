@@ -70,9 +70,9 @@ export function createWallet() {
 		privateKey: wallet.privateKey,
 		mnemonic: wallet.mnemonic?.phrase,
 	};
-	console.log("Wallet Address:", loggedItems.walletAddress);
-	console.log("Private Key:", loggedItems.privateKey);
-	console.log("Mnemonic:", loggedItems.mnemonic);
+	// console.log("Wallet Address:", loggedItems.walletAddress);
+	// console.log("Private Key:", loggedItems.privateKey);
+	// console.log("Mnemonic:", loggedItems.mnemonic);
 
 	// Return all logged items
 	return loggedItems;

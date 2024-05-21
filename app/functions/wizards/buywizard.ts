@@ -6,8 +6,8 @@ import { check } from "yargs";
 import { queryAi } from "../queryApi";
 import { getCaPrompt, getamountprompt } from "../prompt";
 import { fetchCoin } from "../fetchCoins";
-import { addUserHolding, getUserWalletDetails } from "../databases";
-import { buy } from "../buyfunction";
+import { addUserHolding, getUserWalletDetails, sendMessageToAllGroups } from "../databases";
+import { buyOnBase, buyOnEth } from "../buyfunction";
 import type { BigNumber } from "ethers";
 import { getEtherBalance } from "../checkBalance";
 import { addMillisecondsToDate, delay, getEthPrice, processToken } from "../helper";
@@ -143,6 +143,9 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 		//@ts-ignore
 		ctx.scene.session.buyStore.amount = ctx.scene.state.amount;
 
+		//@ts-ignore
+		ctx.scene.session.buyStore.chain = ctx.scene.state.token.chain;
+
 		const wallet = getUserWalletDetails(ctx.from.id);
 		//const buyAddress = ctx.scene.session.buyStore.buyAddress;
 		//console.log(buyAddress);
@@ -258,20 +261,37 @@ const executeBuy = async (
 	//edit this
 
 	// Use buy function here
+	if (ctx.scene.session.buyStore.chain?.toLowerCase() === "ethereum") {
+		try {
+			//	console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
+
+			await buyOnEth(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
+		} catch (error: any) {
+			await delay(5000);
+			ctx.reply(`An Error occured please try again later\nError Message: ${error.message}.`);
+			return await ctx.scene.leave();
+		}
+	}
 
 	//console.log(amountinEth);
 	let receipt;
 	try {
-		//console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
-		receipt = await buy(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
-	} catch (error) {
-		ctx.reply(`An Error occured please try again later\n tx: https://etherscan.io/tx/${receipt.transactionHash}`);
+		//	console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
+
+		receipt = await buyOnBase(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
+	} catch (error: any) {
+		ctx.reply(`An Error occured please try again later\n
+		Error Message: ${error.message}`);
 		return await ctx.scene.leave();
 	}
 
 	await ctx.replyWithHTML(
-		`You bought ${token.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\ntx: https://etherscan.io/tx/${receipt.transactionHash}`,
+		`You bought ${token.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\ntx: https://basescan.org/tx/${receipt.transactionHash}`,
 	);
-	addUserHolding(ctx.from?.id, buyAddress);
+
+	await sendMessageToAllGroups(
+		`Succssful transaction made through @NOVA bot.\n Transaction hash:${receipt.transactionHash}`,
+	);
+	if (receipt) addUserHolding(ctx.from?.id, buyAddress);
 	return receipt;
 };

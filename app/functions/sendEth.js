@@ -29,11 +29,11 @@ export async function sendEth(senderPrivateKey, recipientAddress, amountInEth) {
 
 		// Send the signed transaction
 		const txResponse = await provider.sendTransaction(signedTx);
-		console.log(`Transaction hash: ${txResponse.hash}`);
-		console.log(`Transaction sent successfully!`);
+		// console.log(`Transaction hash: ${txResponse.hash}`);
+		// console.log(`Transaction sent successfully!`);
 		return txResponse;
 	} catch (error) {
-		console.log("Error sending ETH:", error);
+		//console.log("Error sending ETH:", error);
 		return null;
 	}
 }
