@@ -310,7 +310,7 @@ const executeBuy = async (
 	);
 
 	await sendMessageToAllGroups(
-		`Successful transaction made through @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
+		`Successful transaction made through @nova_trader_bot.\n Transaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
 	);
 	if (receipt) {
 		addUserHolding(ctx.from?.id, buyAddress, "base");
