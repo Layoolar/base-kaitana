@@ -12,6 +12,7 @@ const initialData = {
 	userBalance: "",
 	userWallet: null,
 	currency: "",
+	chain: null,
 };
 
 const stepHandler = new Composer<WizardContext>();
@@ -34,7 +35,12 @@ stepHandler.action("sendd", async (ctx) => {
 	}
 	let tx;
 	try {
-		tx = await sendEth(userWallet?.privateKey, recipientAddress, amountinEth.toFixed(15).toString());
+		tx = await sendEth(
+			userWallet?.privateKey,
+			recipientAddress,
+			amountinEth.toFixed(15).toString(),
+			ctx.scene.session.sendStore.chain,
+		);
 		ctx.reply(`Transaction sent successfully\nTransaction hash: ${tx?.hash}`);
 		return ctx.scene.leave();
 	} catch (error) {
@@ -60,11 +66,15 @@ export const sendWizard = new Scenes.WizardScene<WizardContext>(
 	"send-wizard",
 	async (ctx) => {
 		//console.log(ctx.from);
-		ctx.scene.session.sendStore = initialData;
+		ctx.scene.session.sendStore = JSON.parse(JSON.stringify(initialData));
 		if (!ctx.from?.id) {
 			ctx.reply("An error occurred please try again");
 			return ctx.scene.leave();
 		}
+
+		//@ts-ignore
+		ctx.scene.session.sendStore.chain = ctx.scene.state.chain;
+
 		const user_id = ctx.from?.id;
 		const wallet = getUserWalletDetails(ctx.from.id);
 
@@ -74,7 +84,8 @@ export const sendWizard = new Scenes.WizardScene<WizardContext>(
 			ctx.reply("An error occurred (Failed to get balance), please try again.");
 			return ctx.scene.leave();
 		}
-		ctx.scene.session.sendStore.userBalance = userBalance;
+		ctx.scene.session.sendStore.userBalance =
+			ctx.scene.session.sendStore.chain === "ethereum" ? userBalance.eth : userBalance.base;
 		ctx.scene.session.sendStore.recipientAddress = wallet?.walletAddress;
 		ctx.scene.session.sendStore.userWallet = wallet;
 

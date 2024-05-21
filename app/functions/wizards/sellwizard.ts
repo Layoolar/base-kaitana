@@ -3,7 +3,7 @@ import { WizardContext } from "@app/functions/telegraf";
 import { Composer, Context, Markup, Scenes } from "telegraf";
 
 import { queryAi } from "../queryApi";
-import { getCaPrompt, getamountprompt } from "../prompt";
+import { getCaPrompt, getamountprompt, getsellamountprompt } from "../prompt";
 import { fetchCoin } from "../fetchCoins";
 import { addUserHolding, getUserWalletDetails, removeUserHolding, sendMessageToAllGroups } from "../databases";
 import { getEtherBalance, getTokenBalance } from "../checkBalance";
@@ -54,7 +54,7 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 		if (ctx.scene.session.sellStore.amount) {
 			await ctx.replyWithHTML(
 				`Are you sure you want to sell ${ctx.scene.session.sellStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.sellStore.sellAddress}</b>
-                \nAmount: <b>${ctx.scene.session.sellStore.amount} ${ctx.scene.session.sellStore.currency}</b>\nCurrent Price: <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+                \nAmount: <b>${ctx.scene.session.sellStore.amount} %</b>\nCurrent Price: <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
 				Markup.inlineKeyboard([
 					Markup.button.callback("Yes I am sure", "sendsell"),
 					Markup.button.callback("Cancel", "cancel"),
@@ -65,7 +65,7 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 			return ctx.wizard.next();
 		} else {
 			await ctx.replyWithHTML(
-				`What amount(ETH, USD) of ${ctx.scene.session.sellStore.token?.name} do you want to sell, you have ${tokensBalance} ${ctx.scene.session.sellStore.token.name} worth $${tokensBalanceInUsd} and ${tokensBalanceInEth} ETH`,
+				`What percentage of ${ctx.scene.session.sellStore.token?.name} do you want to sell, you have ${tokensBalance} ${ctx.scene.session.sellStore.token.name} worth $${tokensBalanceInUsd} and ${tokensBalanceInEth} ETH`,
 				Markup.inlineKeyboard([Markup.button.callback("Cancel", "cancel")]),
 			);
 
@@ -81,7 +81,7 @@ stepHandler2.on("text", async (ctx) => {
 	if (ctx.message && "text" in ctx.message) {
 		const { text } = ctx.message;
 
-		const am = await queryAi(getamountprompt(text));
+		const am = await queryAi(getsellamountprompt(text));
 		if (am.toLowerCase() === "null") {
 			await ctx.replyWithHTML(
 				"Please provide a valid value.",
@@ -94,11 +94,6 @@ stepHandler2.on("text", async (ctx) => {
 
 		const amount = ctx.scene.session.sellStore.amount;
 		const sellAddress = ctx.scene.session.sellStore.sellAddress;
-		ctx.scene.session.sellStore.currency = amount.toLowerCase().includes("$") ? "usd" : "eth";
-
-		const regex = /-?\d+(\.\d+)?/;
-		const matches = amount.match(regex);
-		if (matches?.[0]) ctx.scene.session.sellStore.amount = matches?.[0];
 
 		const token = await processToken(sellAddress);
 		if (!token) {
@@ -109,7 +104,7 @@ stepHandler2.on("text", async (ctx) => {
 
 		await ctx.replyWithHTML(
 			`Are you sure you want to sell ${ctx.scene.session.sellStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.sellStore.sellAddress}</b>
-                \nAmount: <b>${ctx.scene.session.sellStore.amount} ${ctx.scene.session.sellStore.currency}</b>\nCurrent Price: <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+                \nAmount: <b>${ctx.scene.session.sellStore.amount} %</b>\nCurrent Price: <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
 			Markup.inlineKeyboard([
 				Markup.button.callback("Yes I am sure", "sendsell"),
 				Markup.button.callback("Cancel", "cancel"),
@@ -127,18 +122,6 @@ stepHandler.action("sendsell", async (ctx) => {
 		return ctx.scene.leave();
 	}
 
-	const currency = ctx.scene.session.sellStore.currency;
-	if (!currency) return ctx.scene.leave();
-	const regex = /-?\d+(\.\d+)?/;
-
-	const matches = amount.match(regex);
-	if (matches?.[0]) {
-		ctx.scene.session.sellStore.amount = matches?.[0];
-	} else {
-		ctx.reply("An error occurred please try again");
-		return ctx.scene.leave();
-	}
-
 	if (time) {
 		if (parseFloat(time) > 86400000) {
 			ctx.reply("Error: Maximum interval is 24 hours");
@@ -150,11 +133,7 @@ stepHandler.action("sendsell", async (ctx) => {
 		//await delay(parseFloat(time));
 		setTimeout(async () => {
 			try {
-				if (!ctx.scene.session.sellStore.amount) {
-					ctx.reply("An error occurred please try again");
-					return ctx.scene.leave();
-				}
-				await executeSell(ctx, currency, ctx.scene.session.sellStore.amount, token, sellAddress);
+				await executeSell(ctx, amount, token, sellAddress);
 			} catch (error) {
 				console.log(error);
 				ctx.reply("An Erorr occurred, please try again later");
@@ -165,7 +144,7 @@ stepHandler.action("sendsell", async (ctx) => {
 		ctx.reply(`Selling ${ctx.scene.session.sellStore.token?.name} ...`);
 
 		try {
-			await executeSell(ctx, currency, ctx.scene.session.sellStore.amount, token, sellAddress);
+			await executeSell(ctx, amount, token, sellAddress);
 		} catch (error) {
 			console.log(error);
 			ctx.reply("An Erorr occurred, please try again later");
@@ -187,24 +166,21 @@ stepHandler2.action("cancel", async (ctx) => {
 
 const executeSell = async (
 	ctx: WizardContext,
-	currency: string,
+
 	amount: string,
 	token: TokenData,
 	sellAddress: string,
 ) => {
 	if (!ctx.from) return await ctx.replyWithHTML("<b>Transaction failed</b>");
 	const wallet = getUserWalletDetails(ctx.from.id);
-	const tokensBalance = await getTokenBalance(wallet?.walletAddress, token.address);
+	const tokensBalance = await getTokenBalance(wallet?.walletAddress, token.address, "base");
 	const tokensBalanceInUsd = tokensBalance * token.price;
 	//console.log(tokensBalance);
 
 	const ethPrice = await getEthPrice();
 	const tokensBalanceInEth = tokensBalanceInUsd / ethPrice;
 
-	let amountintokens =
-		currency.toLowerCase() === "eth"
-			? (parseFloat(amount) * ethPrice) / token.price
-			: parseFloat(amount) / token.price;
+	let amountintokens = (parseFloat(amount) / 100) * tokensBalance;
 
 	if (amountintokens > tokensBalance) {
 		ctx.replyWithHTML(
@@ -242,11 +218,11 @@ const executeSell = async (
 	}
 
 	await ctx.replyWithHTML(
-		`You sold ${token?.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
+		`You sold ${token?.name} \n<i>Amount: <b>${amount} % of your tokens</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
 	);
 
 	const balance = await getTokenBalance(wallet?.walletAddress, sellAddress);
-	if (balance <= 0 && receipt) removeUserHolding(ctx.from?.id, sellAddress);
+	if (balance <= 0 && receipt) removeUserHolding(ctx.from?.id, sellAddress, "base");
 	await sendMessageToAllGroups(
 		`Succssful transaction made throught @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
 	);

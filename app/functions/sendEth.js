@@ -1,12 +1,18 @@
 import { ethers } from "ethers";
 
 // Function to send ETH
-export async function sendEth(senderPrivateKey, recipientAddress, amountInEth) {
+export async function sendEth(senderPrivateKey, recipientAddress, amountInEth, chain) {
 	try {
-		// Connect to the Ethereum network using your private key
-		const provider = new ethers.providers.JsonRpcProvider(
-			`https://mainnet.infura.io/v3/3534bf3949ca4b1f88e6023ff4ea3223`,
-		);
+		let provider; // Connect to the Ethereum network using your private key
+		if (chain === "ethereum") {
+			provider = new ethers.providers.JsonRpcProvider(
+				`https://mainnet.infura.io/v3/3534bf3949ca4b1f88e6023ff4ea3223`,
+			);
+		} else {
+			provider = new ethers.providers.JsonRpcProvider(
+				`https://base-mainnet.g.alchemy.com/v2/A1lKz4G5uuXNB7q-l2tnKfz6oyqUgFTK`,
+			);
+		}
 
 		const wallet = new ethers.Wallet(senderPrivateKey, provider);
 

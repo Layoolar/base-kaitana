@@ -25,7 +25,14 @@ import { queryAi } from "./queryApi";
 import { TokenData, generateTimeAndPriceGraph } from "./timePriceData";
 import { calculatePoint } from "mermaid/dist/utils";
 import { error, log } from "console";
-import { getBuyPrompt, getCaPrompt, getSellPrompt, getTimePrompt, getamountprompt } from "./prompt";
+import {
+	getBuyPrompt,
+	getCaPrompt,
+	getSellPrompt,
+	getTimePrompt,
+	getamountprompt,
+	getsellamountprompt,
+} from "./prompt";
 import { createWallet, extractTimeFromPrompt, getAllTokenBalances, getEthPrice, isEmpty, processToken } from "./helper";
 import { getEtherBalance } from "./checkBalance";
 // import { getEthPrice, getTokenInfo } from "./test";
@@ -281,6 +288,54 @@ bot.action("walletaddress", (ctx) => {
 });
 
 bot.action("checkbalance", checkUserExistence, async (ctx) => {
+	await ctx.replyWithHTML(
+		`${getGreeting()} ${
+			ctx.from?.username || ctx.from?.first_name || ctx.from?.last_name
+		}, What balace do you want to check`,
+		Markup.inlineKeyboard([
+			[Markup.button.callback("Base balance", "basebalance")],
+			[Markup.button.callback("ETH balance", "ethbalance")],
+		]),
+	);
+});
+
+bot.action("basebalance", async (ctx) => {
+	ctx.reply("Fetching balances...");
+	const user_id = ctx.from?.id;
+	if (!user_id) {
+		return;
+	}
+	const wallet = databases.getUserWalletDetails(user_id);
+
+	if (!wallet) {
+		return ctx.reply("No wallet found.");
+	}
+
+	if (wallet?.baseholding.length === 0) {
+		const balance = await getEtherBalance(wallet.walletAddress);
+		const currentEthPrice = await getEthPrice();
+
+		if (!balance || !currentEthPrice) {
+			return ctx.reply("An error occured, please try again later");
+		}
+		const usdNetworth = parseFloat(balance.base) * currentEthPrice;
+		return ctx.replyWithHTML(
+			`You have no other tokens\nBalance: <b>${parseFloat(balance.base).toFixed(
+				5,
+			)}</b> ETH\nNet Worth: <b>$${usdNetworth.toFixed(5)}</b>`,
+		);
+	} else {
+		if (!wallet.walletAddress) {
+			return ctx.reply("No wallet found.");
+		}
+		const balancesString = await getAllTokenBalances(wallet?.walletAddress, wallet?.baseholding, "base");
+
+		if (balancesString) {
+			ctx.replyWithHTML(balancesString);
+		}
+	}
+});
+bot.action("ethbalance", async (ctx) => {
 	ctx.reply("Fetching balances...");
 	const user_id = ctx.from?.id;
 	if (!user_id) {
@@ -290,20 +345,25 @@ bot.action("checkbalance", checkUserExistence, async (ctx) => {
 	if (!wallet) {
 		return ctx.reply("No wallet found.");
 	}
-	if (wallet?.holding.length === 0) {
+	if (wallet?.ethholding.length === 0) {
 		const balance = await getEtherBalance(wallet.walletAddress);
+
 		const currentEthPrice = await getEthPrice();
 
 		if (!balance || !currentEthPrice) {
 			return ctx.reply("An error occured, please try again later");
 		}
-		const usdNetworth = parseFloat(balance) * currentEthPrice;
-		return ctx.replyWithHTML(`You have no other tokens\nBalance: ${balance} ETH\nNet Worth: $${usdNetworth}`);
+		const usdNetworth = parseFloat(balance.eth) * currentEthPrice;
+		return ctx.replyWithHTML(
+			`You have no other tokens\nBalance: <b>${parseFloat(balance.eth).toFixed(
+				5,
+			)}</b> ETH\nNet Worth: <b>$${usdNetworth.toFixed(5)}</b>`,
+		);
 	} else {
 		if (!wallet.walletAddress) {
 			return ctx.reply("No wallet found.");
 		}
-		const balancesString = await getAllTokenBalances(wallet?.walletAddress, wallet?.holding);
+		const balancesString = await getAllTokenBalances(wallet?.walletAddress, wallet?.ethholding, "ethereum");
 		// console.log(balancesString);
 		if (balancesString) {
 			ctx.replyWithHTML(balancesString);
@@ -427,7 +487,7 @@ export const neww = async () => {
 			return ctx.reply("Kindly use /call ${token_address} to start conversation about a token");
 		}
 		const processedToken = await processToken(selectedCa);
-		console.log(selectedCa);
+		//console.log(selectedCa);
 		const selectedCoin = processedToken?.token;
 		if (!selectedCoin) return ctx.reply("Couldnt find token please try again");
 		const res = await processToken(selectedCoin.address);
@@ -497,7 +557,8 @@ export const neww = async () => {
 				ctx.reply(
 					`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
 				);
-				const amountRes = await queryAi(getamountprompt(prompt));
+
+				const amountRes = await queryAi(getsellamountprompt(prompt));
 				const message = await ctx.telegram.sendMessage(
 					ctx.from?.id,
 					`You are about to sell ${selectedCoin.name}`,
@@ -587,7 +648,7 @@ bot.command("/import", checkGroup, async (ctx) => {
 	if (token) {
 		// check if tokens with zero balance should be blocked
 		ctx.reply(`${token.token?.name} has been imported successfully.`);
-		return databases.addUserHolding(ctx.from.id, ca);
+		return databases.addUserHolding(ctx.from.id, ca, token.chain);
 	} else {
 		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
 	}
@@ -602,7 +663,7 @@ bot.command("/delete", checkGroup, async (ctx) => {
 	const token = await processToken(ca);
 	if (token) {
 		// check if tokens with zero balance should be blocked
-		databases.removeUserHolding(ctx.from.id, ca);
+		databases.removeUserHolding(ctx.from.id, ca, token.chain);
 		ctx.reply(`${token.token?.name} has been deleted successfully.`);
 		return;
 	} else {
@@ -647,7 +708,7 @@ bot.command("/sell", async (ctx) => {
 	const prompt = commandArgs.join(" ");
 
 	const ca = await queryAi(getCaPrompt(prompt));
-	const amount = await queryAi(getamountprompt(prompt));
+	const amount = await queryAi(getsellamountprompt(prompt));
 	if (ca.toLowerCase() === "null") {
 		return ctx.reply("You need to send a contract address with your command.");
 	}
@@ -724,7 +785,7 @@ bot.command("/schedule", async (ctx) => {
 		});
 		return;
 	} else if (responseSell.toLowerCase() === "sell" && responseBuy.toLowerCase() !== "buy") {
-		const amount = await queryAi(getamountprompt(prompt));
+		const amount = await queryAi(getsellamountprompt(prompt));
 
 		ctx.reply(
 			`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
@@ -802,7 +863,8 @@ const start = async (): Promise<void> => {
 				bets: [],
 				privateKey: null,
 				mnemonic: null,
-				holding: [],
+				ethholding: [],
+				baseholding: [],
 			});
 
 			//	chatId = ctx.message.chat.id;

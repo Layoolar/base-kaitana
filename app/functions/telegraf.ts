@@ -58,9 +58,11 @@ interface MyWizardSession extends Scenes.WizardSessionData {
 			walletAddress: string | null;
 			privateKey: string | null;
 			mnemonic: string | null;
-			holding: string[];
+			ethholding: string[];
+			baseholding: string[];
 		} | null;
 		currency: string;
+		chain: string | null;
 	};
 }
 

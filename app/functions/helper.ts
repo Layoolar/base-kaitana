@@ -240,17 +240,32 @@ export const extractTimeFromPrompt = (prompt: string) => {
 };
 
 // Function to get all token balances
-export async function getAllTokenBalances(walletAddress: string, tokenAddresses: string[]) {
+export async function getAllTokenBalances(walletAddress: string, tokenAddresses: string[], chain: string) {
 	try {
 		let balancesString = "";
 
+		let ethBalance;
 		const currentEthPrice = await getEthPrice();
-		let ethBalance = (await getEtherBalance(walletAddress)) || "0";
+	
+		if (chain === "base") {
+			let res = await getEtherBalance(walletAddress);
+		
+			ethBalance = res?.base;
+		} else {
+			let res = await getEtherBalance(walletAddress);
+			ethBalance = res?.eth;
+		}
+	
+		if (!ethBalance) {
+			return;
+		}
+
 		let totalEth = parseFloat(ethBalance);
+
 		let totalUsd = totalEth * currentEthPrice;
 
 		for (let i = 0; i < tokenAddresses.length; i++) {
-			const balance = await getTokenBalance(walletAddress, tokenAddresses[i]);
+			const balance = await getTokenBalance(walletAddress, tokenAddresses[i], chain);
 			if (balance !== null) {
 				const tokenInfo = await processToken(tokenAddresses[i]);
 				if (!tokenInfo) continue; // Skip token if info not available

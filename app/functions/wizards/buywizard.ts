@@ -150,7 +150,17 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 		//const buyAddress = ctx.scene.session.buyStore.buyAddress;
 		//console.log(buyAddress);
 		//	const amount = ctx.scene.session.buyStore.amount;
-		const userBalance = await getEtherBalance(wallet?.walletAddress);
+		const chain = ctx.scene.session.buyStore.chain;
+		let userBalance;
+
+		if (chain === "base") {
+			const res = await getEtherBalance(wallet?.walletAddress);
+			userBalance = res?.base;
+		} else {
+			const res = await getEtherBalance(wallet?.walletAddress);
+			userBalance = res?.eth;
+		}
+
 		const ethprice = await getEthPrice();
 		if (!userBalance) {
 			ctx.reply("An error occurred please try again");
@@ -249,7 +259,17 @@ const executeBuy = async (
 
 	const wallet = getUserWalletDetails(ctx.from.id);
 
-	const userBalance = await getEtherBalance(wallet?.walletAddress);
+	//const userBalance = await getEtherBalance(wallet?.walletAddress);
+	const chain = ctx.scene.session.buyStore.chain;
+	let userBalance;
+
+	if (chain === "base") {
+		const res = await getEtherBalance(wallet?.walletAddress);
+		userBalance = res?.base;
+	} else {
+		const res = await getEtherBalance(wallet?.walletAddress);
+		userBalance = res?.eth;
+	}
 	if (!userBalance) {
 		ctx.reply("An error occurred please try again");
 		return ctx.scene.leave();
@@ -292,6 +312,7 @@ const executeBuy = async (
 	await sendMessageToAllGroups(
 		`Succssful transaction made through @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
 	);
-	if (receipt) addUserHolding(ctx.from?.id, buyAddress);
+	if (receipt )
+		addUserHolding(ctx.from?.id, buyAddress, 'base');
 	return receipt;
 };

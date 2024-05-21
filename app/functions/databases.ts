@@ -35,7 +35,8 @@ interface MyUser extends TelegramUserInterface {
 	bets: BetData[] | [];
 	privateKey: string | null;
 	mnemonic: string | null;
-	holding: string[];
+	baseholding: string[];
+	ethholding: string[];
 }
 export type Group = {
 	id: number;
@@ -145,7 +146,7 @@ export function getCurrentCalled(groupId: number) {
 	if (group.value()) {
 		return group.get("currentCalled").value();
 	} else {
-		console.log(`Group ${groupId} not found in the database.`);
+		
 		return null;
 	}
 }
@@ -171,18 +172,22 @@ export function addGroup(groupId: number) {
 	//	console.log(`Group ${groupId} has been added to the database.`);
 }
 
-export const addUserHolding = async (userId: number, contractAddress: string): Promise<void> => {
+export const addUserHolding = async (userId: number, contractAddress: string, chain: string): Promise<void> => {
 	const user = databases.users.get("users").find({ id: userId }).value();
-
-	if (user) {
-		if (!user.holding.includes(contractAddress)) {
-			user.holding.push(contractAddress);
-			databases.users.get("users").find({ id: userId }).assign(user).write();
-		} else {
-			//console.log("User already holds this contract address.");
+	if (chain == "ethereum") {
+		if (user) {
+			if (!user.ethholding.includes(contractAddress)) {
+				user.ethholding.push(contractAddress);
+				databases.users.get("users").find({ id: userId }).assign(user).write();
+			}
 		}
 	} else {
-		//console.log("User not found.");
+		if (user) {
+			if (!user.baseholding.includes(contractAddress)) {
+				user.baseholding.push(contractAddress);
+				databases.users.get("users").find({ id: userId }).assign(user).write();
+			}
+		}
 	}
 };
 export async function sendMessageToAllGroups(message: string) {
@@ -199,19 +204,33 @@ export async function sendMessageToAllGroups(message: string) {
 	}
 }
 
-export const removeUserHolding = async (userId: number, contractAddress: string): Promise<void> => {
+export const removeUserHolding = async (userId: number, contractAddress: string, chain: string): Promise<void> => {
 	const user = databases.users.get("users").find({ id: userId }).value();
 
-	if (user) {
-		const index = user.holding.indexOf(contractAddress);
-		if (index !== -1) {
-			user.holding.splice(index, 1);
-			databases.users.get("users").find({ id: userId }).assign(user).write();
+	if (chain == "ethereum") {
+		if (user) {
+			const index = user.ethholding.indexOf(contractAddress);
+			if (index !== -1) {
+				user.ethholding.splice(index, 1);
+				databases.users.get("users").find({ id: userId }).assign(user).write();
+			} else {
+				//console.log("User does not hold this contract address.");
+			}
 		} else {
-			console.log("User does not hold this contract address.");
+			//console.log("User not found.");
 		}
 	} else {
-		console.log("User not found.");
+		if (user) {
+			const index = user.baseholding.indexOf(contractAddress);
+			if (index !== -1) {
+				user.baseholding.splice(index, 1);
+				databases.users.get("users").find({ id: userId }).assign(user).write();
+			} else {
+				//console.log("User does not hold this contract address.");
+			}
+		} else {
+			//console.log("User not found.");
+		}
 	}
 };
 
@@ -245,7 +264,7 @@ const isWalletNull = (userId: number): boolean => {
 };
 
 const addCoinData = (incomingCoinData: CoinDataCollection, db: string) => {
-	console.log("addcoindata");
+	//console.log("addcoindata");
 	// @ts-ignore
 	databases[db].get("coinsData").push(incomingCoinData).write();
 };
@@ -270,8 +289,8 @@ const getUserWalletDetails = (userId: number) => {
 	const userInDb = databases.users.get("users").find({ id: userId }).value();
 
 	if (userInDb) {
-		const { walletAddress, privateKey, mnemonic, holding } = userInDb;
-		return { walletAddress, privateKey, mnemonic, holding };
+		const { walletAddress, privateKey, mnemonic, baseholding, ethholding } = userInDb;
+		return { walletAddress, privateKey, mnemonic, baseholding, ethholding };
 	} else {
 		return null; // Or you can throw an error or handle the case as needed
 	}

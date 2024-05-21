@@ -9,7 +9,18 @@ bot.action("send_token", async (ctx) => {
 });
 
 bot.action("sendeth", async (ctx) => {
-	return await ctx.scene.enter("send-wizard");
+	await ctx.replyWithHTML(
+		`What chain are you sending on`,
+		Markup.inlineKeyboard([Markup.button.callback("Base", "base"), Markup.button.callback("ETH Mainnet", "eth")]),
+	);
+});
+
+bot.action("base", async (ctx) => {
+	return await ctx.scene.enter("send-wizard", { chain: "base" });
+});
+
+bot.action("eth", async (ctx) => {
+	return await ctx.scene.enter("send-wizard", { chain: "ethereum" });
 });
 bot.action("analysis", async (ctx) => {
 	return await ctx.scene.enter("analysis-wizard");

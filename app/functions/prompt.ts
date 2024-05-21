@@ -159,3 +159,34 @@ Strictly return just "{time in miliseconds}" or "null".
 
 Below is the prompt
 ${prompt}`;
+
+export const getsellamountprompt = (
+	prompt: string,
+) => ` Check the prompt below. I want you to find out if there is a percentage there. You must return one word. Either the percentage or null.
+
+Examples:
+Prompt 1: "buy 50 % worth of token"
+
+This prompt should return strictly "50"
+
+Reason: it has a percentage
+
+Example 2: "get 10 percnt"?
+This prompt should strictly return "10"
+
+Reason: it has a percentage.
+
+Example 3: "buy this token for me"
+This prompt should strictly return "null"
+
+Reason: there is no percentage present.
+
+Example 4: "i want to buy 30 dollars worth"
+this prompt should return "null"
+
+Reason: it has no percentage present"
+
+Remember to strictly return just either the amount, or null. 
+
+Below is the prompt
+${prompt}`;
