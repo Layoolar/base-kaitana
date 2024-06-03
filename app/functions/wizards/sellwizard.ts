@@ -12,6 +12,8 @@ import { sell, sellOnEth } from "../sellfunction";
 import { TransactionReceipt } from "./buywizard";
 import { time } from "console";
 import { TokenData } from "../timePriceData";
+import { getParticularTokenBalance } from "../checksolbalance";
+import { sellTokensWithSolana } from "../solana";
 
 const initialData = {
 	sellAddress: null,
@@ -19,6 +21,7 @@ const initialData = {
 	currency: null,
 	token: null,
 	time: undefined,
+	userBalance:null
 };
 const stepHandler = new Composer<WizardContext>();
 const stepHandler2 = new Composer<WizardContext>();
@@ -34,7 +37,8 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 		ctx.scene.session.sellStore.token = ctx.scene.state.token.token;
 		//@ts-ignore
 		ctx.scene.session.sellStore.time = ctx.scene.state.time;
-
+		// @ts-ignore
+		ctx.scene.session.buyStore.amount = ctx.scene.state.amount;
 		//@ts-ignore
 		ctx.scene.session.sellStore.chain = ctx.scene.state.token.chain;
 
@@ -42,14 +46,6 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 			ctx.reply("An error occurred please try again");
 			return ctx.scene.leave();
 		}
-
-		const wallet = getUserWalletDetails(ctx.from.id);
-
-		const tokensBalance = await getTokenBalance(wallet?.walletAddress, ctx.scene.session.sellStore.token.address);
-		const tokensBalanceInUsd = tokensBalance * ctx.scene.session.sellStore.token.price;
-
-		const ethprice = await getEthPrice();
-		const tokensBalanceInEth = tokensBalanceInUsd / ethprice;
 
 		if (ctx.scene.session.sellStore.amount) {
 			await ctx.replyWithHTML(
@@ -65,7 +61,7 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 			return ctx.wizard.next();
 		} else {
 			await ctx.replyWithHTML(
-				`What percentage of ${ctx.scene.session.sellStore.token?.name} do you want to sell, you have ${tokensBalance} ${ctx.scene.session.sellStore.token.name} worth $${tokensBalanceInUsd} and ${tokensBalanceInEth} ETH`,
+				`What percentage of ${ctx.scene.session.sellStore.token?.name} do you want to sell `,
 				Markup.inlineKeyboard([Markup.button.callback("Cancel", "cancel")]),
 			);
 
@@ -92,7 +88,7 @@ stepHandler2.on("text", async (ctx) => {
 			ctx.scene.session.sellStore.amount = am;
 		}
 
-		const amount = ctx.scene.session.sellStore.amount;
+		//const amount = ctx.scene.session.sellStore.amount;
 		const sellAddress = ctx.scene.session.sellStore.sellAddress;
 
 		const token = await processToken(sellAddress);
@@ -173,18 +169,56 @@ const executeSell = async (
 ) => {
 	if (!ctx.from) return await ctx.replyWithHTML("<b>Transaction failed</b>");
 	const wallet = getUserWalletDetails(ctx.from.id);
-	const tokensBalance = await getTokenBalance(wallet?.walletAddress, token.address, "base");
-	const tokensBalanceInUsd = tokensBalance * token.price;
-	//console.log(tokensBalance);
+	const tokenData = await processToken(sellAddress);
+	if (!tokenData) {
+		await ctx.reply("An error occured please try again");
+		return ctx.scene.leave();
+	}
 
-	const ethPrice = await getEthPrice();
-	const tokensBalanceInEth = tokensBalanceInUsd / ethPrice;
+	if (tokenData.chain === "base") {
+		ctx.scene.session.sellStore.currency = "ETH";
+		//const res = await getEtherBalance(wallet?.walletAddress);
+		const tokensBalance = await getTokenBalance(wallet?.walletAddress, token.address, "base");
+		if (!tokensBalance) {
+			await ctx.reply("Couldn't get balance, please try again");
+			return ctx.scene.leave();
+		}
 
-	let amountintokens = (parseFloat(amount) / 100) * tokensBalance;
+		//continue hereee/ trying to get the amount
+		ctx.scene.session.sellStore.userBalance = tokensBalance;
+		//userBalance = res?.base;
+	} else if (tokenData.chain === "solana") {
+		ctx.scene.session.sellStore.currency = "SOL";
+		const solbalance = await getParticularTokenBalance(sellAddress, wallet?.walletAddress);
+		if (!solbalance || solbalance.length === 0) {
+			await ctx.reply("Couldn't get balance, please try again");
 
-	if (amountintokens > tokensBalance) {
+			return ctx.scene.leave();
+		}
+		ctx.scene.session.sellStore.userBalance = solbalance[0].tokenBalance;
+	} else if (tokenData.chain === "ethereum") {
+		ctx.scene.session.sellStore.currency = "ETH";
+		const tokensBalance = await getTokenBalance(wallet?.walletAddress, token.address, "ethereum");
+		if (!tokensBalance) {
+			await ctx.reply("Couldn't get balance, please try again");
+			return ctx.scene.leave();
+		}
+		ctx.scene.session.sellStore.userBalance = tokensBalance;
+	} else {
+		await ctx.reply("only trading on sol,base and eth yet");
+		return ctx.scene.leave();
+	}
+
+	if (!ctx.scene.session.sellStore.userBalance) {
+		await ctx.reply("Couldn't get balance, please try again");
+		return ctx.scene.leave();
+	}
+
+const amountintokens = (parseFloat(amount) / 100) * ctx.scene.session.sellStore.userBalance;
+
+	if (amountintokens > ctx.scene.session.sellStore.userBalance) {
 		ctx.replyWithHTML(
-			`You have insufficient balance (<b>${tokensBalance} ${token.symbol}</b>) to make this transaction. Operation cancelled.`,
+			`You have insufficient balance (<b>${ctx.scene.session.sellStore.userBalance} ${token.symbol}</b>) to make this transaction. Operation cancelled.`,
 		);
 		return ctx.scene.leave();
 	}
@@ -200,14 +234,38 @@ const executeSell = async (
 		}
 	}
 
-	let receipt;
+	let hash;
+	if (ctx.scene.session.sellStore.chain?.toLowerCase() === "solana") {
+		try {
+		
+			hash = await sellTokensWithSolana(wallet?.privateKey, sellAddress, amountintokens.toFixed(15),token.decimals);
+
+			await ctx.replyWithHTML(
+				`You sold ${token.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://solscan.io/tx/${hash}">${hash}</a>`,
+			);
+
+			await sendMessageToAllGroups(
+				`Successful transaction made through @nova_trader_bot.\n Transaction hash:<a href= "https://solscan.io/tx/${hash}">${hash}</a>`,
+			);
+
+			// if (hash) {
+			// 	addUserHolding(ctx.from?.id, buyAddress, "solana");
+			// }
+			return hash;
+		} catch (error: any) {
+			//await delay(5000);
+			ctx.reply(`An Error occured please try again later\nError Message: ${error.message}.`);
+			return await ctx.scene.leave();
+		}
+	}
 	//console.log(wallet?.privateKey, token.address, amountintokens, token.decimals);
+
 	try {
-		receipt = await sell(wallet?.privateKey, token.address, amountintokens.toFixed(2).toString(), token.decimals);
+		hash = await sell(wallet?.privateKey, token.address, amountintokens.toFixed(2).toString(), token.decimals);
 	} catch (error: any) {
-		if (receipt) {
+		if (hash) {
 			ctx.reply(
-				`An error occurred. Please try again later.\n Transaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
+				`An error occurred. Please try again later.\n Transaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
 			);
 		} else {
 			ctx.reply(`An Error occured please try again later\n
@@ -218,14 +276,14 @@ const executeSell = async (
 	}
 
 	await ctx.replyWithHTML(
-		`You sold ${token?.name} \n<i>Amount: <b>${amount} % of your tokens</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
+		`You sold ${token?.name} \n<i>Amount: <b>${amount} % of your tokens</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
 	);
 
 	const balance = await getTokenBalance(wallet?.walletAddress, sellAddress);
-	if (balance <= 0 && receipt) removeUserHolding(ctx.from?.id, sellAddress, "base");
+	if (balance <= 0 && hash) removeUserHolding(ctx.from?.id, sellAddress, "base");
 	await sendMessageToAllGroups(
-		`Succssful transaction made throught @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
+		`Succssful transaction made throught @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
 	);
 	ctx.scene.leave();
-	return receipt;
+	return hash;
 };

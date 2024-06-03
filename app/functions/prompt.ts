@@ -162,29 +162,39 @@ ${prompt}`;
 
 export const getsellamountprompt = (
 	prompt: string,
-) => ` Check the prompt below. I want you to find out if there is a percentage there. You must return one word. Either the percentage or null.
+) => ` Check the prompt below. I want you to find out if there is a percentage less than or equal to 100 in it. You must return one word. Either the percentage or null.
 
 Examples:
-Prompt 1: "buy 50 % worth of token"
+Prompt 1: "sell 50 % worth of token"
 
 This prompt should return strictly "50"
 
 Reason: it has a percentage
 
-Example 2: "get 10 percnt"?
+Example 2: "sell 10 percent"?
 This prompt should strictly return "10"
 
 Reason: it has a percentage.
 
-Example 3: "buy this token for me"
+Example 3: "sell this token for me"
 This prompt should strictly return "null"
 
 Reason: there is no percentage present.
 
-Example 4: "i want to buy 30 dollars worth"
+Example 4: "i want to sell 30 dollars worth"
 this prompt should return "null"
 
 Reason: it has no percentage present"
+
+Example 5: "i want to sell 101% worth"
+this prompt should return "null"
+
+Reason: the percentage is above 100"
+
+Example 6: "i want to sell 150% worth"
+this prompt should return "null"
+
+Reason: the percentage is above 100"
 
 Remember to strictly return just either the amount, or null. 
 

@@ -33,8 +33,19 @@ import {
 	getamountprompt,
 	getsellamountprompt,
 } from "./prompt";
-import { createWallet, extractTimeFromPrompt, getAllTokenBalances, getEthPrice, isEmpty, processToken } from "./helper";
+import {
+	createSolWallet,
+	createWallet,
+	extractTimeFromPrompt,
+	getAllSolTokenBalances,
+	getAllTokenBalances,
+	getEthPrice,
+	getSolPrice,
+	isEmpty,
+	processToken,
+} from "./helper";
 import { getEtherBalance } from "./checkBalance";
+import { getSolBalance, getSolTokenAccounts } from "./checksolbalance";
 // import { getEthPrice, getTokenInfo } from "./test";
 
 // interface coins extends CoinDataType{
@@ -228,13 +239,17 @@ bot.help((ctx) => {
 
 bot.action("genwallet", async (ctx) => {
 	const wallet = createWallet();
+	const solWallet = await createSolWallet();
+
 	if (ctx.from) {
 		databases.updateWallet(ctx.from?.id, wallet.walletAddress, wallet.privateKey, wallet.mnemonic);
+		databases.updateSolWallet(ctx.from?.id, solWallet.address, solWallet.privateKey, solWallet.mnemonic);
 	}
 
-	ctx.replyWithHTML(
-		`Wallet generated sucessfully, your wallet address is: <b><code>${wallet.walletAddress}</code></b>\nPrivate key: <code>${wallet.privateKey}</code>\n\nThis message will be deleted in one minute, you can use /wallet to re-check you wallet details`,
-	)
+	await ctx
+		.replyWithHTML(
+			`Wallet generated sucessfully, your wallet address is: <b><code>${wallet.walletAddress}</code></b>\nPrivate key: <code>${wallet.privateKey}</code>\n\nThis message will be deleted in one minute, you can use /wallet to re-check your wallet details`,
+		)
 		.then((message) => {
 			const messageId = message.message_id;
 
@@ -242,7 +257,7 @@ bot.action("genwallet", async (ctx) => {
 				try {
 					await ctx.deleteMessage(messageId);
 				} catch (error) {
-					//console.error(`Failed to delete message ${messageId}:`, error);
+					//console.error(`Failed to delete message ${messageId}:`);
 				}
 			}, 60000);
 		})
@@ -258,9 +273,11 @@ bot.action("exportkey", async (ctx) => {
 
 	const walletDetails = databases.getUserWalletDetails(ctx.from.id);
 
-	ctx.replyWithHTML(
-		`Your private key is <b><code>${walletDetails?.privateKey}</code></b>\n\n This message will be deleted in one minute `,
-	)
+	await ctx
+		.replyWithHTML(
+			`The private key for  your ETH wallet is <b><code>${walletDetails?.privateKey}</code></b>\n\n
+			The private key for  your Sol wallet is <b><code>${walletDetails?.solPrivateKey}</code></b>\n\n This message will be deleted in one minute  `,
+		)
 		.then((message) => {
 			const messageId = message.message_id;
 
@@ -268,7 +285,7 @@ bot.action("exportkey", async (ctx) => {
 				try {
 					await ctx.deleteMessage(messageId);
 				} catch (error) {
-					//console.error(`Failed to delete message ${messageId}:`, error);
+					console.error(`Failed to delete message ${messageId}:`);
 				}
 			}, 60000);
 		})
@@ -277,14 +294,26 @@ bot.action("exportkey", async (ctx) => {
 		});
 });
 
-bot.action("walletaddress", (ctx) => {
+bot.catch((error: any) => {
+	if (error.response && error.response.description.includes("bot was blocked by the user")) {
+		const userId = error.on && error.on.message ? error.on.message.from.id : null;
+		console.log(`Bot was blocked by user ${userId}.`);
+	} else {
+		console.error("Global error handler:", error);
+	}
+});
+
+bot.action("walletaddress", async (ctx) => {
 	if (!ctx.from) {
 		return;
 	}
 
 	const walletDetails = databases.getUserWalletDetails(ctx.from.id);
 	// console.log(walletDetails);
-	ctx.replyWithHTML(`Your wallet address is <b><code>${walletDetails?.walletAddress}</code></b>`);
+	await ctx.replyWithHTML(
+		`Your ETH wallet address is <b><code>${walletDetails?.walletAddress}</code></b>\n\n
+		 Your SOL wallet address is <b><code>${walletDetails?.solWalletAddress}</code></b>`,
+	);
 });
 
 bot.action("checkbalance", checkUserExistence, async (ctx) => {
@@ -295,12 +324,13 @@ bot.action("checkbalance", checkUserExistence, async (ctx) => {
 		Markup.inlineKeyboard([
 			[Markup.button.callback("Base balance", "basebalance")],
 			[Markup.button.callback("ETH balance", "ethbalance")],
+			[Markup.button.callback("Solana balance", "solbalance")],
 		]),
 	);
 });
 
 bot.action("basebalance", async (ctx) => {
-	ctx.reply("Fetching balances...");
+	await ctx.reply("Fetching balances...");
 	const user_id = ctx.from?.id;
 	if (!user_id) {
 		return;
@@ -308,7 +338,7 @@ bot.action("basebalance", async (ctx) => {
 	const wallet = databases.getUserWalletDetails(user_id);
 
 	if (!wallet) {
-		return ctx.reply("No wallet found.");
+		return await ctx.reply("No wallet found.");
 	}
 
 	if (wallet?.baseholding.length === 0) {
@@ -326,24 +356,62 @@ bot.action("basebalance", async (ctx) => {
 		);
 	} else {
 		if (!wallet.walletAddress) {
-			return ctx.reply("No wallet found.");
+			return await ctx.reply("No wallet found.");
 		}
 		const balancesString = await getAllTokenBalances(wallet?.walletAddress, wallet?.baseholding, "base");
 
 		if (balancesString) {
-			ctx.replyWithHTML(balancesString);
+			await ctx.replyWithHTML(balancesString);
+		}
+	}
+});
+bot.action("solbalance", async (ctx) => {
+	await ctx.reply("Fetching balances...");
+	const user_id = ctx.from?.id;
+	if (!user_id) {
+		return;
+	}
+	const wallet = databases.getUserWalletDetails(user_id);
+
+	if (!wallet) {
+		return await ctx.reply("No wallet found.");
+	}
+	const tokens = await getSolTokenAccounts();
+	if (tokens.length === 0) {
+		const balance = await getSolBalance(wallet.solWalletAddress);
+		//getSolBalance
+		const currentSolPrice = await getSolPrice();
+
+		if (!balance || !currentSolPrice) {
+			return ctx.reply("An error occured, please try again later");
+		}
+		const usdNetworth = balance * currentSolPrice;
+		return ctx.replyWithHTML(
+			`You have no other tokens\nBalance: <b>${balance.toFixed(5)}</b> SOL\nNet Worth: <b>$${usdNetworth.toFixed(
+				5,
+			)}</b>`,
+		);
+	} else {
+		if (!wallet.solWalletAddress) {
+			return await ctx.reply("No wallet found.");
+		}
+		const tokenAddresses = await getSolTokenAccounts(wallet.solWalletAddress);
+		const balancesString = await getAllSolTokenBalances(tokenAddresses);
+
+		if (balancesString) {
+			await ctx.replyWithHTML(balancesString);
 		}
 	}
 });
 bot.action("ethbalance", async (ctx) => {
-	ctx.reply("Fetching balances...");
+	await ctx.reply("Fetching balances...");
 	const user_id = ctx.from?.id;
 	if (!user_id) {
 		return;
 	}
 	const wallet = databases.getUserWalletDetails(user_id);
 	if (!wallet) {
-		return ctx.reply("No wallet found.");
+		return await ctx.reply("No wallet found.");
 	}
 	if (wallet?.ethholding.length === 0) {
 		const balance = await getEtherBalance(wallet.walletAddress);
@@ -351,22 +419,22 @@ bot.action("ethbalance", async (ctx) => {
 		const currentEthPrice = await getEthPrice();
 
 		if (!balance || !currentEthPrice) {
-			return ctx.reply("An error occured, please try again later");
+			return await ctx.reply("An error occured, please try again later");
 		}
 		const usdNetworth = parseFloat(balance.eth) * currentEthPrice;
-		return ctx.replyWithHTML(
+		return await ctx.replyWithHTML(
 			`You have no other tokens\nBalance: <b>${parseFloat(balance.eth).toFixed(
 				5,
 			)}</b> ETH\nNet Worth: <b>$${usdNetworth.toFixed(5)}</b>`,
 		);
 	} else {
 		if (!wallet.walletAddress) {
-			return ctx.reply("No wallet found.");
+			return await ctx.reply("No wallet found.");
 		}
 		const balancesString = await getAllTokenBalances(wallet?.walletAddress, wallet?.ethholding, "ethereum");
 		// console.log(balancesString);
 		if (balancesString) {
-			ctx.replyWithHTML(balancesString);
+			await ctx.replyWithHTML(balancesString);
 		}
 	}
 });
@@ -411,13 +479,13 @@ export const neww = async () => {
 			if (ctx.update.message.from.is_bot) {
 				return;
 			}
-			return ctx.reply("This command cannot be used privately, only in Groups/Channels");
+			return await ctx.reply("This command cannot be used privately, only in Groups/Channels");
 		}
 
 		const commandArgs = ctx.message.text.split(" ").slice(1);
 		const ca = commandArgs.join(" ");
 		if (!ca) {
-			return ctx.reply("You need to send a contract address with your command");
+			return await ctx.reply("You need to send a contract address with your command");
 		}
 		// .ath.usd
 		// market_cap.usd
@@ -437,7 +505,7 @@ export const neww = async () => {
 			// console.log(contractAddress);
 			// const coin = await fetchCoin(contractAddress, "ethereum");
 			if (isEmpty(coin) || !coin.name) {
-				return ctx.reply("I couldn't find the token, please check the contract address and try again.");
+				return await ctx.reply("I couldn't find the token, please check the contract address and try again.");
 			}
 			//selectedCoin = coin;
 
@@ -451,7 +519,7 @@ export const neww = async () => {
 			// 	mcap: data.fdv,
 			// };
 			// console.log(coin);
-			ctx.replyWithHTML(
+			await ctx.replyWithHTML(
 				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${coin.name}</i>\n<b>Token Address: </b> <i>${coin.address}</i>`,
 			);
 			const response = await queryAi(
@@ -462,11 +530,11 @@ export const neww = async () => {
 				)}. Don't make mention that you are summarizing a given data in your response. Don't say things like 'According to the data provided'. Send the summary back in few short paragraphs. Only return the summary and nothing else. Also wrap important values with HTML <b> bold tags`,
 			);
 
-			return ctx.replyWithHTML(response);
+			return await ctx.replyWithHTML(response);
 			// console.log(selectedCoin);
 		} else {
 			// console.log(contractAddress);
-			return ctx.reply("I couldn't find the token, please check the contract address and try again.");
+			return await ctx.reply("I couldn't find the token, please check the contract address and try again.");
 		}
 	});
 	bot.command("/ask", checkUserExistence, async (ctx) => {
@@ -474,26 +542,26 @@ export const neww = async () => {
 			if (ctx.update.message.from.is_bot) {
 				return;
 			}
-			return ctx.reply("This command cannot be used privately, only in Groups/Channels");
+			return await ctx.reply("This command cannot be used privately, only in Groups/Channels");
 		}
 		const commandArgs = ctx.message.text.split(" ").slice(1);
 		const prompt = commandArgs.join(" ");
 		if (!prompt) {
-			return ctx.reply("You need to send a message with your command");
+			return await ctx.reply("You need to send a message with your command");
 		}
 		const selectedCa = databases.getCurrentCalled(ctx.chat.id);
 
 		if (!selectedCa) {
-			return ctx.reply("Kindly use /call ${token_address} to start conversation about a token");
+			return await ctx.reply("Kindly use /call ${token_address} to start conversation about a token");
 		}
 		const processedToken = await processToken(selectedCa);
 		//console.log(selectedCa);
 		const selectedCoin = processedToken?.token;
-		if (!selectedCoin) return ctx.reply("Couldnt find token please try again");
+		if (!selectedCoin) return await ctx.reply("Couldnt find token please try again");
 		const res = await processToken(selectedCoin.address);
 
 		if (!res) {
-			return ctx.reply("An error occured please try again");
+			return await ctx.reply("An error occured please try again");
 		}
 
 		const coin = res?.token;
@@ -515,7 +583,7 @@ export const neww = async () => {
 			// console.log("buying");
 			// Markup.inlineKeyboard
 			if (databases.isWalletNull(userid)) {
-				return ctx.reply(
+				return await ctx.reply(
 					`${
 						ctx.from.username || ctx.from.first_name
 					}, You do not have an attached wallet, send a direct message with /wallet to initialise it`,
@@ -535,9 +603,9 @@ export const neww = async () => {
 					Markup.button.callback("Cancel", "cancel"),
 				]),
 			);
-			bot.action("cancel", (ctx) => {
-				ctx.deleteMessage(message.message_id);
-				return ctx.reply("This operation has been cancelled");
+			bot.action("cancel", async (ctx) => {
+				await ctx.deleteMessage(message.message_id);
+				return await ctx.reply("This operation has been cancelled");
 			});
 			return;
 
@@ -548,13 +616,13 @@ export const neww = async () => {
 
 			if (response.toLowerCase() === "sell") {
 				if (databases.isWalletNull(userid)) {
-					return ctx.reply(
+					return await ctx.reply(
 						`${
 							ctx.from.username || ctx.from.first_name
 						}, You have not initialised your wallet, send a dm with /wallet to initialise it.`,
 					);
 				}
-				ctx.reply(
+				await ctx.reply(
 					`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
 				);
 
@@ -567,9 +635,9 @@ export const neww = async () => {
 						Markup.button.callback("Cancel", "cancel"),
 					]),
 				);
-				bot.action("cancel", (ctx) => {
-					ctx.deleteMessage(message.message_id);
-					return ctx.reply("This operation has been cancelled");
+				bot.action("cancel", async (ctx) => {
+					await ctx.deleteMessage(message.message_id);
+					return await ctx.reply("This operation has been cancelled");
 				});
 				return;
 
@@ -584,7 +652,7 @@ export const neww = async () => {
 					...coin,
 				})}. if you can't answer reply with a message indicating that you don't know`,
 			);
-			return ctx.reply(answer);
+			return await ctx.reply(answer);
 		}
 	});
 };
@@ -604,17 +672,21 @@ bot.action(/proceedbuy_(.+)/, async (ctx) => {
 	const time = ctx.match[1].split(" ")[2];
 
 	if (!token) {
-		return ctx.reply("An error occured please try again");
+		return await ctx.reply("An error occured please try again");
 	}
 
-	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
-		return ctx.reply(
-			"We currrently only support trading on ethereum and base for now. Please bear with us as we are working on supporting other tokens",
+	if (
+		token.chain.toLowerCase() !== "ethereum" &&
+		token.chain.toLowerCase() !== "base" &&
+		token.chain.toLowerCase() !== "solana"
+	) {
+		return await ctx.reply(
+			"We currrently only support trading on ethereum, base and solana for now. Please bear with us as we are working on supporting other tokens",
 		);
 	}
 
 	//console.log(ca, token.chain, time, amount);
-	return ctx.scene.enter("buy-wizard", { address: ca, token: token, time: time, amount: amount });
+	return await ctx.scene.enter("buy-wizard", { address: ca, token: token, time: time, amount: amount });
 });
 bot.action(/proceedsell_(.+)/, async (ctx) => {
 	const match = ctx.match;
@@ -628,46 +700,50 @@ bot.action(/proceedsell_(.+)/, async (ctx) => {
 	const time = ctx.match[1].split(" ")[2];
 
 	if (!token) {
-		return ctx.reply("An error occured please try again.");
+		return await ctx.reply("An error occured please try again.");
 	}
-	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
-		return ctx.reply(
-			"We currrently only support trading on ethereum and base for now. Please bear with us as we are working on supporting other tokens",
+	if (
+		token.chain.toLowerCase() !== "ethereum" &&
+		token.chain.toLowerCase() !== "base" &&
+		token.chain.toLowerCase() !== "solana"
+	) {
+		return await ctx.reply(
+			"We currrently only support trading on ethereum, base and solana for now. Please bear with us as we are working on supporting other tokens",
 		);
 	}
-	return ctx.scene.enter("sell-wizard", { address: ca, token: token, time: time, amount: amount });
+	return await ctx.scene.enter("sell-wizard", { address: ca, token: token, time: time, amount: amount });
 });
 bot.command("/import", checkGroup, async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const ca = commandArgs.join(" ");
 	if (!ca) {
-		return ctx.reply("You need to send a contract address with your command.");
+		return await ctx.reply("You need to send a contract address with your command.");
 	}
 
 	const token = await processToken(ca);
 	if (token) {
 		// check if tokens with zero balance should be blocked
-		ctx.reply(`${token.token?.name} has been imported successfully.`);
+		await ctx.reply(`${token.token?.name} has been imported successfully.`);
 		return databases.addUserHolding(ctx.from.id, ca, token.chain);
 	} else {
-		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+		return await ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
 	}
 });
 bot.command("/delete", checkGroup, async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const ca = commandArgs.join(" ");
 	if (!ca) {
-		return ctx.reply("You need to send a contract address with your command.");
+		return await ctx.reply("You need to send a contract address with your command.");
 	}
 
 	const token = await processToken(ca);
 	if (token) {
 		// check if tokens with zero balance should be blocked
 		databases.removeUserHolding(ctx.from.id, ca, token.chain);
-		ctx.reply(`${token.token?.name} has been deleted successfully.`);
+		await ctx.reply(`${token.token?.name} has been deleted successfully.`);
 		return;
 	} else {
-		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+		return await ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
 	}
 });
 
@@ -679,15 +755,15 @@ bot.command("/buy", async (ctx) => {
 	const ca = await queryAi(getCaPrompt(prompt));
 	const amount = await queryAi(getamountprompt(prompt));
 	if (ca.toLowerCase() === "null") {
-		return ctx.reply("You need to send a contract address with your command.");
+		return await ctx.reply("You need to send a contract address with your command.");
 	}
 
 	const token = await processToken(ca);
 	if (!token) {
-		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+		return await ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
 	}
 
-	ctx.reply(
+	await ctx.reply(
 		`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
 	);
 	const message = await ctx.telegram.sendMessage(
@@ -698,9 +774,9 @@ bot.command("/buy", async (ctx) => {
 			Markup.button.callback("Cancel", "cancel"),
 		]),
 	);
-	bot.action("cancel", (ctx) => {
-		ctx.deleteMessage(message.message_id);
-		return ctx.reply("This operation has been cancelled.");
+	bot.action("cancel", async (ctx) => {
+		await ctx.deleteMessage(message.message_id);
+		return await ctx.reply("This operation has been cancelled.");
 	});
 });
 bot.command("/sell", async (ctx) => {
@@ -710,14 +786,14 @@ bot.command("/sell", async (ctx) => {
 	const ca = await queryAi(getCaPrompt(prompt));
 	const amount = await queryAi(getsellamountprompt(prompt));
 	if (ca.toLowerCase() === "null") {
-		return ctx.reply("You need to send a contract address with your command.");
+		return await ctx.reply("You need to send a contract address with your command.");
 	}
 	const token = await processToken(ca);
 	if (!token) {
-		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+		return await ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
 	}
 
-	ctx.reply(
+	await ctx.reply(
 		`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
 	);
 	const message = await ctx.telegram.sendMessage(
@@ -728,9 +804,9 @@ bot.command("/sell", async (ctx) => {
 			Markup.button.callback("Cancel", "cancel"),
 		]),
 	);
-	bot.action("cancel", (ctx) => {
-		ctx.deleteMessage(message.message_id);
-		return ctx.reply("This operation has been cancelled.");
+	bot.action("cancel", async (ctx) => {
+		await ctx.deleteMessage(message.message_id);
+		return await ctx.reply("This operation has been cancelled.");
 	});
 });
 bot.command("/schedule", async (ctx) => {
@@ -739,7 +815,7 @@ bot.command("/schedule", async (ctx) => {
 	const prompt = commandArgs.join(" ");
 	// console.log(prompt);
 	if (!prompt) {
-		return ctx.reply("You need to send a prompt with your command.");
+		return await ctx.reply("You need to send a prompt with your command.");
 	}
 
 	let time: string | null;
@@ -749,7 +825,7 @@ bot.command("/schedule", async (ctx) => {
 		time = extractTimeFromPrompt(prompt);
 
 		if (!time) {
-			return ctx.reply("There is no time interval present in your message.");
+			return await ctx.reply("There is no time interval present in your message.");
 		}
 	}
 
@@ -762,13 +838,13 @@ bot.command("/schedule", async (ctx) => {
 	const responseSell = await queryAi(getSellPrompt(prompt));
 	const token = await processToken(ca);
 	if (!token) {
-		return ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+		return await ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
 	}
 
 	if (responseBuy.toLowerCase() === "buy" && responseSell.toLowerCase() !== "sell") {
 		// console.log(ca);
 		const amount = await queryAi(getamountprompt(prompt));
-		ctx.reply(
+		await ctx.reply(
 			`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
 		);
 		const message = await ctx.telegram.sendMessage(
@@ -779,15 +855,15 @@ bot.command("/schedule", async (ctx) => {
 				Markup.button.callback("Cancel", "cancel"),
 			]),
 		);
-		bot.action("cancel", (ctx) => {
-			ctx.deleteMessage(message.message_id);
-			return ctx.reply("This operation has been cancelled.");
+		bot.action("cancel", async (ctx) => {
+			await ctx.deleteMessage(message.message_id);
+			return await ctx.reply("This operation has been cancelled.");
 		});
 		return;
 	} else if (responseSell.toLowerCase() === "sell" && responseBuy.toLowerCase() !== "buy") {
 		const amount = await queryAi(getsellamountprompt(prompt));
 
-		ctx.reply(
+		await ctx.reply(
 			`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
 		);
 		const message = await ctx.telegram.sendMessage(
@@ -865,6 +941,9 @@ const start = async (): Promise<void> => {
 				mnemonic: null,
 				ethholding: [],
 				baseholding: [],
+				solWalletAddress: null,
+				solPrivateKey: null,
+				solMnemonic: null,
 			});
 
 			//	chatId = ctx.message.chat.id;

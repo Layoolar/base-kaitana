@@ -12,6 +12,8 @@ import type { BigNumber } from "ethers";
 import { getEtherBalance } from "../checkBalance";
 import { addMillisecondsToDate, delay, getEthPrice, processToken } from "../helper";
 import { TokenData } from "../timePriceData";
+import { getSolBalance } from "../checksolbalance";
+import { buyTokensWithSolana } from "../solana";
 
 export type TransactionReceipt = {
 	to: string | null; // Address this transaction is sent to
@@ -37,6 +39,7 @@ const initialData = {
 	amount: null,
 	currency: null,
 	token: null,
+	userBalance: null,
 	time: undefined,
 };
 
@@ -44,11 +47,11 @@ const stepHandler = new Composer<WizardContext>();
 const stepHandler2 = new Composer<WizardContext>();
 
 stepHandler.action("sendbuy", async (ctx) => {
-	const { buyAddress, amount, token, time } = ctx.scene.session.buyStore;
+	const { buyAddress, amount, token, time, userBalance } = ctx.scene.session.buyStore;
 	// if (!buyAddress || !amount) {
 	// 	return ctx.wizard.next();
 	// }
-	if (!buyAddress || !amount || !token) {
+	if (!buyAddress || !amount || !token || !userBalance) {
 		ctx.reply("An error occurred please try again");
 		return ctx.scene.leave();
 	}
@@ -87,7 +90,7 @@ stepHandler.action("sendbuy", async (ctx) => {
 					return ctx.scene.leave();
 				}
 				// console.log(ctx.from, currency, ctx.scene.session.buyStore.amount, token, buyAddress);
-				receipt = await executeBuy(ctx, currency, ctx.scene.session.buyStore.amount, token, buyAddress);
+				receipt = await executeBuy(ctx, parseFloat(amount), token, buyAddress, userBalance);
 				// console.log(receipt);
 			} catch (error) {
 				console.log(error);
@@ -102,7 +105,14 @@ stepHandler.action("sendbuy", async (ctx) => {
 				ctx.reply("An error occurred please try again");
 				return ctx.scene.leave();
 			}
-			receipt = await executeBuy(ctx, currency, ctx.scene.session.buyStore.amount, token, buyAddress);
+			// 			const executeBuy = async (
+			// 	ctx: WizardContext,
+			// 	amount: number,
+			// 	token: TokenData,
+			// 	buyAddress: string,
+			// 	userBalance:number
+			// )
+			receipt = await executeBuy(ctx, parseFloat(amount), token, buyAddress, userBalance);
 			// console.log(receipt);
 		} catch (error) {
 			console.log(error);
@@ -132,6 +142,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			return ctx.scene.leave();
 		}
 		ctx.scene.session.buyStore = JSON.parse(JSON.stringify(initialData));
+		//{ address: ca, token: token, time: time, amount: amount }
 		// @ts-ignore
 		ctx.scene.session.buyStore.buyAddress = ctx.scene.state.address;
 		// @ts-ignore
@@ -151,27 +162,47 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 		// console.log(buyAddress);
 		//	const amount = ctx.scene.session.buyStore.amount;
 		const chain = ctx.scene.session.buyStore.chain;
-		let userBalance;
+		//let userBalance;
 
 		if (chain === "base") {
+			ctx.scene.session.buyStore.currency = "ETH";
 			const res = await getEtherBalance(wallet?.walletAddress);
-			userBalance = res?.base;
+			if (!res) {
+				await ctx.reply("Couldn't get balance, please try again");
+				return ctx.scene.leave();
+			}
+			ctx.scene.session.buyStore.userBalance = parseFloat(res.base);
+			//userBalance = res?.base;
+		} else if (chain === "solana") {
+			ctx.scene.session.buyStore.currency = "SOL";
+			const solbalance = await getSolBalance(wallet);
+			if (!solbalance) {
+				await ctx.reply("Couldn't get balance, please try again");
+
+				return ctx.scene.leave();
+			}
+			ctx.scene.session.buyStore.userBalance = solbalance;
 		} else {
+			ctx.scene.session.buyStore.currency = "ETH";
 			const res = await getEtherBalance(wallet?.walletAddress);
-			userBalance = res?.eth;
+			if (!res) {
+				await ctx.reply("Couldn't get balance, please try again");
+				return ctx.scene.leave();
+			}
+			ctx.scene.session.buyStore.userBalance = parseFloat(res.eth);
 		}
 
-		const ethprice = await getEthPrice();
-		if (!userBalance) {
+		//const ethprice = await getEthPrice();
+		if (!ctx.scene.session.buyStore.userBalance) {
 			ctx.reply("An error occurred please try again");
 			return ctx.scene.leave();
 		}
-		const userBalanceInUsd = parseFloat(userBalance) * parseFloat(ethprice);
+		//const userBalanceInUsd = userBalance * parseFloat(ethprice);
 
 		if (ctx.scene.session.buyStore.amount) {
 			await ctx.replyWithHTML(
 				`Are you sure you want to buy ${ctx.scene.session.buyStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.buyStore.buyAddress}</b>
-			\nAmount: <b>${ctx.scene.session.buyStore.amount}</b>\nCurrent Price: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+			\nAmount: <b>${ctx.scene.session.buyStore.amount} ${ctx.scene.session.buyStore.currency}</b>\nCurrent Price: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
 				Markup.inlineKeyboard([
 					Markup.button.callback("Yes I am sure", "sendbuy"),
 					Markup.button.callback("Cancel", "cancel"),
@@ -182,7 +213,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			return ctx.wizard.next();
 		} else {
 			await ctx.replyWithHTML(
-				`What amount(ETH, USD) of ${ctx.scene.session.buyStore.token?.name} do you want to buy, your balance is ${userBalance} ETH($${userBalanceInUsd}) `,
+				`What amount(USD) of ${ctx.scene.session.buyStore.token?.name} do you want to buy`,
 				Markup.inlineKeyboard([Markup.button.callback("Cancel", "cancel")]),
 			);
 			return ctx.wizard.next();
@@ -224,7 +255,7 @@ stepHandler2.on("text", async (ctx) => {
 
 		await ctx.replyWithHTML(
 			`Are you sure you want to buy ${ctx.scene.session.buyStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.buyStore.buyAddress}</b>
-			\nAmount: <b>${ctx.scene.session.buyStore.amount}</b>\nCurrent Price: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+			\nAmount: <b>${ctx.scene.session.buyStore.amount}  ${ctx.scene.session.buyStore.currency}</b>\nCurrent Price: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
 			Markup.inlineKeyboard([
 				Markup.button.callback("Yes I am sure", "sendbuy"),
 				Markup.button.callback("Cancel", "cancel"),
@@ -236,45 +267,21 @@ stepHandler2.on("text", async (ctx) => {
 
 const executeBuy = async (
 	ctx: WizardContext,
-	currency: string,
-	amount: string,
+	amount: number,
 	token: TokenData,
 	buyAddress: string,
+	userBalance: number,
 ) => {
 	if (!ctx.from) {
 		await ctx.replyWithHTML("<b>Transaction failed</b>");
 		return await ctx.scene.leave();
 	}
-	const ethPrice = await getEthPrice();
-	if (!ethPrice) {
-		ctx.reply("An error occured please try again later here");
-		return ctx.scene.leave();
-	}
-
-	let amountinEth = parseFloat(amount);
-
-	if (currency === "usd") {
-		amountinEth = parseFloat(amount) / ethPrice;
-	}
 
 	const wallet = getUserWalletDetails(ctx.from.id);
 
-	// const userBalance = await getEtherBalance(wallet?.walletAddress);
-	const chain = ctx.scene.session.buyStore.chain;
-	let userBalance;
+	//let userBalance=ctx.scene.session.buyStore.userBalance;
 
-	if (chain === "base") {
-		const res = await getEtherBalance(wallet?.walletAddress);
-		userBalance = res?.base;
-	} else {
-		const res = await getEtherBalance(wallet?.walletAddress);
-		userBalance = res?.eth;
-	}
-	if (!userBalance) {
-		ctx.reply("An error occurred please try again");
-		return ctx.scene.leave();
-	}
-	if (parseFloat(userBalance) <= amountinEth) {
+	if (userBalance <= amount) {
 		ctx.reply("You have insuffient balance to make this transaction, please try again with a valid amount");
 		return ctx.scene.leave();
 	}
@@ -285,7 +292,7 @@ const executeBuy = async (
 		try {
 			//	console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
 
-			await buyOnEth(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
+			await buyOnEth(wallet?.privateKey, buyAddress, amount.toFixed(15).toString());
 		} catch (error: any) {
 			await delay(5000);
 			ctx.reply(`An Error occured please try again later\nError Message: ${error.message}.`);
@@ -294,11 +301,33 @@ const executeBuy = async (
 	}
 
 	// console.log(amountinEth);
-	let receipt;
+	let hash;
+	if (ctx.scene.session.buyStore.chain?.toLowerCase() === "solana") {
+		try {
+			hash = await buyTokensWithSolana(wallet?.privateKey, buyAddress, amount.toFixed(15));
+
+			await ctx.replyWithHTML(
+				`You bought ${token.name} \n<i>Amount: <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\nTransaction hash:<a href= "https://solscan.io/tx/${hash}">${hash}</a>`,
+			);
+
+			await sendMessageToAllGroups(
+				`Successful transaction made through @nova_trader_bot.\n Transaction hash:<a href= "https://solscan.io/tx/${hash}">${hash}</a>`,
+			);
+
+			// if (hash) {
+			// 	addUserHolding(ctx.from?.id, buyAddress, "solana");
+			// }
+			return hash;
+		} catch (error: any) {
+			//await delay(5000);
+			ctx.reply(`An Error occured please try again later\nError Message: ${error.message}.`);
+			return await ctx.scene.leave();
+		}
+	}
 	try {
 		//	console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
 
-		receipt = await buyOnBase(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
+		hash = await buyOnBase(wallet?.privateKey, buyAddress, amount.toFixed(15).toString());
 	} catch (error: any) {
 		ctx.reply(`An Error occured please try again later\n
 		Error Message: ${error.message}`);
@@ -306,14 +335,14 @@ const executeBuy = async (
 	}
 
 	await ctx.replyWithHTML(
-		`You bought ${token.name} \n<i>Amount: <b>${amount} ${currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\nTransaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
+		`You bought ${token.name} \n<i>Amount: <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\nTransaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
 	);
 
 	await sendMessageToAllGroups(
-		`Successful transaction made through @nova_trader_bot.\n Transaction hash:<a href= "https://basescan.org/tx/${receipt.transactionHash}">${receipt.transactionHash}</a>`,
+		`Successful transaction made through @nova_trader_bot.\n Transaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
 	);
-	if (receipt) {
+	if (hash) {
 		addUserHolding(ctx.from?.id, buyAddress, "base");
 	}
-	return receipt;
+	return hash;
 };

@@ -4,6 +4,11 @@ import { ethers } from "ethers";
 import axios from "axios";
 import { getEtherBalance, getTokenBalance } from "./checkBalance";
 
+import solanaWeb3 from "@solana/web3.js";
+import * as bip39 from "bip39";
+import { derivePath } from "ed25519-hd-key";
+import { getSolBalance } from "./checksolbalance";
+
 export function isEmpty(obj: any) {
 	return Object.keys(obj).length === 0;
 }
@@ -20,6 +25,17 @@ export async function getEthPrice() {
 		return null;
 	}
 }
+export async function getSolPrice() {
+	try {
+		const response = await axios.get("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd");
+		const price = response.data.solana.usd;
+		return price;
+	} catch (error) {
+		console.error("Error fetching SOL price:", error);
+		return null;
+	}
+}
+
 export function delay(ms: number) {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -78,132 +94,50 @@ export function createWallet() {
 	return loggedItems;
 }
 
-// Call the createWallet function to create a new wallet and get all logged items
-// const walletDetails = createWallet();
-// console.log(walletDetails);
+// Function to create a new Solana wallet with mnemonic
+function uint8ArrayToBase64(uint8Array: Uint8Array): string {
+	let binaryString = "";
+	uint8Array.forEach((byte) => {
+		binaryString += String.fromCharCode(byte);
+	});
+	return btoa(binaryString);
+}
 
-// const tokenInfo = await processToken(address);
+// Function to create a new Solana wallet with mnemonic
+export async function createSolWallet() {
+	// Generate a random mnemonic (24 words)
+	const mnemonic = bip39.generateMnemonic(256); // 24-word mnemonic
 
-// if (tokenInfo === null) {
-// 	// Token not found
-// 	await ctx.reply("I could not find the token. Please check the address and try again.");
-// 	return;
-// } else if (tokenInfo.offerChoice) {
-// 	// Offer options to choose a specific token
-// 	ctx.scene.session.analysisStore.address = tokenInfo.address;
-// 	return await ctx.replyWithHTML(
-// 		`<b>🤔 Choose the specific token</b>`,
-// 		Markup.inlineKeyboard([
-// 			Markup.button.callback(`${tokenInfo.bsctoken.name}`, `token_${tokenInfo.bsctoken.name}`),
-// 			Markup.button.callback(`${tokenInfo.ethtoken.name}`, `token_${tokenInfo.ethtoken.name}`),
-// 		]),
-// 	);
-// } else {
-// 	// Token found, store token information
-// 	ctx.scene.session.analysisStore.chain = tokenInfo.chain;
-// 	ctx.scene.session.analysisStore.address = tokenInfo.address;
-// 	ctx.scene.session.analysisStore.token = tokenInfo.token;
-// }
+	// Derive seed from mnemonic
+	const seed = await bip39.mnemonicToSeed(mnemonic);
 
-// Function to send Ethereum
-// async function sendEther(privateKey: string, recipientAddress: string, amountInEther: string) {
-// 	// Define your provider (e.g., a connection to the Ethereum mainnet or a testnet)
-// 	const provider = ethers.getDefaultProvider("mainnet"); // Change 'mainnet' to 'ropsten' or another testnet as needed
+	// Derive the keypair from the seed
+	const path = "m/44'/501'/0'/0'"; // BIP44 path for Solana
+	const derivedSeed = derivePath(path, seed.toString("hex")).key;
+	const keypair = solanaWeb3.Keypair.fromSeed(derivedSeed);
 
-// 	// Create a wallet instance using the private key and connect it to the provider
-// 	const wallet = new ethers.Wallet(privateKey, provider);
+	// Get the public key and private key
+	const publicKey = keypair.publicKey.toBase58();
+	const privateKeyUint8Array = keypair.secretKey;
+	const privateKeyBase64 = uint8ArrayToBase64(privateKeyUint8Array);
 
-// 	try {
-// 		// Create a transaction object
-// 		const tx: ethers.TransactionRequest = {
-// 			to: recipientAddress,
-// 			value: ethers.parseEther(amountInEther), // Convert the amount from Ether to Wei
-// 			gasLimit: 21000, // Standard gas limit for a simple transaction
-// 			// Current gas price
-// 		};
-
-// 		const gasPrice = await provider.estimateGas(tx); //gasprice
-// 		const transactionResponse = await wallet.sendTransaction(tx);
-
-// 		// Wait for the transaction to be confirmed
-// 		const transactionReceipt = await transactionResponse.wait();
-
-// 		// Return the transaction receipt
-// 		return transactionReceipt;
-// 	} catch (error) {
-// 		// Handle errors
-// 		console.log(error);
-// 	}
-// }
-
-// // Example usage:
-// // const privateKey = "YOUR_PRIVATE_KEY";
-// // const recipientAddress = "RECIPIENT_ADDRESS";
-// // const amountInEther = "0.01"; // Amount to send in Ether
-
-// // sendEther(privateKey, recipientAddress, amountInEther)
-// // 	.then((transactionReceipt) => {
-// // 		console.log("Transaction receipt:", transactionReceipt);
-// // 	})
-// // 	.catch((error) => {
-// // 		console.error("An error occurred:", error);
-// // 	});
-
-// //import { ethers } from "ethers";
-
-// async function sendErc20Token(
-// 	privateKey: string,
-// 	tokenContractAddress: string,
-// 	recipientAddress: string,
-// 	amountInToken: string,
-// 	decimals: number = 18,
-// ): Promise<void> {
-// 	// Define your provider (e.g., a connection to the Ethereum mainnet or a testnet)
-// 	const provider = ethers.getDefaultProvider("mainnet"); // Change 'mainnet' to 'ropsten' or another testnet as needed
-
-// 	// Create a wallet instance using the private key and connect it to the provider
-// 	const wallet = new ethers.Wallet(privateKey, provider);
-
-// 	// Define the ABI of the ERC-20 token contract (minimal ABI for transfer function)
-// 	const erc20Abi = [
-// 		// Only include the transfer function ABI
-// 		"function transfer(address to, uint256 amount) public returns (bool)",
-// 	];
-
-// 	// Create a contract instance for the ERC-20 token
-// 	const tokenContract = new ethers.Contract(tokenContractAddress, erc20Abi, wallet);
-
-// 	// Convert the amount to the token's units (wei)
-// 	const amountInWei = ethers.parseUnits(amountInToken, decimals);
-
-// 	try {
-// 		// Send the ERC-20 token using the transfer function
-// 		const transactionResponse = await tokenContract.transfer(recipientAddress, amountInWei);
-
-// 		// Wait for the transaction to be confirmed
-// 		const transactionReceipt = await transactionResponse.wait();
-
-// 		// Log the transaction receipt
-// 		console.log("Transaction receipt:", transactionReceipt);
-// 	} catch (error) {
-// 		// Handle errors
-// 		throw new Error("Failed to send ERC-20 token: " + error);
-// 	}
-// }
-
-// // Example usage:
-// const privateKey = "YOUR_PRIVATE_KEY";
-// const tokenContractAddress = "ERC20_TOKEN_CONTRACT_ADDRESS";
-// const recipientAddress = "RECIPIENT_ADDRESS";
-// const amountInToken = "10"; // Amount to send in token units
-// const decimals = 18; // Decimals of the ERC-20 token
-
-// sendErc20Token(privateKey, tokenContractAddress, recipientAddress, amountInToken, decimals)
-// 	.then(() => {
-// 		console.log("ERC-20 token sent successfully");
+	// Return the wallet object containing the public key, private key (Base64), and mnemonic
+	return {
+		address: publicKey,
+		privateKey: privateKeyBase64,
+		mnemonic: mnemonic,
+	};
+}
+// Create a new wallet and log the wallet details
+// createSolWallet()
+// 	.then((wallet) => {
+// 		console.log("New Wallet Created");
+// 		console.log("Address:", wallet.address);
+// 		console.log("Private Key:", wallet.privateKey);
+// 		console.log("Mnemonic:", wallet.mnemonic);
 // 	})
 // 	.catch((error) => {
-// 		console.error("An error occurred:", error);
+// 		console.error("Error creating wallet:", error);
 // 	});
 
 export const extractTimeFromPrompt = (prompt: string) => {
@@ -246,16 +180,16 @@ export async function getAllTokenBalances(walletAddress: string, tokenAddresses:
 
 		let ethBalance;
 		const currentEthPrice = await getEthPrice();
-	
+
 		if (chain === "base") {
 			let res = await getEtherBalance(walletAddress);
-		
+
 			ethBalance = res?.base;
 		} else {
 			let res = await getEtherBalance(walletAddress);
 			ethBalance = res?.eth;
 		}
-	
+
 		if (!ethBalance) {
 			return;
 		}
@@ -281,6 +215,49 @@ export async function getAllTokenBalances(walletAddress: string, tokenAddresses:
 			}
 		}
 		balancesString += `Balance: ${parseFloat(ethBalance).toFixed(5)} ETH\nNet Worth: ${totalEth.toFixed(
+			5,
+		)} Eth / $${totalUsd.toFixed(2)}\n`;
+
+		return balancesString;
+	} catch (error) {
+		console.error("Error getting all token balances:", error);
+		return null;
+	}
+}
+
+export async function getAllSolTokenBalances(tokenAddresses: { mintAddress: string, tokenBalance: number }[]) {
+	try {
+		let balancesString = "";
+
+		const solBalance= await getSolBalance()
+		const currentSolPrice = await getSolPrice();
+
+
+		if (!solBalance) {
+			return;
+		}
+
+		let totalSol = solBalance;
+
+		let totalUsd = totalSol * currentSolPrice;
+
+		for (let i = 0; i < tokenAddresses.length; i++) {
+			const balance = tokenAddresses[i].tokenBalance;
+			if (balance !== null) {
+				const tokenInfo = await processToken(tokenAddresses[i].mintAddress);
+				if (!tokenInfo) continue; // Skip token if info not available
+				const tokenPriceUsd = balance * tokenInfo.token.price;
+				const tokenPriceSol = tokenPriceUsd / currentSolPrice;
+				totalSol += tokenPriceSol;
+				totalUsd += tokenPriceUsd;
+				balancesString += `${i + 1}. <b>${
+					tokenInfo.token.name
+				}</b>\n\tAmount: <b>${balance.toFixed(2)}</b>\n\tValue: <b>$${tokenPriceUsd.toFixed(2)} / ${tokenPriceSol.toFixed(
+					5,
+				)} SOL</b>\n\n`;
+			}
+		}
+		balancesString += `Balance: ${solBalance.toFixed(5)} ETH\nNet Worth: ${totalSol.toFixed(
 			5,
 		)} Eth / $${totalUsd.toFixed(2)}\n`;
 

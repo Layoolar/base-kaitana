@@ -36,7 +36,7 @@ export const buyOnBase = async (privateKey, tokenAddress, amountInEth) => {
 
 		const receipt = await tx.wait();
 		//	console.log("Trade successful!");
-		return receipt;
+		return receipt.transactionHash;
 	} catch (error) {
 		throw new Error(error.code);
 	}

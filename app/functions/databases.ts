@@ -37,6 +37,9 @@ interface MyUser extends TelegramUserInterface {
 	mnemonic: string | null;
 	baseholding: string[];
 	ethholding: string[];
+	solWalletAddress: string | null;
+	solPrivateKey: string | null;
+	solMnemonic: string | null;
 }
 export type Group = {
 	id: number;
@@ -282,12 +285,51 @@ const updateWallet = (userId: number, newWallet: string, newPrivateKey: string, 
 		return false;
 	}
 };
+export const updateSolWallet = (
+	userId: number,
+	newWallet: string,
+	newPrivateKey: string,
+	newMnemonic: string | undefined,
+) => {
+	const userInDb = databases.users.get("users").find({ id: userId });
+
+	if (userInDb.value()) {
+		userInDb
+			.assign({
+				solWalletAddress: newWallet,
+				solPrivateKey: newPrivateKey,
+				solMnemonic: newMnemonic,
+			})
+			.write();
+		return true;
+	} else {
+		return false;
+	}
+};
 const getUserWalletDetails = (userId: number) => {
 	const userInDb = databases.users.get("users").find({ id: userId }).value();
 
 	if (userInDb) {
-		const { walletAddress, privateKey, mnemonic, baseholding, ethholding } = userInDb;
-		return { walletAddress, privateKey, mnemonic, baseholding, ethholding };
+		const {
+			walletAddress,
+			privateKey,
+			mnemonic,
+			baseholding,
+			ethholding,
+			solMnemonic,
+			solPrivateKey,
+			solWalletAddress,
+		} = userInDb;
+		return {
+			walletAddress,
+			privateKey,
+			mnemonic,
+			baseholding,
+			ethholding,
+			solMnemonic,
+			solPrivateKey,
+			solWalletAddress,
+		};
 	} else {
 		return null; // Or you can throw an error or handle the case as needed
 	}

@@ -51,7 +51,7 @@ export const sell = async (privateKey, tokenAddress, amountInTokens, decimal) =>
 
 		const receipt = await tx.wait();
 
-		return receipt;
+		return receipt.transactionHash;
 	} catch (error) {
 		throw new Error(error.code);
 	}

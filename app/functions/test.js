@@ -63,16 +63,56 @@ const tokenSymbol = "ETH"; // Replace with the symbol of the token you're intere
 //const axios = require("axios");
 
 // Function to get current time in Unix timestamp format
-function getCurrentUnixTime() {
-	return Math.floor(Date.now() / 1000);
+async function getCurrentUnixTime() {
+	console.log(await getSolPrice());
 }
 
-
+getCurrentUnixTime();
 // Example usage:
-fetchDataFromDexTools("base", "0x8181b3979299bc4b4eb85b3ec9098b589dbf47ff").then((data) => {
-	if (data) {
-		console.log(data);
-	} else {
-		console.log("Failed to fetch data.");
-	}
-});
+// fetchDataFromDexTools("base", "0x8181b3979299bc4b4eb85b3ec9098b589dbf47ff").then((data) => {
+// 	if (data) {
+// 		console.log(data);
+// 	} else {
+// 		console.log("Failed to fetch data.");
+// 	}
+// });
+
+const solanaWeb3 = require("@solana/web3.js");
+const splToken = require("@solana/spl-token");
+
+// Create a connection to the Solana devnet
+const RPC_ENDPOINT = "https://mainnet.helius-rpc.com/?api-key=7ac71d07-8188-40ac-bacc-d91d36b61b38";
+
+// Create a connection to the Solana cluster
+const connection = new solanaWeb3.Connection(RPC_ENDPOINT);
+
+// Replace with the owner's public key (wallet address) and the token mint address
+const ownerPublicKey = new solanaWeb3.PublicKey("GGztQqQ6pCPaJQnNpXBgELr5cs3WwDakRbh1iEMzjgSJ");
+const tokenMintAddress = new solanaWeb3.PublicKey("7atgF8KQo4wJrD5ATGX7t1V2zVvykPJbFfNeVf1icFv1");
+
+// Function to find the associated token account and get the balance
+async function getTokenBalance(ownerPublicKey, tokenMintAddress) {
+	// Find the associated token account
+	const associatedTokenAddress = await splToken.getAssociatedTokenAddress(
+		tokenMintAddress,
+		ownerPublicKey,
+		false, // Allow owner off curve (for Solana accounts, this should be false)
+		splToken.TOKEN_PROGRAM_ID,
+		splToken.ASSOCIATED_TOKEN_PROGRAM_ID,
+	);
+
+	// Get the token account balance
+	const tokenAccountInfo = await connection.getTokenAccountBalance(associatedTokenAddress);
+
+	// Return the balance
+	return tokenAccountInfo.value.amount;
+}
+
+// Call the function and print the balance
+// getTokenBalance(ownerPublicKey, tokenMintAddress)
+// 	.then((balance) => {
+// 		console.log(`Token balance: ${balance}`);
+// 	})
+// 	.catch((err) => {
+// 		console.error("Error fetching token balance:", err);
+// 	});

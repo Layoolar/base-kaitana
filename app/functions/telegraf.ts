@@ -41,6 +41,7 @@ interface MyWizardSession extends Scenes.WizardSessionData {
 		token: TokenData | null;
 		time: undefined | string;
 		chain: string | null;
+		userBalance: null | number;
 	};
 	sellStore: {
 		sellAddress: string | null;
@@ -49,6 +50,7 @@ interface MyWizardSession extends Scenes.WizardSessionData {
 		token: TokenData | null;
 		time: undefined | string;
 		chain: string | null;
+		userBalance: null | number;
 	};
 	sendStore: {
 		recipientAddress: string;
@@ -76,5 +78,9 @@ interface WizardContext extends Context {
 // This bot will then be passed around your app to either commands or
 // actions
 const bot = new Telegraf<WizardContext>(configs.telegram.token);
+
+bot.catch((err) => {
+	console.log("Ooops", err);
+});
 export { WizardContext };
 export default bot;
