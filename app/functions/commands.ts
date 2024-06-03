@@ -137,19 +137,6 @@ export function getGreeting() {
 	}
 }
 
-// async function sendHourlyMessage() {
-// 	const ethdata = await fetchData("ethereum", null);
-// 	const soldata = await fetchData("solana", null);
-// 	const bnbdata = await fetchData("bnb", null);
-
-// 	bot.telegram.sendMessage(chatId, formatCoinsMessage(ethdata, null));
-// 	bot.telegram.sendMessage(chatId, formatCoinsMessage(soldata, null));
-// 	bot.telegram.sendMessage(chatId, formatCoinsMessage(bnbdata, null));
-// }
-
-// setInterval(sendHourlyMessage, 3000);
-// setInterval(() => console.log("hi"), 3000);
-
 const isValidWallet = (address: string): boolean => {
 	// ctx.reply;
 	const ethAddressRegex = /^(0x)?[0-9a-fA-F]{40}$/;
@@ -213,7 +200,14 @@ const checkGroup: MiddlewareFn<Context> = (ctx, next) => {
 // 	// If the message is from the allowed group, continue with the next middleware
 // 	return next();
 // };
-
+bot.catch((error: any) => {
+	if (error.response && error.response.description.includes("bot was blocked by the user")) {
+		const userId = error.on && error.on.message ? error.on.message.from.id : null;
+		console.log(`Bot was blocked by user ${userId}.`);
+	} else {
+		console.error("Global error handler:", error);
+	}
+});
 const commands = {
 	"/start": "Send this command privately to the bot to register and get started",
 	"/call <b>(CAN ONLY BE USED IN GROUPS)</b>":
@@ -248,7 +242,10 @@ bot.action("genwallet", async (ctx) => {
 
 	await ctx
 		.replyWithHTML(
-			`Wallet generated sucessfully, your wallet address is: <b><code>${wallet.walletAddress}</code></b>\nPrivate key: <code>${wallet.privateKey}</code>\n\nThis message will be deleted in one minute, you can use /wallet to re-check your wallet details`,
+			`Wallet generated sucessfully, your ETH wallet address is: <b><code>${wallet.walletAddress}</code></b>\nPrivate key: <code>${wallet.privateKey}</code>.\n\n
+			And your SOL wallet address is: <b><code>${solWallet.address}</code></b>\nPrivate key: <code>${solWallet.privateKey}</code>
+			
+			This message will be deleted in one minute, you can use /wallet to re-check your wallet details`,
 		)
 		.then((message) => {
 			const messageId = message.message_id;
@@ -294,15 +291,6 @@ bot.action("exportkey", async (ctx) => {
 		});
 });
 
-bot.catch((error: any) => {
-	if (error.response && error.response.description.includes("bot was blocked by the user")) {
-		const userId = error.on && error.on.message ? error.on.message.from.id : null;
-		console.log(`Bot was blocked by user ${userId}.`);
-	} else {
-		console.error("Global error handler:", error);
-	}
-});
-
 bot.action("walletaddress", async (ctx) => {
 	if (!ctx.from) {
 		return;
@@ -320,7 +308,7 @@ bot.action("checkbalance", checkUserExistence, async (ctx) => {
 	await ctx.replyWithHTML(
 		`${getGreeting()} ${
 			ctx.from?.username || ctx.from?.first_name || ctx.from?.last_name
-		}, What balace do you want to check`,
+		}, What balance do you want to check`,
 		Markup.inlineKeyboard([
 			[Markup.button.callback("Base balance", "basebalance")],
 			[Markup.button.callback("ETH balance", "ethbalance")],
@@ -743,7 +731,7 @@ bot.command("/delete", checkGroup, async (ctx) => {
 		await ctx.reply(`${token.token?.name} has been deleted successfully.`);
 		return;
 	} else {
-		return await ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+		return await ctx.reply(`Couldn't find the token, Please check the prompt and contract address.`);
 	}
 });
 
@@ -760,7 +748,7 @@ bot.command("/buy", async (ctx) => {
 
 	const token = await processToken(ca);
 	if (!token) {
-		return await ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+		return await ctx.reply(`Couldn't find the token, Please check the prompt and contract address.`);
 	}
 
 	await ctx.reply(
@@ -790,7 +778,7 @@ bot.command("/sell", async (ctx) => {
 	}
 	const token = await processToken(ca);
 	if (!token) {
-		return await ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+		return await ctx.reply(`Couldn't find the token, Please check the prompt and contract address.`);
 	}
 
 	await ctx.reply(
@@ -838,7 +826,7 @@ bot.command("/schedule", async (ctx) => {
 	const responseSell = await queryAi(getSellPrompt(prompt));
 	const token = await processToken(ca);
 	if (!token) {
-		return await ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+		return await ctx.reply(`Couldn't find the token, Please check the prompt and contract address.`);
 	}
 
 	if (responseBuy.toLowerCase() === "buy" && responseSell.toLowerCase() !== "sell") {

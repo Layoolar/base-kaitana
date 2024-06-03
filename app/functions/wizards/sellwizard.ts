@@ -12,7 +12,7 @@ import { sell, sellOnEth } from "../sellfunction";
 import { TransactionReceipt } from "./buywizard";
 import { time } from "console";
 import { TokenData } from "../timePriceData";
-import { getParticularTokenBalance } from "../checksolbalance";
+import { getParticularSolTokenBalance } from "../checksolbalance";
 import { sellTokensWithSolana } from "../solana";
 
 const initialData = {
@@ -21,7 +21,7 @@ const initialData = {
 	currency: null,
 	token: null,
 	time: undefined,
-	userBalance:null
+	userBalance: null,
 };
 const stepHandler = new Composer<WizardContext>();
 const stepHandler2 = new Composer<WizardContext>();
@@ -38,7 +38,7 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 		//@ts-ignore
 		ctx.scene.session.sellStore.time = ctx.scene.state.time;
 		// @ts-ignore
-		ctx.scene.session.buyStore.amount = ctx.scene.state.amount;
+		ctx.scene.session.sellStore.amount = ctx.scene.state.amount;
 		//@ts-ignore
 		ctx.scene.session.sellStore.chain = ctx.scene.state.token.chain;
 
@@ -189,7 +189,7 @@ const executeSell = async (
 		//userBalance = res?.base;
 	} else if (tokenData.chain === "solana") {
 		ctx.scene.session.sellStore.currency = "SOL";
-		const solbalance = await getParticularTokenBalance(sellAddress, wallet?.walletAddress);
+		const solbalance = await getParticularSolTokenBalance(sellAddress, wallet?.walletAddress);
 		if (!solbalance || solbalance.length === 0) {
 			await ctx.reply("Couldn't get balance, please try again");
 
@@ -214,7 +214,7 @@ const executeSell = async (
 		return ctx.scene.leave();
 	}
 
-const amountintokens = (parseFloat(amount) / 100) * ctx.scene.session.sellStore.userBalance;
+	const amountintokens = (parseFloat(amount) / 100) * ctx.scene.session.sellStore.userBalance;
 
 	if (amountintokens > ctx.scene.session.sellStore.userBalance) {
 		ctx.replyWithHTML(
@@ -237,8 +237,12 @@ const amountintokens = (parseFloat(amount) / 100) * ctx.scene.session.sellStore.
 	let hash;
 	if (ctx.scene.session.sellStore.chain?.toLowerCase() === "solana") {
 		try {
-		
-			hash = await sellTokensWithSolana(wallet?.privateKey, sellAddress, amountintokens.toFixed(15),token.decimals);
+			hash = await sellTokensWithSolana(
+				wallet?.privateKey,
+				sellAddress,
+				amountintokens.toFixed(15),
+				token.decimals,
+			);
 
 			await ctx.replyWithHTML(
 				`You sold ${token.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://solscan.io/tx/${hash}">${hash}</a>`,
