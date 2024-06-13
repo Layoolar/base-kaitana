@@ -10,12 +10,13 @@ const connection = new solanaWeb3.Connection(RPC_ENDPOINT);
 
 // Function to get the SOL balance of a wallet
 export async function getSolBalance(walletAddress) {
-	try {
-		// Create a PublicKey object from the wallet address
-		const publicKey = new solanaWeb3.PublicKey(walletAddress);
+	// Create a PublicKey object from the wallet address
 
+	try {
 		// Get the balance in lamports
+		const publicKey = new solanaWeb3.PublicKey(walletAddress);
 		const balanceLamports = await connection.getBalance(publicKey);
+
 		//connection.getTokenAccountBalance();
 		// connection.getTokenAccountsByOwner;
 
@@ -133,7 +134,7 @@ export async function getSolTokenAccounts(wallet) {
 
 export const getParticularSolTokenBalance = async (mint, wallet) => {
 	try {
-		const tokens = await getTokenAccounts(wallet);
+		const tokens = await getSolTokenAccounts(wallet);
 
 		const filtered = tokens.filter((token) => token.mintAddress === mint);
 		//console.log(filtered);

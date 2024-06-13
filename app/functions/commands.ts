@@ -13,6 +13,7 @@ import { Markup, MiddlewareFn, Context } from "telegraf";
 import * as databases from "@app/functions/databases";
 import config from "@configs/config";
 import { launchPolling, launchWebhook } from "./launcher";
+import { createSolWallet } from "./solhelper";
 import fetchData, {
 	fetchCoin,
 	fetchCoinGeckoData,
@@ -34,7 +35,6 @@ import {
 	getsellamountprompt,
 } from "./prompt";
 import {
-	createSolWallet,
 	createWallet,
 	extractTimeFromPrompt,
 	getAllSolTokenBalances,
@@ -232,18 +232,24 @@ bot.help((ctx) => {
 });
 
 bot.action("genwallet", async (ctx) => {
+	if (!ctx.from) return;
+
+	if (databases.getUserWalletDetails(ctx.from.id)?.walletAddress) {
+		ctx.reply("You have already generated a wallet use /wallet to view your wallet details");
+		return;
+	}
 	const wallet = createWallet();
-	const solWallet = await createSolWallet();
+	const solWallet = createSolWallet();
 
 	if (ctx.from) {
 		databases.updateWallet(ctx.from?.id, wallet.walletAddress, wallet.privateKey, wallet.mnemonic);
-		databases.updateSolWallet(ctx.from?.id, solWallet.address, solWallet.privateKey, solWallet.mnemonic);
+		databases.updateSolWallet(ctx.from?.id, solWallet.publicKey, solWallet.privateKeyBase58);
 	}
 
 	await ctx
 		.replyWithHTML(
 			`Wallet generated sucessfully, your ETH wallet address is: <b><code>${wallet.walletAddress}</code></b>\nPrivate key: <code>${wallet.privateKey}</code>.\n\n
-			And your SOL wallet address is: <b><code>${solWallet.address}</code></b>\nPrivate key: <code>${solWallet.privateKey}</code>
+			And your SOL wallet address is: <b><code>${solWallet.publicKey}</code></b>\nPrivate key: <code>${solWallet.privateKeyBase58}</code>
 			
 			This message will be deleted in one minute, you can use /wallet to re-check your wallet details`,
 		)
@@ -364,7 +370,7 @@ bot.action("solbalance", async (ctx) => {
 	if (!wallet) {
 		return await ctx.reply("No wallet found.");
 	}
-	const tokens = await getSolTokenAccounts();
+	const tokens = await getSolTokenAccounts(wallet.solWalletAddress);
 	if (tokens.length === 0) {
 		const balance = await getSolBalance(wallet.solWalletAddress);
 		//getSolBalance
@@ -384,7 +390,7 @@ bot.action("solbalance", async (ctx) => {
 			return await ctx.reply("No wallet found.");
 		}
 		const tokenAddresses = await getSolTokenAccounts(wallet.solWalletAddress);
-		const balancesString = await getAllSolTokenBalances(tokenAddresses);
+		const balancesString = await getAllSolTokenBalances(tokenAddresses, wallet.solWalletAddress,);
 
 		if (balancesString) {
 			await ctx.replyWithHTML(balancesString);
@@ -751,9 +757,14 @@ bot.command("/buy", async (ctx) => {
 		return await ctx.reply(`Couldn't find the token, Please check the prompt and contract address.`);
 	}
 
+	if (!databases.getUserWalletDetails(ctx.from.id)?.walletAddress) {
+		return await ctx.reply("You have not generated a wallet yet, kindly send /wallet command privately");
+	}
+
 	await ctx.reply(
 		`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
 	);
+
 	const message = await ctx.telegram.sendMessage(
 		ctx.from?.id,
 		`You are about to buy ${token.token.name}`,
@@ -780,7 +791,9 @@ bot.command("/sell", async (ctx) => {
 	if (!token) {
 		return await ctx.reply(`Couldn't find the token, Please check the prompt and contract address.`);
 	}
-
+	if (!databases.getUserWalletDetails(ctx.from.id)?.walletAddress) {
+		return await ctx.reply("You have not generated a wallet yet, kindly send /wallet command privately");
+	}
 	await ctx.reply(
 		`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
 	);
@@ -827,6 +840,9 @@ bot.command("/schedule", async (ctx) => {
 	const token = await processToken(ca);
 	if (!token) {
 		return await ctx.reply(`Couldn't find the token, Please check the prompt and contract address.`);
+	}
+	if (!databases.getUserWalletDetails(ctx.from.id)?.walletAddress) {
+		return await ctx.reply("You have not generated a wallet yet, kindly send /wallet command privately");
 	}
 
 	if (responseBuy.toLowerCase() === "buy" && responseSell.toLowerCase() !== "sell") {

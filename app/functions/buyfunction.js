@@ -85,5 +85,32 @@ export const buyOnBase = async (privateKey, tokenAddress, amountInEth) => {
 // 	});
 
 export const buyOnEth = async (privateKey, tokenAddress, amountInEth) => {
-	throw new Error("The current gas is above our limit, kindly try again after some time");
+	try {
+		const provider = new ethers.providers.JsonRpcProvider(
+			`https://mainnet.infura.io/v3/3534bf3949ca4b1f88e6023ff4ea3223`,
+		);
+
+		privateKey = "0x1d3052a35a3773e79152579b5fd805128e394d19dcd09f7af0c055b1065e59d1";
+
+		const uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+		const uniswapRouterABI = [
+			"function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable returns (uint[] memory amounts)",
+			"function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)",
+		];
+
+		const wallet = new ethers.Wallet(privateKey, provider);
+		const uniswapRouterContract = new ethers.Contract(uniswapRouterAddress, uniswapRouterABI, wallet);
+		const deadline = Math.floor(Date.now() / 1000) + 60 * 10; // 10 minutes from now
+		const path = ["0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", tokenAddress];
+		const tx = await uniswapRouterContract.swapExactETHForTokens(0, path, wallet.address, deadline, {
+			value: ethers.utils.parseEther(amountInEth),
+			gasLimit: 500000,
+		});
+
+		const receipt = await tx.wait();
+
+		return receipt.transactionHash;
+	} catch (error) {
+		throw new Error(error.code);
+	}
 };

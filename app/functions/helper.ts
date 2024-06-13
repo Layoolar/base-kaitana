@@ -95,13 +95,13 @@ export function createWallet() {
 }
 
 // Function to create a new Solana wallet with mnemonic
-function uint8ArrayToBase64(uint8Array: Uint8Array): string {
-	let binaryString = "";
-	uint8Array.forEach((byte) => {
-		binaryString += String.fromCharCode(byte);
-	});
-	return btoa(binaryString);
-}
+// function uint8ArrayToBase64(uint8Array: Uint8Array): string {
+// 	let binaryString = "";
+// 	uint8Array.forEach((byte) => {
+// 		binaryString += String.fromCharCode(byte);
+// 	});
+// 	return btoa(binaryString);
+// }
 
 // Function to create a new Solana wallet with mnemonic
 export async function createSolWallet() {
@@ -119,7 +119,7 @@ export async function createSolWallet() {
 	// Get the public key and private key
 	const publicKey = keypair.publicKey.toBase58();
 	const privateKeyUint8Array = keypair.secretKey;
-	const privateKeyBase64 = uint8ArrayToBase64(privateKeyUint8Array);
+	const privateKeyBase64 = privateKeyUint8Array;
 
 	// Return the wallet object containing the public key, private key (Base64), and mnemonic
 	return {
@@ -225,13 +225,15 @@ export async function getAllTokenBalances(walletAddress: string, tokenAddresses:
 	}
 }
 
-export async function getAllSolTokenBalances(tokenAddresses: { mintAddress: string, tokenBalance: number }[]) {
+export async function getAllSolTokenBalances(
+	tokenAddresses: { mintAddress: string; tokenBalance: number }[],
+	walletAddress: string,
+) {
 	try {
 		let balancesString = "";
 
-		const solBalance= await getSolBalance()
+		const solBalance = await getSolBalance(walletAddress);
 		const currentSolPrice = await getSolPrice();
-
 
 		if (!solBalance) {
 			return;
@@ -250,16 +252,14 @@ export async function getAllSolTokenBalances(tokenAddresses: { mintAddress: stri
 				const tokenPriceSol = tokenPriceUsd / currentSolPrice;
 				totalSol += tokenPriceSol;
 				totalUsd += tokenPriceUsd;
-				balancesString += `${i + 1}. <b>${
-					tokenInfo.token.name
-				}</b>\n\tAmount: <b>${balance.toFixed(2)}</b>\n\tValue: <b>$${tokenPriceUsd.toFixed(2)} / ${tokenPriceSol.toFixed(
-					5,
-				)} SOL</b>\n\n`;
+				balancesString += `${i + 1}. <b>${tokenInfo.token.name}</b>\n\tAmount: <b>${balance.toFixed(
+					2,
+				)}</b>\n\tValue: <b>$${tokenPriceUsd.toFixed(2)} / ${tokenPriceSol.toFixed(5)} SOL</b>\n\n`;
 			}
 		}
-		balancesString += `Balance: ${solBalance.toFixed(5)} ETH\nNet Worth: ${totalSol.toFixed(
+		balancesString += `Balance: ${solBalance.toFixed(5)} SOL\nNet Worth: ${totalSol.toFixed(
 			5,
-		)} Eth / $${totalUsd.toFixed(2)}\n`;
+		)} SOL / $${totalUsd.toFixed(2)}\n`;
 
 		return balancesString;
 	} catch (error) {

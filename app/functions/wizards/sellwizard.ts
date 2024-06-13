@@ -189,7 +189,7 @@ const executeSell = async (
 		//userBalance = res?.base;
 	} else if (tokenData.chain === "solana") {
 		ctx.scene.session.sellStore.currency = "SOL";
-		const solbalance = await getParticularSolTokenBalance(sellAddress, wallet?.walletAddress);
+		const solbalance = await getParticularSolTokenBalance(sellAddress, wallet?.solWalletAddress);
 		if (!solbalance || solbalance.length === 0) {
 			await ctx.reply("Couldn't get balance, please try again");
 
@@ -223,38 +223,46 @@ const executeSell = async (
 		return ctx.scene.leave();
 	}
 
+	let hash;
 	if (ctx.scene.session.sellStore.chain?.toLowerCase() === "ethereum") {
 		try {
-			await sellOnEth(wallet?.privateKey, token.address, amountintokens.toFixed(2).toString(), token.decimals);
-		} catch (error: any) {
-			await delay(5000);
-			ctx.reply(`An Error occured please try again later\nError Message: ${error.message}`);
+			hash = await sellOnEth(wallet?.privateKey, token.address, amountintokens.toFixed(2).toString());
 
+			if (!hash) throw new Error("Transaction failed/expired");
+			await ctx.replyWithHTML(
+				`You sold ${token?.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://etherscan.io/tx/${hash}">${hash}</a>`,
+			);
+			//ctx.scene.leave();
+			return hash;
+		} catch (error: any) {
+			ctx.reply(`An Error occured please try again later\nError Message: ${error.message}`);
 			return ctx.scene.leave();
 		}
 	}
 
-	let hash;
 	if (ctx.scene.session.sellStore.chain?.toLowerCase() === "solana") {
 		try {
 			hash = await sellTokensWithSolana(
-				wallet?.privateKey,
+				wallet?.solPrivateKey,
 				sellAddress,
 				amountintokens.toFixed(15),
 				token.decimals,
 			);
 
+			if (!hash) throw new Error("Transaction failed/expired");
+
 			await ctx.replyWithHTML(
 				`You sold ${token.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://solscan.io/tx/${hash}">${hash}</a>`,
 			);
 
-			await sendMessageToAllGroups(
-				`Successful transaction made through @nova_trader_bot.\n Transaction hash:<a href= "https://solscan.io/tx/${hash}">${hash}</a>`,
-			);
+			// await sendMessageToAllGroups(
+			// 	`Successful transaction made through @nova_trader_bot.\n Transaction hash:<a href= "https://solscan.io/tx/${hash}">${hash}</a>`,
+			// );
 
 			// if (hash) {
 			// 	addUserHolding(ctx.from?.id, buyAddress, "solana");
 			// }
+			//ctx.scene.leave();
 			return hash;
 		} catch (error: any) {
 			//await delay(5000);
@@ -266,28 +274,22 @@ const executeSell = async (
 
 	try {
 		hash = await sell(wallet?.privateKey, token.address, amountintokens.toFixed(2).toString(), token.decimals);
+		if (!hash) throw new Error("Transaction failed/expired");
 	} catch (error: any) {
-		if (hash) {
-			ctx.reply(
-				`An error occurred. Please try again later.\n Transaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
-			);
-		} else {
-			ctx.reply(`An Error occured please try again later\n
+		ctx.reply(`An Error occured please try again later\n
 		Error Message: ${error.message}`);
-		}
-
 		return ctx.scene.leave();
 	}
 
 	await ctx.replyWithHTML(
-		`You sold ${token?.name} \n<i>Amount: <b>${amount} % of your tokens</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
+		`You sold ${token?.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
 	);
 
 	const balance = await getTokenBalance(wallet?.walletAddress, sellAddress);
 	if (balance <= 0 && hash) removeUserHolding(ctx.from?.id, sellAddress, "base");
-	await sendMessageToAllGroups(
-		`Succssful transaction made throught @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
-	);
-	ctx.scene.leave();
+	// await sendMessageToAllGroups(
+	// 	`Succssful transaction made throught @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
+	// );
+	//ctx.scene.leave();
 	return hash;
 };

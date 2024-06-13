@@ -160,7 +160,6 @@ async function doSwap(swapTransaction, wallet) {
 		const hash = response.transaction.signatures[0];
 		return { status: true, hash };
 	} else {
-		console.error("Transaction failed or expired.");
 		return { status: false };
 	}
 }
@@ -169,23 +168,29 @@ export async function buyTokensWithSolana(privateKeys, tokenAddress, amount) {
 	try {
 		const solValue = amount * 1000000;
 		const wallet = await getWallet(privateKeys);
-		console.log(wallet);
+		//	console.log(wallet);
 		const quoteResponse = await getQuote(solanaAddress, tokenAddress, solValue);
 		const serializedTx = await getSerializedTx(quoteResponse, wallet);
 		const txStatus = await doSwap(serializedTx, wallet);
+
+		if (txStatus.status === false) {
+			throw new Error("Transaction expired, network is currently congested");
+		}
 		return txStatus.hash;
 	} catch (error) {
-		throw new Error(error.code);
+		throw new Error(error.message);
 	}
 }
 
 export async function sellTokensWithSolana(privateKeys, tokenAddress, amount, decimal) {
 	try {
-		const solValue = amount * decimal;
+		const solValue = amount * Math.pow(10, decimal);
 		const wallet = await getWallet(privateKeys);
-		console.log(wallet);
-		const quoteResponse = await getQuote(tokenAddress, solanaAddress, solValue);
+		//console.log(wallet.payer.publicKey, wallet.payer.secretKey);
+		const quoteResponse = await getQuote(tokenAddress, solanaAddress, solValue.toFixed(0));
+
 		const serializedTx = await getSerializedTx(quoteResponse, wallet);
+
 		const txStatus = await doSwap(serializedTx, wallet);
 		return txStatus.hash;
 	} catch (error) {

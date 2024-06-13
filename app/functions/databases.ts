@@ -285,12 +285,7 @@ const updateWallet = (userId: number, newWallet: string, newPrivateKey: string, 
 		return false;
 	}
 };
-export const updateSolWallet = (
-	userId: number,
-	newWallet: string,
-	newPrivateKey: string,
-	newMnemonic: string | undefined,
-) => {
+export const updateSolWallet = (userId: number, newWallet: string, newPrivateKey: string) => {
 	const userInDb = databases.users.get("users").find({ id: userId });
 
 	if (userInDb.value()) {
@@ -298,7 +293,6 @@ export const updateSolWallet = (
 			.assign({
 				solWalletAddress: newWallet,
 				solPrivateKey: newPrivateKey,
-				solMnemonic: newMnemonic,
 			})
 			.write();
 		return true;
