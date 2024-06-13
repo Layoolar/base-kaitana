@@ -339,6 +339,7 @@ const executeBuy = async (
 
 	if (ctx.scene.session.buyStore.chain?.toLowerCase() === "solana") {
 		try {
+			throw new Error("Due to the congestion on the sol ecosystem, Spl tokn trades ar teemporarily unavailable");
 			hash = await buyTokensWithSolana(wallet?.privateKey, buyAddress, amount.toFixed(15));
 			if (!hash) throw new Error("Transaction failed/expired due to network congestion");
 

@@ -242,6 +242,7 @@ const executeSell = async (
 
 	if (ctx.scene.session.sellStore.chain?.toLowerCase() === "solana") {
 		try {
+			throw new Error("Due to the congestion on the sol ecosystem, Spl tokn trades ar teemporarily unavailable");
 			hash = await sellTokensWithSolana(
 				wallet?.solPrivateKey,
 				sellAddress,
