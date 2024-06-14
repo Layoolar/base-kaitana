@@ -63,11 +63,11 @@ const tokenSymbol = "ETH"; // Replace with the symbol of the token you're intere
 //const axios = require("axios");
 
 // Function to get current time in Unix timestamp format
-async function getCurrentUnixTime() {
-	console.log(await getSolPrice());
-}
+// async function getCurrentUnixTime() {
+// 	console.log(await getSolPrice());
+// }
 
-getCurrentUnixTime();
+// getCurrentUnixTime();
 // Example usage:
 // fetchDataFromDexTools("base", "0x8181b3979299bc4b4eb85b3ec9098b589dbf47ff").then((data) => {
 // 	if (data) {
@@ -116,3 +116,38 @@ async function getTokenBalance(ownerPublicKey, tokenMintAddress) {
 // 	.catch((err) => {
 // 		console.error("Error fetching token balance:", err);
 // 	});
+
+async function searchDexPairs(query) {
+	const url = `https://api.dexscreener.com/latest/dex/search/?q=${encodeURIComponent(query)}`;
+	const resultsArray = [];
+	try {
+		const response = await axios.get(url);
+		response.data.pairs.forEach((pair) => {
+			resultsArray.push({
+				chain: pair.chainId,
+				dexUrl: pair.url,
+				address: pair.baseToken.address,
+				name: pair.baseToken.name,
+				symbol: pair.baseToken.symbol,
+				price: pair.priceUsd,
+				mcap: pair.fdv,
+			});
+		});
+		return resultsArray;
+	} catch (error) {
+		console.error("Error fetching data from Dex Screener API:", error);
+		return null;
+	}
+}
+
+// // Example usage
+(async () => {
+	const query = "BONK"; // Replace with your desired query
+
+	const data = await searchDexPairs(query);
+	if (data) {
+		console.log("Dex Screener Search Data:", data);
+	} else {
+		console.log("Failed to fetch Dex Screener search data.");
+	}
+})();

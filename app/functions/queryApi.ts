@@ -34,7 +34,7 @@ export const queryAi = async (text: string): Promise<string> => {
 		});
 	return aiReply;
 };
-const openai = new OpenAI({
+export const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY, // This is the default and can be omitted
 });
 

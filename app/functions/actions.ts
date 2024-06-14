@@ -2,7 +2,9 @@ import { bot } from "@app/functions/wizards";
 import { getGreeting, getJoke } from "./commands";
 import fetchData, { fetchCoin } from "./fetchCoins";
 import { Markup } from "telegraf";
-import { queryAi } from "./queryApi";
+import { openai, queryAi } from "./queryApi";
+import { deleteFile, downloadFile, transcribeAudio } from "./helper";
+import { getTrancribedAudioPrompt } from "./prompt";
 
 bot.action("send_token", async (ctx) => {
 	return await ctx.scene.enter("transaction-wizard");
@@ -156,5 +158,32 @@ bot.action("sol", async (ctx) => {
 // 		return ctx.reply(joke);
 // 	}
 // });
+
+//top 4 without ca
+//only ticker
+//regex to remove - from text to speech then send to dexscreener and return as array without ca duplication
+//button for top 3 get summary , button contains name mcap
+//summary has a buy button under
+//homeypot data should be appended under summary check tg risk level,risk ishoneypot,flags[];
+
+
+bot.on("voice",async (ctx) => {
+	const voice = ctx.message.voice;
+	if(	voice.duration>10){
+		return ctx.reply("Maximum duration is 10 seconds");
+	}
+
+	try {
+		const filePath = await downloadFile(voice.file_id);
+		const transcription = await transcribeAudio(filePath);
+	
+		ctx.reply(`${transcription}`);
+		//const aiResponse=await queryAi( getTrancribedAudioPrompt( transcription))
+
+		deleteFile(filePath);
+	} catch (error) {
+		return ctx.reply("Failed to transcribe audio.");
+	}
+});
 
 export { bot };

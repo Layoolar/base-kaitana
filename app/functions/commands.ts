@@ -19,6 +19,7 @@ import fetchData, {
 	fetchCoinGeckoData,
 	fetchDxToolsPairData,
 	formatCoinsMessage,
+	getDexPairDataWithAddress,
 	sendAllChainData,
 } from "./fetchCoins";
 import { v4 as uuidv4 } from "uuid";
@@ -390,7 +391,7 @@ bot.action("solbalance", async (ctx) => {
 			return await ctx.reply("No wallet found.");
 		}
 		const tokenAddresses = await getSolTokenAccounts(wallet.solWalletAddress);
-		const balancesString = await getAllSolTokenBalances(tokenAddresses, wallet.solWalletAddress,);
+		const balancesString = await getAllSolTokenBalances(tokenAddresses, wallet.solWalletAddress);
 
 		if (balancesString) {
 			await ctx.replyWithHTML(balancesString);
@@ -505,14 +506,13 @@ export const neww = async () => {
 
 			//	console.log(selectedCoin);
 
-			// const data = await fetchDxToolsPairData(selectedCoin.address, res.chain);
+			const data = await getDexPairDataWithAddress(coin.address);
+
 			// //console.log(data);
-			// if (!data) return ctx.reply("An error occurred please try again");
-			// const newData = {
-			// 	...data,
-			// 	mcap: data.fdv,
-			// };
+			if (!data) return ctx.reply("An error occurred please try again");
+
 			// console.log(coin);
+
 			await ctx.replyWithHTML(
 				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${coin.name}</i>\n<b>Token Address: </b> <i>${coin.address}</i>`,
 			);
@@ -520,8 +520,10 @@ export const neww = async () => {
 				`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify(
 					{
 						...coin,
+						mcap: data[0].mcap,
 					},
-				)}. Don't make mention that you are summarizing a given data in your response. Don't say things like 'According to the data provided'. Send the summary back in few short paragraphs. Only return the summary and nothing else. Also wrap important values with HTML <b> bold tags`,
+				)}. Don't make mention that you are summarizing a given data in your response. Don't say things like 'According to the data provided'. Send the summary back in few short paragraphs. Only return the summary and nothing else. Also wrap important values with HTML <b> bold tags,
+				make the numbers easy for humans to read with commas and add a lot of emojis to your summary to make it aesthetically pleasing, for example add 💰 to price, 💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath, 📈 to % increase ,📉 to % decrease`,
 			);
 
 			return await ctx.replyWithHTML(response);

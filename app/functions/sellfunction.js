@@ -21,8 +21,12 @@ export const sell = async (privateKey, tokenAddress, amountInTokens, decimal) =>
 			"function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline) external returns (uint[] memory amounts)",
 			"function swapExactETHForTokensSupportingFeeOnTransferTokens(uint amountOutMin, address[] calldata path, address to, uint deadline) external payable",
 		];
+		const tokenABI = [
+			"function approve(address spender, uint256 amount) external returns (bool)",
+			"function allowance(address owner, address spender) external view returns (uint256)",
+		];
 
-		const tokenABI = ["function approve(address spender, uint256 amount) external returns (bool)"];
+		//const tokenABI = ["function approve(address spender, uint256 amount) external returns (bool)"];
 		//const tokenAddress = "0x24f303e08227cb3bc8edd607a2f639b86423d5bd";
 
 		const tokenContract = new ethers.Contract(tokenAddress, tokenABI, wallet);
@@ -32,13 +36,20 @@ export const sell = async (privateKey, tokenAddress, amountInTokens, decimal) =>
 		const path = [tokenAddress, "0x4200000000000000000000000000000000000006"];
 		//const path = [ethers.constants.AddressZero, tokenAddress]; // Trading ETH for token
 
+		const currentAllowance = await tokenContract.allowance(wallet.address, uniswapRouterAddress);
+		if (currentAllowance.lt(amountInTokens)) {
+			// Approve Uniswap Router to spend tokens on behalf of the wallet
+			const approvalTx = await tokenContract.approve(
+				uniswapRouterAddress,
+				amountInTokens,
+				{ gasLimit: 50000 }, // Adjust gas limit accordingly
+			);
+			await approvalTx.wait();
+			console.log("Approved");
+		} else {
+			console.log("Already approved");
+		}
 		// Approve Uniswap Router to spend tokens on behalf of the wallet
-		const approvalTx = await tokenContract.approve(
-			uniswapRouterAddress,
-			ethers.utils.parseUnits(amountInTokens, decimal),
-			{ gasLimit: 50000 }, // Adjust gas limit accordingly
-		);
-		await approvalTx.wait();
 
 		const tx = await uniswapRouterContract.swapExactTokensForETH(
 			ethers.utils.parseUnits(amountInTokens, decimal),

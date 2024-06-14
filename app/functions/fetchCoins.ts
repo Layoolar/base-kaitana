@@ -2,6 +2,17 @@ import { Context } from "telegraf";
 import { CoinDataType } from "./commands";
 import axios, { AxiosResponse } from "axios";
 
+interface DexScreenerPair {
+	chain: string;
+	address: string;
+	dexUrl: string;
+	name: string;
+	symbol: string;
+	price: string;
+	mcap: number;
+	liquidity: number;
+}
+
 const fetchData = async (network: string, bet: "bet" | null): Promise<{ data: CoinDataType[] }> => {
 	const url = `https://multichain-api.birdeye.so/${network}/trending/token?u=da39a3ee5e6b4b0d3255bfef95601890afd80709`;
 
@@ -136,7 +147,55 @@ export const fetchDxToolsPairData = async (address: string, chain: string | unde
 		return null;
 	}
 };
+export async function getDexPairDataWithAddress(pairAddresses: string) {
+	const url = `https://api.dexscreener.com/latest/dex/tokens/${pairAddresses}`;
+	const resultsArray: DexScreenerPair[] = [];
 
+	try {
+		const response = await axios.get(url);
+		response.data.pairs.forEach((pair: any) => {
+			resultsArray.push({
+				chain: pair.chainId,
+				dexUrl: pair.url,
+				address: pair.baseToken.address,
+				name: pair.baseToken.name,
+				symbol: pair.baseToken.symbol,
+				price: pair.priceUsd,
+				mcap: pair.fdv,
+				liquidity: pair.liquidity,
+			});
+		});
+		//	return response.data.pairs[0];
+		return resultsArray;
+	} catch (error) {
+		console.error("Error fetching data from Dex Screener API:", error);
+		return null;
+	}
+}
+
+export async function searchDexPairs(query: string) {
+	const url = `https://api.dexscreener.com/latest/dex/search/?q=${encodeURIComponent(query)}`;
+	const resultsArray: DexScreenerPair[] = [];
+	try {
+		const response = await axios.get(url);
+		response.data.pairs.forEach((pair: any) => {
+			resultsArray.push({
+				chain: pair.chainId,
+				dexUrl: pair.url,
+				address: pair.baseToken.address,
+				name: pair.baseToken.name,
+				symbol: pair.baseToken.symbol,
+				price: pair.priceUsd,
+				mcap: pair.fdv,
+				liquidity: pair.liquidity,
+			});
+		});
+		return resultsArray;
+	} catch (error) {
+		console.error("Error fetching data from Dex Screener API:", error);
+		return null;
+	}
+}
 // Example usage:
 
 export { formatCoinsMessage, sendAllChainData, fetchCoin };

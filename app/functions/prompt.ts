@@ -200,3 +200,43 @@ Remember to strictly return just either the amount, or null.
 
 Below is the prompt
 ${prompt}`;
+export const getTrancribedAudioPrompt = (
+	prompt: string,
+) => ` Check the prompt below. I want you to find out if there is a cryptocurrency ticker in it, return either the ticker or null.
+
+Examples:
+Prompt 1: "call btc"
+
+This prompt should return strictly "btc"
+
+Reason: it has a percentage
+
+Example 2: "sell 10 percent"?
+This prompt should strictly return "10"
+
+Reason: it has a percentage.
+
+Example 3: "sell this token for me"
+This prompt should strictly return "null"
+
+Reason: there is no percentage present.
+
+Example 4: "i want to sell 30 dollars worth"
+this prompt should return "null"
+
+Reason: it has no percentage present"
+
+Example 5: "i want to sell 101% worth"
+this prompt should return "null"
+
+Reason: the percentage is above 100"
+
+Example 6: "i want to sell 150% worth"
+this prompt should return "null"
+
+Reason: the percentage is above 100"
+
+Remember to strictly return just either the amount, or null. 
+
+Below is the prompt
+${prompt}`;

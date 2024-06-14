@@ -3,11 +3,14 @@ import { TokenData } from "./timePriceData";
 import { ethers } from "ethers";
 import axios from "axios";
 import { getEtherBalance, getTokenBalance } from "./checkBalance";
-
+import bot from "./telegraf";
+import fs from "fs";
+import path from "path";
 import solanaWeb3 from "@solana/web3.js";
 import * as bip39 from "bip39";
 import { derivePath } from "ed25519-hd-key";
 import { getSolBalance } from "./checksolbalance";
+import { openai } from "./queryApi";
 
 export function isEmpty(obj: any) {
 	return Object.keys(obj).length === 0;
@@ -279,4 +282,52 @@ export const addMillisecondsToDate = (milliseconds: number) => {
 	const targetDate = new Date(targetTime);
 
 	return targetDate;
+};
+
+export const downloadFile = async (fileId: string): Promise<string> => {
+	const file = await bot.telegram.getFileLink(fileId);
+	//const url = `https://api.telegram.org/file/bot${bot.token}/${file.file_path}`;
+	const url = file.href;
+
+	const response = await axios({
+		url,
+		method: "GET",
+		responseType: "stream",
+	});
+
+	const filePath = path.join(__dirname, "voice_note.ogg");
+	const writer = fs.createWriteStream(filePath);
+
+	response.data.pipe(writer);
+
+	return new Promise((resolve, reject) => {
+		writer.on("finish", () => resolve(filePath));
+		writer.on("error", reject);
+	});
+};
+
+export const deleteFile = (filePath: string): void => {
+	fs.unlink(filePath, (err) => {
+		if (err) {
+			//console.error("Error deleting file:", err);
+		} else {
+			//console.log("File deleted successfully");
+		}
+	});
+};
+
+export const transcribeAudio = async (filePath: string): Promise<string> => {
+	try {
+		const transcription = await openai.audio.transcriptions.create({
+			// @ts-ignore
+			file: fs.createReadStream(filePath),
+			model: "whisper-1",
+			response_format: "text",
+		});
+		// @ts-ignore
+		return transcription;
+	} catch (error) {
+		//		console.error("Error:", error);
+		throw error;
+	}
 };
