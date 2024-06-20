@@ -2,7 +2,7 @@ import { Composer, Markup, Scenes } from "telegraf";
 import { WizardContext } from "@app/functions/telegraf";
 import { getUserWalletDetails } from "../databases";
 import { getEtherBalance } from "../checkBalance";
-import { getEthPrice, processToken } from "../helper";
+import { getEthPrice } from "../helper";
 import { queryAi } from "../queryApi";
 import { getCaPrompt, getamountprompt } from "../prompt";
 import { sendEth } from "../sendEth";

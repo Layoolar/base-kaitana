@@ -44,6 +44,7 @@ import {
 	getSolPrice,
 	isEmpty,
 	processToken,
+	translate,
 } from "./helper";
 import { getEtherBalance } from "./checkBalance";
 import { getSolBalance, getSolTokenAccounts } from "./checksolbalance";
@@ -152,6 +153,18 @@ const isValidWallet = (address: string): boolean => {
 };
 
 export const checkWallet: MiddlewareFn<Context> = async (ctx: Context, next: () => Promise<void>) => {
+	if (!ctx.from) return;
+
+	const userLanguage = databases.getUserLanguage(ctx.from?.id);
+
+	let translations = {
+		english: "You already have a wallet",
+		french: "Vous avez déjà un portefeuille",
+		spanish: "Ya tienes una cartera",
+		arabic: "لديك بالفعل محفظة",
+		chinese: "你已经有一个钱包",
+	};
+
 	if (!ctx.from) {
 		return;
 	}
@@ -160,25 +173,43 @@ export const checkWallet: MiddlewareFn<Context> = async (ctx: Context, next: () 
 		return next();
 	}
 
-	return await ctx.reply("You already have a wallet");
+	return await ctx.reply(translations[userLanguage]);
 };
 export const checkUserExistence: MiddlewareFn<Context> = async (ctx: Context, next: () => Promise<void>) => {
+	let translations = {
+		english: 'You are not yet registered send "/start" to the bot privately to get started.',
+		french: 'Vous n\'êtes pas encore enregistré, envoyez "/start" au bot en privé pour commencer.',
+		spanish: 'Todavía no estás registrado, envía "/start" al bot en privado para empezar.',
+		arabic: 'لم تقم بالتسجيل بعد، أرسل "/start" إلى الروبوت بشكل خاص للبدء.',
+		chinese: '您尚未注册，请私密发送"/start"给机器人以开始。',
+	};
+
 	if (!ctx.from) {
 		return;
 	}
 
 	const user = databases.checkUserExists(ctx.from?.id);
 	if (!user) {
-		ctx.reply(`You are not yet registered send "/start" to the bot privately to get started.`);
+		ctx.reply(translations[databases.getUserLanguage(ctx.from.id)]);
 		return;
 	}
 	await next();
 };
 const checkGroup: MiddlewareFn<Context> = (ctx, next) => {
+	if (!ctx.from) {
+		return;
+	}
+	let translations = {
+		english: "This command can only be sent as a direct message",
+		french: "Cette commande ne peut être envoyée que sous forme de message direct",
+		spanish: "Este comando solo se puede enviar como mensaje directo",
+		arabic: "هذا الأمر يمكن إرساله فقط كرسالة مباشرة",
+		chinese: "此命令只能作为直接消息发送",
+	};
 	const chatType = ctx.chat?.type;
 
 	if (chatType != "private") {
-		ctx.reply("This command can only be sent as a direct message");
+		ctx.reply(translations[databases.getUserLanguage(ctx.from?.id)]);
 	} else {
 		next();
 	}
@@ -224,19 +255,42 @@ const commands = {
 	"/wallet": "This command can be used to  manange your wallet.\nUsage format: /wallet",
 };
 
-bot.help((ctx) => {
-	const commandsList = Object.entries(commands)
-		.map(([command, description]) => `${command}: ${description}`)
-		.join("\n\n");
+bot.help(async (ctx) => {
+	let translations = {
+		english: "Here are some available commands:",
+		french: "Voici quelques commandes disponibles :",
+		spanish: "Aquí tienes algunos comandos disponibles:",
+		arabic: "إليك بعض الأوامر المتاحة:",
+		chinese: "以下是一些可用的命令：",
+	};
+	const userLanguage = databases.getUserLanguage(ctx.from.id);
 
-	ctx.replyWithHTML(`Here are some available commands:\n\n${commandsList}`);
+	const commandsList = await Promise.all(
+		Object.entries(commands).map(async ([command, description]) => {
+			const translatedDescription =
+				userLanguage === "english" ? description : await translate(description, userLanguage);
+			return `${command}: ${translatedDescription}`;
+		}),
+	).then((commandsWithTranslations) => commandsWithTranslations.join("\n\n"));
+
+	ctx.replyWithHTML(`${translations[userLanguage]}\n\n${commandsList}`);
 });
 
 bot.action("genwallet", async (ctx) => {
+	let translations = {
+		english: "You have already generated a wallet. Use /wallet to view your wallet details.",
+		french: "Vous avez déjà généré un portefeuille. Utilisez /wallet pour afficher les détails de votre portefeuille.",
+		spanish: "Ya has generado un monedero. Usa /wallet para ver los detalles de tu monedero.",
+		arabic: "لقد قمت بتوليد محفظة بالفعل. استخدم /wallet لعرض تفاصيل محفظتك.",
+		chinese: "您已经生成了一个钱包。使用 /wallet 查看您的钱包详情。",
+	};
+
 	if (!ctx.from) return;
 
+	const userLanguage = databases.getUserLanguage(ctx.from.id);
+
 	if (databases.getUserWalletDetails(ctx.from.id)?.walletAddress) {
-		ctx.reply("You have already generated a wallet use /wallet to view your wallet details");
+		ctx.reply(translations[userLanguage]);
 		return;
 	}
 	const wallet = createWallet();
@@ -247,13 +301,15 @@ bot.action("genwallet", async (ctx) => {
 		databases.updateSolWallet(ctx.from?.id, solWallet.publicKey, solWallet.privateKeyBase58);
 	}
 
+	let translations2 = {
+		english: `Wallet generated successfully, your ETH wallet address is: <b><code>${wallet.walletAddress}</code></b>\nPrivate key: <code>${wallet.privateKey}</code>.\n\nAnd your SOL wallet address is: <b><code>${solWallet.publicKey}</code></b>\nPrivate key: <code>${solWallet.privateKeyBase58}</code> \n\nWallet Address and private keys are above, click on them to copy. This message will be deleted in one minute. You can use /wallet to re-check your wallet details.`,
+		french: `Portefeuille généré avec succès, votre adresse de portefeuille ETH est : <b><code>${wallet.walletAddress}</code></b>\nClé privée : <code>${wallet.privateKey}</code>.\n\nEt votre adresse de portefeuille SOL est : <b><code>${solWallet.publicKey}</code></b>\nClé privée : <code>${solWallet.privateKeyBase58}</code> \n\nLes adresses de portefeuille et les clés privées se trouvent ci-dessus, cliquez dessus pour les copier. Ce message sera supprimé dans une minute. Vous pouvez utiliser /wallet pour vérifier à nouveau les détails de votre portefeuille.`,
+		spanish: `Monedero generado exitosamente, tu dirección de monedero ETH es: <b><code>${wallet.walletAddress}</code></b>\nClave privada: <code>${wallet.privateKey}</code>.\n\nY tu dirección de monedero SOL es: <b><code>${solWallet.publicKey}</code></b>\nClave privada: <code>${solWallet.privateKeyBase58}</code> \n\nLas direcciones de monedero y las claves privadas están arriba, haz clic en ellas para copiarlas. Este mensaje será eliminado en un minuto. Puedes usar /wallet para volver a verificar los detalles de tu monedero.`,
+		arabic: `تم إنشاء المحفظة بنجاح، عنوان محفظتك ETH هو: <b><code>${wallet.walletAddress}</code></b>\nالمفتاح الخاص: <code>${wallet.privateKey}</code>.\n\nوعنوان محفظتك SOL هو: <b><code>${solWallet.publicKey}</code></b>\nالمفتاح الخاص: <code>${solWallet.privateKeyBase58}</code> \n\nعناوين المحافظ والمفاتيح الخاصة أعلاه، انقر فوقها لنسخها. سيتم حذف هذه الرسالة في دقيقة واحدة. يمكنك استخدام /wallet لإعادة التحقق من تفاصيل محفظتك.`,
+		chinese: `钱包生成成功，您的ETH钱包地址为：<b><code>${wallet.walletAddress}</code></b>\n私钥：<code>${wallet.privateKey}</code>。\n\n您的SOL钱包地址为：<b><code>${solWallet.publicKey}</code></b>\n私钥：<code>${solWallet.privateKeyBase58}</code> \n\n上方为钱包地址和私钥，请点击以复制。此消息将在一分钟内被删除。您可以使用 /wallet 重新检查您的钱包详情。`,
+	};
 	await ctx
-		.replyWithHTML(
-			`Wallet generated sucessfully, your ETH wallet address is: <b><code>${wallet.walletAddress}</code></b>\nPrivate key: <code>${wallet.privateKey}</code>.\n\n
-			And your SOL wallet address is: <b><code>${solWallet.publicKey}</code></b>\nPrivate key: <code>${solWallet.privateKeyBase58}</code>
-			
-			This message will be deleted in one minute, you can use /wallet to re-check your wallet details`,
-		)
+		.replyWithHTML(translations2[userLanguage])
 		.then((message) => {
 			const messageId = message.message_id;
 
@@ -276,12 +332,15 @@ bot.action("exportkey", async (ctx) => {
 	}
 
 	const walletDetails = databases.getUserWalletDetails(ctx.from.id);
-
+	let translations = {
+		english: `The private key for your ETH wallet is <b><code>${walletDetails?.privateKey}</code></b>\n\nThe private key for your Sol wallet is <b><code>${walletDetails?.solPrivateKey}</code></b>\n\nThis message will be deleted in one minute.`,
+		french: `La clé privée de votre portefeuille ETH est <b><code>${walletDetails?.privateKey}</code></b>\n\nLa clé privée de votre portefeuille Sol est <b><code>${walletDetails?.solPrivateKey}</code></b>\n\nCe message sera supprimé dans une minute.`,
+		spanish: `La clave privada de tu monedero ETH es <b><code>${walletDetails?.privateKey}</code></b>\n\nLa clave privada de tu monedero Sol es <b><code>${walletDetails?.solPrivateKey}</code></b>\n\nEste mensaje será eliminado en un minuto.`,
+		arabic: `المفتاح الخاص لمحفظتك ETH هو <b><code>${walletDetails?.privateKey}</code></b>\n\nالمفتاح الخاص لمحفظتك Sol هو <b><code>${walletDetails?.solPrivateKey}</code></b>\n\nسيتم حذف هذه الرسالة في دقيقة واحدة.`,
+		chinese: `您的ETH钱包的私钥为 <b><code>${walletDetails?.privateKey}</code></b>\n\n您的Sol钱包的私钥为 <b><code>${walletDetails?.solPrivateKey}</code></b>\n\n此消息将在一分钟内被删除。`,
+	};
 	await ctx
-		.replyWithHTML(
-			`The private key for  your ETH wallet is <b><code>${walletDetails?.privateKey}</code></b>\n\n
-			The private key for  your Sol wallet is <b><code>${walletDetails?.solPrivateKey}</code></b>\n\n This message will be deleted in one minute  `,
-		)
+		.replyWithHTML(translations[databases.getUserLanguage(ctx.from.id)])
 		.then((message) => {
 			const messageId = message.message_id;
 
@@ -304,18 +363,32 @@ bot.action("walletaddress", async (ctx) => {
 	}
 
 	const walletDetails = databases.getUserWalletDetails(ctx.from.id);
-	// console.log(walletDetails);
-	await ctx.replyWithHTML(
-		`Your ETH wallet address is <b><code>${walletDetails?.walletAddress}</code></b>\n\n
-		 Your SOL wallet address is <b><code>${walletDetails?.solWalletAddress}</code></b>`,
-	);
+	let translations = {
+		english: `Your ETH wallet address is <b><code>${walletDetails?.walletAddress}</code></b>\n\nYour SOL wallet address is <b><code>${walletDetails?.solWalletAddress}</code></b>`,
+		french: `Votre adresse de portefeuille ETH est <b><code>${walletDetails?.walletAddress}</code></b>\n\nVotre adresse de portefeuille SOL est <b><code>${walletDetails?.solWalletAddress}</code></b>`,
+		spanish: `Tu dirección de monedero ETH es <b><code>${walletDetails?.walletAddress}</code></b>\n\nTu dirección de monedero SOL es <b><code>${walletDetails?.solWalletAddress}</code></b>`,
+		arabic: `عنوان محفظتك ETH هو <b><code>${walletDetails?.walletAddress}</code></b>\n\nعنوان محفظتك SOL هو <b><code>${walletDetails?.solWalletAddress}</code></b>`,
+		chinese: `您的ETH钱包地址为 <b><code>${walletDetails?.walletAddress}</code></b>\n\n您的SOL钱包地址为 <b><code>${walletDetails?.solWalletAddress}</code></b>`,
+	};
+	/// console.log(walletDetails);
+	await ctx.replyWithHTML(translations[databases.getUserLanguage(ctx.from.id)]);
 });
 
 bot.action("checkbalance", checkUserExistence, async (ctx) => {
+	if (!ctx.from) {
+		return;
+	}
+	let translations = {
+		english: "What balance do you want to check?",
+		french: "Quel solde voulez-vous vérifier?",
+		spanish: "¿Qué saldo quieres verificar?",
+		arabic: "ما الرصيد الذي ترغب في التحقق منه؟",
+		chinese: "您想检查什么余额？",
+	};
 	await ctx.replyWithHTML(
-		`${getGreeting()} ${
-			ctx.from?.username || ctx.from?.first_name || ctx.from?.last_name
-		}, What balance do you want to check`,
+		`${getGreeting()} ${ctx.from?.username || ctx.from?.first_name || ctx.from?.last_name}, ${
+			translations[databases.getUserLanguage(ctx.from.id)]
+		}`,
 		Markup.inlineKeyboard([
 			[Markup.button.callback("Base balance", "basebalance")],
 			[Markup.button.callback("ETH balance", "ethbalance")],
@@ -325,11 +398,34 @@ bot.action("checkbalance", checkUserExistence, async (ctx) => {
 });
 
 bot.action("basebalance", async (ctx) => {
-	await ctx.reply("Fetching balances...");
+	let translations = {
+		english: "Fetching balances...",
+		french: "Récupération des soldes...",
+		spanish: "Obteniendo saldos...",
+		arabic: "جلب الأرصدة...",
+		chinese: "正在获取余额...",
+	};
+
+	let translations2 = {
+		english: "An error occurred, please try again later.",
+		french: "Une erreur s'est produite, veuillez réessayer plus tard.",
+		spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
+		arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
+		chinese: "发生错误，请稍后再试。",
+	};
+	let translations3 = {
+		english: "You have no other tokens",
+		french: "Vous n'avez pas d'autres jetons",
+		spanish: "No tienes otros tokens",
+		arabic: "ليس لديك رموز أخرى",
+		chinese: "您没有其他代币",
+	};
+
 	const user_id = ctx.from?.id;
 	if (!user_id) {
 		return;
 	}
+	await ctx.reply(translations[databases.getUserLanguage(user_id)]);
 	const wallet = databases.getUserWalletDetails(user_id);
 
 	if (!wallet) {
@@ -341,11 +437,11 @@ bot.action("basebalance", async (ctx) => {
 		const currentEthPrice = await getEthPrice();
 
 		if (!balance || !currentEthPrice) {
-			return ctx.reply("An error occured, please try again later");
+			return ctx.reply(translations2[databases.getUserLanguage(user_id)]);
 		}
 		const usdNetworth = parseFloat(balance.base) * currentEthPrice;
 		return ctx.replyWithHTML(
-			`You have no other tokens\nBalance: <b>${parseFloat(balance.base).toFixed(
+			`${translations3[databases.getUserLanguage(user_id)]}\nBalance: <b>${parseFloat(balance.base).toFixed(
 				5,
 			)}</b> ETH\nNet Worth: <b>$${usdNetworth.toFixed(5)}</b>`,
 		);
@@ -361,11 +457,34 @@ bot.action("basebalance", async (ctx) => {
 	}
 });
 bot.action("solbalance", async (ctx) => {
-	await ctx.reply("Fetching balances...");
+	let translations = {
+		english: "Fetching balances...",
+		french: "Récupération des soldes...",
+		spanish: "Obteniendo saldos...",
+		arabic: "جلب الأرصدة...",
+		chinese: "正在获取余额...",
+	};
+
+	let translations2 = {
+		english: "An error occurred, please try again later.",
+		french: "Une erreur s'est produite, veuillez réessayer plus tard.",
+		spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
+		arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
+		chinese: "发生错误，请稍后再试。",
+	};
+	let translations3 = {
+		english: "You have no other tokens",
+		french: "Vous n'avez pas d'autres jetons",
+		spanish: "No tienes otros tokens",
+		arabic: "ليس لديك رموز أخرى",
+		chinese: "您没有其他代币",
+	};
+
 	const user_id = ctx.from?.id;
 	if (!user_id) {
 		return;
 	}
+	await ctx.reply(translations[databases.getUserLanguage(user_id)]);
 	const wallet = databases.getUserWalletDetails(user_id);
 
 	if (!wallet) {
@@ -378,13 +497,13 @@ bot.action("solbalance", async (ctx) => {
 		const currentSolPrice = await getSolPrice();
 
 		if (!balance || !currentSolPrice) {
-			return ctx.reply("An error occured, please try again later");
+			return ctx.reply(translations2[databases.getUserLanguage(user_id)]);
 		}
 		const usdNetworth = balance * currentSolPrice;
 		return ctx.replyWithHTML(
-			`You have no other tokens\nBalance: <b>${balance.toFixed(5)}</b> SOL\nNet Worth: <b>$${usdNetworth.toFixed(
+			`${translations3[databases.getUserLanguage(user_id)]}\nBalance: <b>${balance.toFixed(
 				5,
-			)}</b>`,
+			)}</b> SOL\nNet Worth: <b>$${usdNetworth.toFixed(5)}</b>`,
 		);
 	} else {
 		if (!wallet.solWalletAddress) {
@@ -399,11 +518,33 @@ bot.action("solbalance", async (ctx) => {
 	}
 });
 bot.action("ethbalance", async (ctx) => {
-	await ctx.reply("Fetching balances...");
+	let translations = {
+		english: "Fetching balances...",
+		french: "Récupération des soldes...",
+		spanish: "Obteniendo saldos...",
+		arabic: "جلب الأرصدة...",
+		chinese: "正在获取余额...",
+	};
+	let translations2 = {
+		english: "An error occurred, please try again later.",
+		french: "Une erreur s'est produite, veuillez réessayer plus tard.",
+		spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
+		arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
+		chinese: "发生错误，请稍后再试。",
+	};
+	let translations3 = {
+		english: "You have no other tokens",
+		french: "Vous n'avez pas d'autres jetons",
+		spanish: "No tienes otros tokens",
+		arabic: "ليس لديك رموز أخرى",
+		chinese: "您没有其他代币",
+	};
+
 	const user_id = ctx.from?.id;
 	if (!user_id) {
 		return;
 	}
+	await ctx.reply(translations[databases.getUserLanguage(user_id)]);
 	const wallet = databases.getUserWalletDetails(user_id);
 	if (!wallet) {
 		return await ctx.reply("No wallet found.");
@@ -414,11 +555,11 @@ bot.action("ethbalance", async (ctx) => {
 		const currentEthPrice = await getEthPrice();
 
 		if (!balance || !currentEthPrice) {
-			return await ctx.reply("An error occured, please try again later");
+			return await ctx.reply(translations2[databases.getUserLanguage(user_id)]);
 		}
 		const usdNetworth = parseFloat(balance.eth) * currentEthPrice;
 		return await ctx.replyWithHTML(
-			`You have no other tokens\nBalance: <b>${parseFloat(balance.eth).toFixed(
+			`${translations3[databases.getUserLanguage(user_id)]}\nBalance: <b>${parseFloat(balance.eth).toFixed(
 				5,
 			)}</b> ETH\nNet Worth: <b>$${usdNetworth.toFixed(5)}</b>`,
 		);
@@ -436,15 +577,29 @@ bot.action("ethbalance", async (ctx) => {
 bot.command("/wallet", checkUserExistence, checkGroup, async (ctx) => {
 	const user_id = ctx.from?.id;
 	// console.log(user_id);
-
+	const userLanguage = databases.getUserLanguage(user_id);
+	let translations = {
+		english: "You don't have a wallet yet",
+		french: "Vous n'avez pas encore de portefeuille",
+		spanish: "Aún no tienes un monedero",
+		arabic: "ليس لديك محفظة بعد",
+		chinese: "您还没有钱包",
+	};
+	let translations2 = {
+		english: "Generate wallet",
+		french: "Générer un portefeuille",
+		spanish: "Generar monedero",
+		arabic: "إنشاء محفظة",
+		chinese: "生成钱包",
+	};
 	if (user_id) {
 		if (databases.isWalletNull(user_id)) {
 			// ctx.reply("generate wallet");
 			await ctx.replyWithHTML(
-				`${getGreeting()} ${
-					ctx.from?.username || ctx.from?.first_name || ctx.from?.last_name
-				}, you don't have a wallet yet`,
-				Markup.inlineKeyboard([[Markup.button.callback("Generate wallet", "genwallet")]]),
+				`${getGreeting()} ${ctx.from?.username || ctx.from?.first_name || ctx.from?.last_name}, ${
+					translations[userLanguage]
+				}`,
+				Markup.inlineKeyboard([[Markup.button.callback(translations2[userLanguage], "genwallet")]]),
 			);
 		} else {
 			// ctx.reply("view wallet ad, xport private key,send eth, send kai");
@@ -452,13 +607,40 @@ bot.command("/wallet", checkUserExistence, checkGroup, async (ctx) => {
 				`${getGreeting()} ${ctx.from?.username || ctx.from?.first_name || ctx.from?.last_name}`,
 				Markup.inlineKeyboard([
 					[
-						Markup.button.callback("Wallet address", "walletaddress"),
-						Markup.button.callback("Export private key", "exportkey"),
+						Markup.button.callback(
+							{
+								english: "Wallet address",
+								french: "Adresse du portefeuille",
+								spanish: "Dirección del monedero",
+								arabic: "عنوان المحفظة",
+								chinese: "钱包地址",
+							}[userLanguage],
+							"walletaddress",
+						),
+						Markup.button.callback(
+							{
+								english: "Export private key",
+								french: "Exporter la clé privée",
+								spanish: "Exportar clave privada",
+								arabic: "تصدير المفتاح الخاص",
+								chinese: "导出私钥",
+							}[userLanguage],
+							"exportkey",
+						),
 					],
 
 					[
-						Markup.button.callback("Send ETH", "sendeth"),
-						Markup.button.callback("Check balances", "checkbalance"),
+						//Markup.button.callback("Send ETH", "sendeth"),
+						Markup.button.callback(
+							{
+								english: "Check balances",
+								french: "Vérifier les soldes",
+								spanish: "Consultar saldos",
+								arabic: "التحقق من الأرصدة",
+								chinese: "检查余额",
+							}[userLanguage],
+							"checkbalance",
+						),
 					],
 				]),
 			);
@@ -492,26 +674,21 @@ export const neww = async () => {
 
 		const res = await processToken(ca);
 		const coin = res?.token;
-		// console.log(coin);
-		// console.log(await fetchCoin(ca, "ethereum"));
-		// console.log(coin);
+
+		if (!coin) {
+			return await ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
+		}
+
 		if (coin) {
 			databases.updateCurrentCalledAndPushToHistory(ctx.chat.id, ca);
-			// console.log(contractAddress);
-			// const coin = await fetchCoin(contractAddress, "ethereum");
-			if (isEmpty(coin) || !coin.name) {
-				return await ctx.reply("I couldn't find the token, please check the contract address and try again.");
-			}
-			//selectedCoin = coin;
 
-			//	console.log(selectedCoin);
+			if (isEmpty(coin) || !coin.name) {
+				return await ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
+			}
 
 			const data = await getDexPairDataWithAddress(coin.address);
 
-			// //console.log(data);
 			if (!data) return ctx.reply("An error occurred please try again");
-
-			// console.log(coin);
 
 			await ctx.replyWithHTML(
 				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${coin.name}</i>\n<b>Token Address: </b> <i>${coin.address}</i>`,
@@ -552,24 +729,11 @@ export const neww = async () => {
 		}
 		const processedToken = await processToken(selectedCa);
 		//console.log(selectedCa);
-		const selectedCoin = processedToken?.token;
-		if (!selectedCoin) return await ctx.reply("Couldnt find token please try again");
-		const res = await processToken(selectedCoin.address);
-
-		if (!res) {
-			return await ctx.reply("An error occured please try again");
-		}
-
-		const coin = res?.token;
-
-		// const coin = await fetchCoin(selectedCoin.address, "ethereum");
-		// console.log(res?.chain, selectedCoin.address);
-		// const data = await getTokenInfo(selectedCoin.symbol);
-		// const data = await fetchDxToolsPairData(selectedCoin.address, res.chain);
-		// //console.log(data);
-		// if (!data) return ctx.reply("An error occurred please try again");
+		const coin = processedToken?.token;
+		if (!coin) return await ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
 
 		const userid = ctx.from.id;
+		const userLanguage = databases.getUserLanguage(userid);
 
 		const response = await queryAi(getBuyPrompt(prompt));
 		// console.log(response);
@@ -580,32 +744,84 @@ export const neww = async () => {
 			// Markup.inlineKeyboard
 			if (databases.isWalletNull(userid)) {
 				return await ctx.reply(
-					`${
-						ctx.from.username || ctx.from.first_name
-					}, You do not have an attached wallet, send a direct message with /wallet to initialise it`,
+					{
+						english: `${
+							ctx.from.username || ctx.from.first_name
+						}, You do not have an attached wallet, send a direct message with /wallet to initialise it`,
+						french: `${
+							ctx.from.username || ctx.from.first_name
+						}, Vous n'avez pas de portefeuille attaché, envoyez un message direct avec /wallet pour l'initialiser`,
+						spanish: `${
+							ctx.from.username || ctx.from.first_name
+						}, No tienes un monedero adjunto, envía un mensaje directo con /wallet para iniciarlo`,
+						arabic: `${
+							ctx.from.username || ctx.from.first_name
+						}، ليس لديك محفظة مرفقة، أرسل رسالة مباشرة مع /wallet لتهيئتها`,
+						chinese: `${
+							ctx.from.username || ctx.from.first_name
+						}, 您没有附加的钱包，请发送私信并使用 /wallet 来初始化它`,
+					}[userLanguage],
 				);
 			}
 			ctx.reply(
-				`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
+				{
+					english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
+					french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
+					spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
+					arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
+					chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
+				}[userLanguage],
 			);
 			const amountRes = await queryAi(getamountprompt(prompt));
 			//console.log(`proceedbuy_${selectedCoin?.address}_${amountRes}`);
 
 			const message = await ctx.telegram.sendMessage(
 				ctx.from?.id,
-				`You are about to buy ${selectedCoin.name} with contract address ${selectedCoin.address}`,
+				{
+					english: `You are about to buy ${coin.name} with contract address ${coin.address}`,
+					french: `Vous êtes sur le point d'acheter ${coin.name} avec l'adresse du contrat ${coin.address}`,
+					spanish: `Estás a punto de comprar ${coin.name} con la dirección del contrato ${coin.address}`,
+					arabic: `أنت على وشك شراء ${coin.name} بعنوان العقد ${coin.address}`,
+					chinese: `您即将用合约地址 ${coin.address} 购买 ${coin.name}`,
+				}[userLanguage],
 				Markup.inlineKeyboard([
-					Markup.button.callback("Proceed", `proceedbuy_${selectedCoin?.address} ${amountRes}`),
-					Markup.button.callback("Cancel", "cancel"),
+					Markup.button.callback(
+						{
+							english: "Proceed",
+							french: "Procéder",
+							spanish: "Proceder",
+							arabic: "المتابعة",
+							chinese: "继续",
+						}[userLanguage],
+						`proceedbuy_${coin?.address} ${amountRes}`,
+					),
+					Markup.button.callback(
+						{
+							english: "Cancel",
+							french: "Annuler",
+							spanish: "Cancelar",
+							arabic: "إلغاء",
+							chinese: "取消",
+						}[userLanguage],
+						"cancel",
+					),
 				]),
 			);
 			bot.action("cancel", async (ctx) => {
 				await ctx.deleteMessage(message.message_id);
-				return await ctx.reply("This operation has been cancelled");
+				return await ctx.reply(
+					{
+						english: "This operation has been cancelled",
+						french: "Cette opération a été annulée",
+						spanish: "Esta operación ha sido cancelada",
+						arabic: "تم إلغاء هذه العملية",
+						chinese: "此操作已取消",
+					}[userLanguage],
+				);
 			});
 			return;
 
-			// return ctx.scene.enter("buy-wizard", { address: selectedCoin.address, token: selectedCoin });
+			// return ctx.scene.enter("buy-wizard", { address: coin.address, token: coin });
 			//	const confirmation = await ctx.awaitReply("Please enter the amount you want to buy:");
 		} else {
 			const response = await queryAi(getSellPrompt(prompt));
@@ -613,27 +829,79 @@ export const neww = async () => {
 			if (response.toLowerCase() === "sell") {
 				if (databases.isWalletNull(userid)) {
 					return await ctx.reply(
-						`${
-							ctx.from.username || ctx.from.first_name
-						}, You have not initialised your wallet, send a dm with /wallet to initialise it.`,
+						{
+							english: `${
+								ctx.from.username || ctx.from.first_name
+							}, You do not have an attached wallet, send a direct message with /wallet to initialise it`,
+							french: `${
+								ctx.from.username || ctx.from.first_name
+							}, Vous n'avez pas de portefeuille attaché, envoyez un message direct avec /wallet pour l'initialiser`,
+							spanish: `${
+								ctx.from.username || ctx.from.first_name
+							}, No tienes un monedero adjunto, envía un mensaje directo con /wallet para iniciarlo`,
+							arabic: `${
+								ctx.from.username || ctx.from.first_name
+							}، ليس لديك محفظة مرفقة، أرسل رسالة مباشرة مع /wallet لتهيئتها`,
+							chinese: `${
+								ctx.from.username || ctx.from.first_name
+							}, 您没有附加的钱包，请发送私信并使用 /wallet 来初始化它`,
+						}[userLanguage],
 					);
 				}
 				await ctx.reply(
-					`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
+					{
+						english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
+						french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
+						spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
+						arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
+						chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
+					}[userLanguage],
 				);
 
 				const amountRes = await queryAi(getsellamountprompt(prompt));
 				const message = await ctx.telegram.sendMessage(
 					ctx.from?.id,
-					`You are about to sell ${selectedCoin.name}`,
+					{
+						english: `You are about to sell ${coin.name}`,
+						french: `Vous êtes sur le point de vendre ${coin.name}`,
+						spanish: `Estás a punto de vender ${coin.name}`,
+						arabic: `أنت على وشك بيع ${coin.name}`,
+						chinese: `您即将出售 ${coin.name}`,
+					}[userLanguage],
 					Markup.inlineKeyboard([
-						Markup.button.callback("Proceed", `proceedsell_${selectedCoin?.address} ${amountRes}`),
-						Markup.button.callback("Cancel", "cancel"),
+						Markup.button.callback(
+							{
+								english: "Proceed",
+								french: "Procéder",
+								spanish: "Proceder",
+								arabic: "المتابعة",
+								chinese: "继续",
+							}[userLanguage],
+							`proceedsell_${coin?.address} ${amountRes}`,
+						),
+						Markup.button.callback(
+							{
+								english: "Cancel",
+								french: "Annuler",
+								spanish: "Cancelar",
+								arabic: "إلغاء",
+								chinese: "取消",
+							}[userLanguage],
+							"cancel",
+						),
 					]),
 				);
 				bot.action("cancel", async (ctx) => {
 					await ctx.deleteMessage(message.message_id);
-					return await ctx.reply("This operation has been cancelled");
+					return await ctx.reply(
+						{
+							english: "This operation has been cancelled",
+							french: "Cette opération a été annulée",
+							spanish: "Esta operación ha sido cancelada",
+							arabic: "تم إلغاء هذه العملية",
+							chinese: "此操作已取消",
+						}[userLanguage],
+					);
 				});
 				return;
 
@@ -657,6 +925,10 @@ export const neww = async () => {
 /proceedsell_(.+)/;
 /proceedbuy_([^_]+)_?(\w+)?/;
 bot.action(/proceedbuy_(.+)/, async (ctx) => {
+	const userid = ctx.from?.id;
+
+	if (!userid) return;
+	const userLanguage = databases.getUserLanguage(userid);
 	const match = ctx.match;
 
 	const amount = match[1].split(" ")[1] === "null" ? null : match[1].split(" ")[1];
@@ -668,7 +940,15 @@ bot.action(/proceedbuy_(.+)/, async (ctx) => {
 	const time = ctx.match[1].split(" ")[2];
 
 	if (!token) {
-		return await ctx.reply("An error occured please try again");
+		return await ctx.reply(
+			{
+				english: "An error occurred, please try again",
+				french: "Une erreur s'est produite, veuillez réessayer",
+				spanish: "Se ha producido un error, por favor inténtalo de nuevo",
+				arabic: "حدث خطأ، يرجى المحاولة مرة أخرى",
+				chinese: "发生错误，请重试",
+			}[userLanguage],
+		);
 	}
 
 	if (
@@ -677,7 +957,15 @@ bot.action(/proceedbuy_(.+)/, async (ctx) => {
 		token.chain.toLowerCase() !== "solana"
 	) {
 		return await ctx.reply(
-			"We currrently only support trading on ethereum, base and solana for now. Please bear with us as we are working on supporting other tokens",
+			{
+				english:
+					"We currently only support trading on Ethereum, Binance Smart Chain, and Solana for now. Please bear with us as we are working on supporting other tokens.",
+				french: "Nous prenons actuellement uniquement en charge les échanges sur Ethereum, Binance Smart Chain et Solana pour le moment. Veuillez patienter pendant que nous travaillons à prendre en charge d'autres jetons.",
+				spanish:
+					"Actualmente solo admitimos operaciones de trading en Ethereum, Binance Smart Chain y Solana. Por favor, tenga paciencia mientras trabajamos en admitir otros tokens.",
+				arabic: "نحن ندعم حاليًا التداول فقط على Ethereum و Binance Smart Chain و Solana في الوقت الحالي. يرجى التحلي بالصبر بينما نعمل على دعم رموز أخرى.",
+				chinese: "目前我们只支持在以太坊、币安智能链和Solana上交易。请您耐心等待，我们正在努力支持其他代币。",
+			}[userLanguage],
 		);
 	}
 
@@ -685,6 +973,10 @@ bot.action(/proceedbuy_(.+)/, async (ctx) => {
 	return await ctx.scene.enter("buy-wizard", { address: ca, token: token, time: time, amount: amount });
 });
 bot.action(/proceedsell_(.+)/, async (ctx) => {
+	const userid = ctx.from?.id;
+
+	if (!userid) return;
+	const userLanguage = databases.getUserLanguage(userid);
 	const match = ctx.match;
 
 	const amount = match[1].split(" ")[1] === "null" ? null : match[1].split(" ")[1];
@@ -696,7 +988,15 @@ bot.action(/proceedsell_(.+)/, async (ctx) => {
 	const time = ctx.match[1].split(" ")[2];
 
 	if (!token) {
-		return await ctx.reply("An error occured please try again.");
+		return await ctx.reply(
+			{
+				english: "An error occurred, please try again",
+				french: "Une erreur s'est produite, veuillez réessayer",
+				spanish: "Se ha producido un error, por favor inténtalo de nuevo",
+				arabic: "حدث خطأ، يرجى المحاولة مرة أخرى",
+				chinese: "发生错误，请重试",
+			}[userLanguage],
+		);
 	}
 	if (
 		token.chain.toLowerCase() !== "ethereum" &&
@@ -704,7 +1004,15 @@ bot.action(/proceedsell_(.+)/, async (ctx) => {
 		token.chain.toLowerCase() !== "solana"
 	) {
 		return await ctx.reply(
-			"We currrently only support trading on ethereum, base and solana for now. Please bear with us as we are working on supporting other tokens",
+			{
+				english:
+					"We currently only support trading on Ethereum, Binance Smart Chain, and Solana for now. Please bear with us as we are working on supporting other tokens.",
+				french: "Nous prenons actuellement uniquement en charge les échanges sur Ethereum, Binance Smart Chain et Solana pour le moment. Veuillez patienter pendant que nous travaillons à prendre en charge d'autres jetons.",
+				spanish:
+					"Actualmente solo admitimos operaciones de trading en Ethereum, Binance Smart Chain y Solana. Por favor, tenga paciencia mientras trabajamos en admitir otros tokens.",
+				arabic: "نحن ندعم حاليًا التداول فقط على Ethereum و Binance Smart Chain و Solana في الوقت الحالي. يرجى التحلي بالصبر بينما نعمل على دعم رموز أخرى.",
+				chinese: "目前我们只支持在以太坊、币安智能链和Solana上交易。请您耐心等待，我们正在努力支持其他代币。",
+			}[userLanguage],
 		);
 	}
 	return await ctx.scene.enter("sell-wizard", { address: ca, token: token, time: time, amount: amount });
@@ -712,34 +1020,91 @@ bot.action(/proceedsell_(.+)/, async (ctx) => {
 bot.command("/import", checkGroup, async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const ca = commandArgs.join(" ");
+	const userid = ctx.from?.id;
+
+	if (!userid) return;
+	const userLanguage = databases.getUserLanguage(userid);
 	if (!ca) {
-		return await ctx.reply("You need to send a contract address with your command.");
+		return await ctx.reply(
+			{
+				english: "You need to send a contract address with your command.",
+				french: "Vous devez envoyer une adresse de contrat avec votre commande.",
+				spanish: "Debes enviar una dirección de contrato con tu comando.",
+				arabic: "يجب عليك إرسال عنوان العقد مع الأمر الخاص بك.",
+				chinese: "您需要在命令中发送合约地址。",
+			}[userLanguage],
+		);
 	}
 
 	const token = await processToken(ca);
+
 	if (token) {
 		// check if tokens with zero balance should be blocked
-		await ctx.reply(`${token.token?.name} has been imported successfully.`);
+		await ctx.reply(
+			{
+				english: `${token.token?.name} has been imported successfully.`,
+				french: `${token.token?.name} a été importé avec succès.`,
+				spanish: `${token.token?.name} ha sido importado correctamente.`,
+				arabic: `تم استيراد ${token.token?.name} بنجاح.`,
+				chinese: `${token.token?.name} 已成功导入。`,
+			}[userLanguage],
+		);
 		return databases.addUserHolding(ctx.from.id, ca, token.chain);
 	} else {
-		return await ctx.reply(`Couldn't find the token, Please check the contract address and try again.`);
+		return await ctx.reply(
+			{
+				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+				chinese: "我找不到代币，不支持的链或错误的合约地址。",
+			}[userLanguage],
+		);
 	}
 });
 bot.command("/delete", checkGroup, async (ctx) => {
+	const userid = ctx.from?.id;
+
+	if (!userid) return;
+	const userLanguage = databases.getUserLanguage(userid);
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const ca = commandArgs.join(" ");
 	if (!ca) {
-		return await ctx.reply("You need to send a contract address with your command.");
+		return await ctx.reply(
+			{
+				english: "You need to send a contract address with your command.",
+				french: "Vous devez envoyer une adresse de contrat avec votre commande.",
+				spanish: "Debes enviar una dirección de contrato con tu comando.",
+				arabic: "يجب عليك إرسال عنوان العقد مع الأمر الخاص بك.",
+				chinese: "您需要在命令中发送合约地址。",
+			}[userLanguage],
+		);
 	}
 
 	const token = await processToken(ca);
 	if (token) {
 		// check if tokens with zero balance should be blocked
 		databases.removeUserHolding(ctx.from.id, ca, token.chain);
-		await ctx.reply(`${token.token?.name} has been deleted successfully.`);
+		await ctx.reply(
+			{
+				english: `${token.token?.name} has been deleted successfully.`,
+				french: `${token.token?.name} a été supprimé avec succès.`,
+				spanish: `${token.token?.name} ha sido eliminado correctamente.`,
+				arabic: `تم حذف ${token.token?.name} بنجاح.`,
+				chinese: `${token.token?.name} 已成功删除。`,
+			}[userLanguage],
+		);
 		return;
 	} else {
-		return await ctx.reply(`Couldn't find the token, Please check the prompt and contract address.`);
+		return await ctx.reply(
+			{
+				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+				chinese: "我找不到代币，不支持的链或错误的合约地址。",
+			}[userLanguage],
+		);
 	}
 });
 
@@ -747,78 +1112,220 @@ const coinActions = () => {};
 bot.command("/buy", async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const prompt = commandArgs.join(" ");
+	const userid = ctx.from?.id;
 
+	if (!userid) return;
+	const userLanguage = databases.getUserLanguage(userid);
 	const ca = await queryAi(getCaPrompt(prompt));
 	const amount = await queryAi(getamountprompt(prompt));
 	if (ca.toLowerCase() === "null") {
-		return await ctx.reply("You need to send a contract address with your command.");
+		return await ctx.reply(
+			{
+				english: "You need to send a contract address with your command.",
+				french: "Vous devez envoyer une adresse de contrat avec votre commande.",
+				spanish: "Debes enviar una dirección de contrato con tu comando.",
+				arabic: "يجب عليك إرسال عنوان العقد مع الأمر الخاص بك.",
+				chinese: "您需要在命令中发送合约地址。",
+			}[userLanguage],
+		);
 	}
 
 	const token = await processToken(ca);
 	if (!token) {
-		return await ctx.reply(`Couldn't find the token, Please check the prompt and contract address.`);
+		return await ctx.reply(
+			{
+				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+				chinese: "我找不到代币，不支持的链或错误的合约地址。",
+			}[userLanguage],
+		);
 	}
 
 	if (!databases.getUserWalletDetails(ctx.from.id)?.walletAddress) {
-		return await ctx.reply("You have not generated a wallet yet, kindly send /wallet command privately");
+		return await ctx.reply(
+			{
+				english: `${
+					ctx.from.username || ctx.from.first_name
+				}, You do not have an attached wallet, send a direct message with /wallet to initialise it`,
+				french: `${
+					ctx.from.username || ctx.from.first_name
+				}, Vous n'avez pas de portefeuille attaché, envoyez un message direct avec /wallet pour l'initialiser`,
+				spanish: `${
+					ctx.from.username || ctx.from.first_name
+				}, No tienes un monedero adjunto, envía un mensaje directo con /wallet para iniciarlo`,
+				arabic: `${
+					ctx.from.username || ctx.from.first_name
+				}، ليس لديك محفظة مرفقة، أرسل رسالة مباشرة مع /wallet لتهيئتها`,
+				chinese: `${
+					ctx.from.username || ctx.from.first_name
+				}, 您没有附加的钱包，请发送私信并使用 /wallet 来初始化它`,
+			}[userLanguage],
+		);
 	}
 
 	await ctx.reply(
-		`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
+		{
+			english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
+			french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
+			spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
+			arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
+			chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
+		}[userLanguage],
 	);
 
 	const message = await ctx.telegram.sendMessage(
 		ctx.from?.id,
-		`You are about to buy ${token.token.name}`,
+		{
+			english: `You are about to buy ${token.token.name} with contract address ${token.token.address}`,
+			french: `Vous êtes sur le point d'acheter ${token.token.name} avec l'adresse du contrat ${token.token.address}`,
+			spanish: `Estás a punto de comprar ${token.token.name} con la dirección del contrato ${token.token.address}`,
+			arabic: `أنت على وشك شراء ${token.token.name} بعنوان العقد ${token.token.address}`,
+			chinese: `您即将用合约地址 ${token.token.address} 购买 ${token.token.name}`,
+		}[userLanguage],
 		Markup.inlineKeyboard([
-			Markup.button.callback(`Proceed`, `proceedbuy_${token?.address} ${amount}`),
-			Markup.button.callback("Cancel", "cancel"),
+			Markup.button.callback(
+				{
+					english: "Proceed",
+					french: "Procéder",
+					spanish: "Proceder",
+					arabic: "المتابعة",
+					chinese: "继续",
+				}[userLanguage],
+				`proceedbuy_${token?.address} ${amount}`,
+			),
+			Markup.button.callback(
+				{
+					english: "Cancel",
+					french: "Annuler",
+					spanish: "Cancelar",
+					arabic: "إلغاء",
+					chinese: "取消",
+				}[userLanguage],
+				"cancel",
+			),
 		]),
 	);
 	bot.action("cancel", async (ctx) => {
 		await ctx.deleteMessage(message.message_id);
-		return await ctx.reply("This operation has been cancelled.");
+		return await ctx.reply(
+			{
+				english: "This operation has been cancelled",
+				french: "Cette opération a été annulée",
+				spanish: "Esta operación ha sido cancelada",
+				arabic: "تم إلغاء هذه العملية",
+				chinese: "此操作已取消",
+			}[userLanguage],
+		);
 	});
 });
 bot.command("/sell", async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const prompt = commandArgs.join(" ");
+	const userid = ctx.from?.id;
 
+	if (!userid) return;
+	const userLanguage = databases.getUserLanguage(userid);
 	const ca = await queryAi(getCaPrompt(prompt));
 	const amount = await queryAi(getsellamountprompt(prompt));
 	if (ca.toLowerCase() === "null") {
-		return await ctx.reply("You need to send a contract address with your command.");
+		return await ctx.reply(
+			{
+				english: "You need to send a contract address with your command.",
+				french: "Vous devez envoyer une adresse de contrat avec votre commande.",
+				spanish: "Debes enviar una dirección de contrato con tu comando.",
+				arabic: "يجب عليك إرسال عنوان العقد مع الأمر الخاص بك.",
+				chinese: "您需要在命令中发送合约地址。",
+			}[userLanguage],
+		);
 	}
 	const token = await processToken(ca);
 	if (!token) {
-		return await ctx.reply(`Couldn't find the token, Please check the prompt and contract address.`);
+		return await ctx.reply(
+			{
+				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+				chinese: "我找不到代币，不支持的链或错误的合约地址。",
+			}[userLanguage],
+		);
 	}
 	if (!databases.getUserWalletDetails(ctx.from.id)?.walletAddress) {
 		return await ctx.reply("You have not generated a wallet yet, kindly send /wallet command privately");
 	}
 	await ctx.reply(
-		`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
+		{
+			english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
+			french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
+			spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
+			arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
+			chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
+		}[userLanguage],
 	);
 	const message = await ctx.telegram.sendMessage(
 		ctx.from?.id,
-		`You are about to sell ${token.token.name}`,
+		{
+			english: `You are about to sell ${token.token.name}`,
+			french: `Vous êtes sur le point de vendre ${token.token.name}`,
+			spanish: `Estás a punto de vender ${token.token.name}`,
+			arabic: `أنت على وشك بيع ${token.token.name}`,
+			chinese: `您即将出售 ${token.token.name}`,
+		}[userLanguage],
 		Markup.inlineKeyboard([
-			Markup.button.callback("Proceed", `proceedsell_${token?.address} ${amount}`),
-			Markup.button.callback("Cancel", "cancel"),
+			Markup.button.callback(
+				{
+					english: "Proceed",
+					french: "Procéder",
+					spanish: "Proceder",
+					arabic: "المتابعة",
+					chinese: "继续",
+				}[userLanguage],
+				`proceedsell_${token?.address} ${amount}`,
+			),
+			Markup.button.callback(
+				{
+					english: "Cancel",
+					french: "Annuler",
+					spanish: "Cancelar",
+					arabic: "إلغاء",
+					chinese: "取消",
+				}[userLanguage],
+				"cancel",
+			),
 		]),
 	);
 	bot.action("cancel", async (ctx) => {
 		await ctx.deleteMessage(message.message_id);
-		return await ctx.reply("This operation has been cancelled.");
+		return await ctx.reply(
+			{
+				english: "This operation has been cancelled",
+				french: "Cette opération a été annulée",
+				spanish: "Esta operación ha sido cancelada",
+				arabic: "تم إلغاء هذه العملية",
+				chinese: "此操作已取消",
+			}[userLanguage],
+		);
 	});
 });
 bot.command("/schedule", async (ctx) => {
 	const currentUnixTime = Math.floor(Date.now() / 1000);
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const prompt = commandArgs.join(" ");
+	const userId = ctx.from.id;
+	const userLanguage = databases.getUserLanguage(userId);
 	// console.log(prompt);
 	if (!prompt) {
-		return await ctx.reply("You need to send a prompt with your command.");
+		return await ctx.reply(
+			{
+				english: "You need to send a prompt with your command.",
+				french: "Vous devez envoyer un message avec votre commande.",
+				spanish: "Necesitas enviar un mensaje con tu comando.",
+				arabic: "يجب عليك إرسال رسالة مع أمرك.",
+				chinese: "您需要在命令中发送提示。",
+			}[userLanguage],
+		);
 	}
 
 	let time: string | null;
@@ -828,61 +1335,179 @@ bot.command("/schedule", async (ctx) => {
 		time = extractTimeFromPrompt(prompt);
 
 		if (!time) {
-			return await ctx.reply("There is no time interval present in your message.");
+			return await ctx.reply(
+				{
+					english: "There is no time interval present in your message.",
+					french: "Aucun intervalle de temps n'est présent dans votre message.",
+					spanish: "No hay intervalo de tiempo presente en tu mensaje.",
+					arabic: "لا يوجد فاصل زمني موجود في رسالتك.",
+					chinese: "您的消息中没有时间间隔。",
+				}[userLanguage],
+			);
 		}
 	}
 
 	const ca = await queryAi(getCaPrompt(prompt));
 	if (ca.toLowerCase() === "null") {
-		return ctx.reply("There is no contract address present in your prompt.");
+		return ctx.reply(
+			{
+				english: "There is no contract address present in your prompt.",
+				french: "Aucune adresse de contrat n'est présente dans votre message.",
+				spanish: "No hay ninguna dirección de contrato presente en tu mensaje.",
+				arabic: "لا يوجد عنوان عقد موجود في رسالتك.",
+				chinese: "您的消息中没有合约地址。",
+			}[userLanguage],
+		);
 	}
 
 	const responseBuy = await queryAi(getBuyPrompt(prompt));
 	const responseSell = await queryAi(getSellPrompt(prompt));
 	const token = await processToken(ca);
 	if (!token) {
-		return await ctx.reply(`Couldn't find the token, Please check the prompt and contract address.`);
+		return await ctx.reply(
+			{
+				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+				chinese: "我找不到代币，不支持的链或错误的合约地址。",
+			}[userLanguage],
+		);
 	}
 	if (!databases.getUserWalletDetails(ctx.from.id)?.walletAddress) {
-		return await ctx.reply("You have not generated a wallet yet, kindly send /wallet command privately");
+		return await ctx.reply(
+			{
+				english: `${
+					ctx.from.username || ctx.from.first_name
+				}, You do not have an attached wallet, send a direct message with /wallet to initialise it`,
+				french: `${
+					ctx.from.username || ctx.from.first_name
+				}, Vous n'avez pas de portefeuille attaché, envoyez un message direct avec /wallet pour l'initialiser`,
+				spanish: `${
+					ctx.from.username || ctx.from.first_name
+				}, No tienes un monedero adjunto, envía un mensaje directo con /wallet para iniciarlo`,
+				arabic: `${
+					ctx.from.username || ctx.from.first_name
+				}، ليس لديك محفظة مرفقة، أرسل رسالة مباشرة مع /wallet لتهيئتها`,
+				chinese: `${
+					ctx.from.username || ctx.from.first_name
+				}, 您没有附加的钱包，请发送私信并使用 /wallet 来初始化它`,
+			}[userLanguage],
+		);
 	}
 
 	if (responseBuy.toLowerCase() === "buy" && responseSell.toLowerCase() !== "sell") {
 		// console.log(ca);
 		const amount = await queryAi(getamountprompt(prompt));
 		await ctx.reply(
-			`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
+			{
+				english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
+				french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
+				spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
+				arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
+				chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
+			}[userLanguage],
 		);
 		const message = await ctx.telegram.sendMessage(
 			ctx.from?.id,
-			`You are about to schedule a buy for ${token?.token?.name}`,
+			{
+				english: `You are about to schedule a buy for ${token?.token?.name}`,
+				french: `Vous êtes sur le point de planifier un achat pour ${token?.token?.name}`,
+				spanish: `Estás a punto de programar una compra para ${token?.token?.name}`,
+				arabic: `أنت على وشك جدولة عملية شراء لـ ${token?.token?.name}`,
+				chinese: `您即将为 ${token?.token?.name} 安排购买`,
+			}[userLanguage],
 			Markup.inlineKeyboard([
-				Markup.button.callback("Proceed", `proceedbuy_${token?.address} ${amount} ${time}`),
-				Markup.button.callback("Cancel", "cancel"),
+				Markup.button.callback(
+					{
+						english: "Proceed",
+						french: "Procéder",
+						spanish: "Proceder",
+						arabic: "المتابعة",
+						chinese: "继续",
+					}[userLanguage],
+					`proceedbuy_${token?.address} ${amount} ${time}`,
+				),
+				Markup.button.callback(
+					{
+						english: "Cancel",
+						french: "Annuler",
+						spanish: "Cancelar",
+						arabic: "إلغاء",
+						chinese: "取消",
+					}[userLanguage],
+					"cancel",
+				),
 			]),
 		);
 		bot.action("cancel", async (ctx) => {
 			await ctx.deleteMessage(message.message_id);
-			return await ctx.reply("This operation has been cancelled.");
+			return await ctx.reply(
+				{
+					english: "This operation has been cancelled",
+					french: "Cette opération a été annulée",
+					spanish: "Esta operación ha sido cancelada",
+					arabic: "تم إلغاء هذه العملية",
+					chinese: "此操作已取消",
+				}[userLanguage],
+			);
 		});
 		return;
 	} else if (responseSell.toLowerCase() === "sell" && responseBuy.toLowerCase() !== "buy") {
 		const amount = await queryAi(getsellamountprompt(prompt));
 
 		await ctx.reply(
-			`@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox`,
+			{
+				english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
+				french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
+				spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
+				arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
+				chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
+			}[userLanguage],
 		);
 		const message = await ctx.telegram.sendMessage(
 			ctx.from?.id,
-			`You are about to schedule a sell for ${token?.token?.name}`,
+			{
+				english: `You are about to schedule a sell for ${token?.token?.name}`,
+				french: `Vous êtes sur le point de planifier une vente pour ${token?.token?.name}`,
+				spanish: `Estás a punto de programar una venta para ${token?.token?.name}`,
+				arabic: `أنت على وشك جدولة عملية بيع لـ ${token?.token?.name}`,
+				chinese: `您即将为 ${token?.token?.name} 安排出售`,
+			}[userLanguage],
 			Markup.inlineKeyboard([
-				Markup.button.callback("Proceed", `proceedsell_${token?.address} ${amount} ${time}`),
-				Markup.button.callback("Cancel", "cancel"),
+				Markup.button.callback(
+					{
+						english: "Proceed",
+						french: "Procéder",
+						spanish: "Proceder",
+						arabic: "المتابعة",
+						chinese: "继续",
+					}[userLanguage],
+					`proceedsell_${token?.address} ${amount} ${time}`,
+				),
+				Markup.button.callback(
+					{
+						english: "Cancel",
+						french: "Annuler",
+						spanish: "Cancelar",
+						arabic: "إلغاء",
+						chinese: "取消",
+					}[userLanguage],
+					"cancel",
+				),
 			]),
 		);
-		bot.action("cancel", (ctx) => {
-			ctx.deleteMessage(message.message_id);
-			return ctx.reply("This operation has been cancelled.");
+		bot.action("cancel", async (ctx) => {
+			await ctx.deleteMessage(message.message_id);
+			return await ctx.reply(
+				{
+					english: "This operation has been cancelled",
+					french: "Cette opération a été annulée",
+					spanish: "Esta operación ha sido cancelada",
+					arabic: "تم إلغاء هذه العملية",
+					chinese: "此操作已取消",
+				}[userLanguage],
+			);
 		});
 		return;
 	} else {
@@ -913,10 +1538,6 @@ const quit = async (): Promise<void> => {
 // bot.on("message", (ctx) => {
 // 	console.log(ctx.chat.id);
 // });
-const buttons = Markup.inlineKeyboard([
-	[Markup.button.callback("💼 Wallet", "wallet")],
-	[Markup.button.callback("🤖 Sell Tokens", "sell")],
-]);
 
 const menu = async (): Promise<void> => {
 	// bot.command("menu", checkUserExistence, async (ctx) => {
@@ -932,33 +1553,60 @@ const menu = async (): Promise<void> => {
 	// });
 };
 
-const start = async (): Promise<void> => {
-	bot.start((ctx) => {
+const start = async () => {
+	bot.start(async (ctx) => {
+		// Check if the chat and message objects are defined
+		if (!ctx.chat || !ctx.update.message || !ctx.update.message.chat || !ctx.update.message.from) {
+			console.error("Chat or message object is not defined");
+			return;
+		}
+
 		const groupId = ctx.chat.id;
+		const userId = ctx.update.message.from.id;
 		if (ctx.update.message.chat.type === "private") {
+			// Check if the message is from a bot
 			if (ctx.update.message.from.is_bot) {
 				return;
 			}
-			databases.writeUser({
-				...ctx.update.message.from,
-				walletAddress: null,
-				bets: [],
-				privateKey: null,
-				mnemonic: null,
-				ethholding: [],
-				baseholding: [],
-				solWalletAddress: null,
-				solPrivateKey: null,
-				solMnemonic: null,
-			});
 
-			//	chatId = ctx.message.chat.id;
-			ctx.reply(`Welcome you have been sucessfully registered use /help to get started`);
+			// Check if the user is already registered
+			const existingUser = databases.checkUserExists(userId); // Replace with your method to get user by ID
+
+			if (existingUser) {
+				await ctx.reply(
+					{
+						english: "You are already registered. Use /help to get started.",
+						french: "Vous êtes déjà inscrit. Utilisez /help pour commencer.",
+						spanish: "Ya estás registrado. Usa /help para empezar.",
+						arabic: "أنت مسجل بالفعل. استخدم /help للبدء.",
+						chinese: "您已经注册了。使用 /help 开始。",
+					}[databases.getUserLanguage(userId)],
+				);
+			} else {
+				await ctx.replyWithHTML(
+					"Please select a language",
+					Markup.inlineKeyboard([
+						[Markup.button.callback("English", "language_english")],
+						[Markup.button.callback("Français", "language_french")],
+						[Markup.button.callback("Español", "language_spanish")],
+						[Markup.button.callback("中文", "language_chinese")],
+						[Markup.button.callback("العربية", "language_arabic")],
+					]),
+				);
+
+				// Store user data in the database
+			}
 		} else {
-			ctx.reply(
-				`@${
-					ctx.message.from.username || ctx.message.from.last_name
-				}, send a private message to the bot to get started`,
+			// Handle group chats
+			const usernameOrLastName = ctx.message.from.username || ctx.message.from.last_name || "user";
+			await ctx.reply(
+				{
+					english: `@${usernameOrLastName}, send a private message to the bot to get started.`,
+					french: `@${usernameOrLastName}, envoyez un message privé au bot pour commencer.`,
+					spanish: `@${usernameOrLastName}, envía un mensaje privado al bot para empezar.`,
+					arabic: `@${usernameOrLastName}، أرسل رسالة خاصة إلى الروبوت للبدء.`,
+					chinese: `@${usernameOrLastName}，发送私信给机器人开始。`,
+				}[databases.getUserLanguage(userId)],
 			);
 		}
 	});

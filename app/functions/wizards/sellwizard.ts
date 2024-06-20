@@ -29,6 +29,16 @@ const stepHandler2 = new Composer<WizardContext>();
 export const sellWizard = new Scenes.WizardScene<WizardContext>(
 	"sell-wizard",
 	async (ctx) => {
+		if (!ctx.from?.id) {
+			ctx.reply("An error occurred please try again");
+			return ctx.scene.leave();
+		}
+
+		const wallet = getUserWalletDetails(ctx.from.id);
+		if (!wallet) {
+			await ctx.reply("You have not generated a wallet yet, kindly send /wallet command privately");
+			return ctx.scene.leave();
+		}
 		ctx.scene.session.sellStore = JSON.parse(JSON.stringify(initialData));
 		//@ts-ignore
 
@@ -93,7 +103,7 @@ stepHandler2.on("text", async (ctx) => {
 
 		const token = await processToken(sellAddress);
 		if (!token) {
-			await ctx.reply("Could not find token, exiting.");
+			ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
 			return ctx.scene.leave();
 		}
 		ctx.scene.session.sellStore.token = token.token;
@@ -171,7 +181,7 @@ const executeSell = async (
 	const wallet = getUserWalletDetails(ctx.from.id);
 	const tokenData = await processToken(sellAddress);
 	if (!tokenData) {
-		await ctx.reply("An error occured please try again");
+		ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
 		return ctx.scene.leave();
 	}
 

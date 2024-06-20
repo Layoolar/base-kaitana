@@ -40,6 +40,7 @@ interface MyUser extends TelegramUserInterface {
 	solWalletAddress: string | null;
 	solPrivateKey: string | null;
 	solMnemonic: string | null;
+	language: string;
 }
 export type Group = {
 	id: number;
@@ -247,6 +248,11 @@ const checkUserExists = (userId: number): boolean => {
 	const userInDb = databases.users.get("users").find({ id: userId }).value();
 	return !!userInDb;
 };
+const getUserLanguage = (userId: number) => {
+	const userInDb = databases.users.get("users").find({ id: userId }).value();
+
+	return userInDb.language as "english" | "french" | "spanish" | "arabic" | "chinese";
+};
 
 // const updateWallet = (userId: number, newWallet: string): boolean => {
 // 	const userInDb = databases.users.get("users").find({ id: userId });
@@ -444,6 +450,7 @@ export {
 	databases,
 	writeUser,
 	checkUserExists,
+	getUserLanguage,
 	updateWallet,
 	isWalletNull,
 	getHistoricalDataAndGraph,

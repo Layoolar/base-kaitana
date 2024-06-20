@@ -1,11 +1,10 @@
 import { WizardContext } from "@app/functions/telegraf";
-import { error, log } from "console";
+
 import { Composer, Markup, Scenes } from "telegraf";
-import { createContext } from "vm";
-import { check } from "yargs";
+
 import { queryAi } from "../queryApi";
-import { getCaPrompt, getamountprompt } from "../prompt";
-import { fetchCoin } from "../fetchCoins";
+import { getamountprompt } from "../prompt";
+
 import { addUserHolding, getUserWalletDetails, sendMessageToAllGroups } from "../databases";
 import { buyOnBase, buyOnEth } from "../buyfunction";
 import type { BigNumber } from "ethers";
@@ -165,6 +164,12 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			ctx.reply("An error occurred please try again");
 			return ctx.scene.leave();
 		}
+
+		const wallet = getUserWalletDetails(ctx.from.id);
+		if (!wallet) {
+			await ctx.reply("You have not generated a wallet yet, kindly send /wallet command privately");
+			return ctx.scene.leave();
+		}
 		ctx.scene.session.buyStore = JSON.parse(JSON.stringify(initialData));
 		//{ address: ca, token: token, time: time, amount: amount }
 		// @ts-ignore
@@ -181,7 +186,6 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 		// @ts-ignore
 		ctx.scene.session.buyStore.chain = ctx.scene.state.token.chain;
 
-		const wallet = getUserWalletDetails(ctx.from.id);
 		// const buyAddress = ctx.scene.session.buyStore.buyAddress;
 		// console.log(buyAddress);
 		//	const amount = ctx.scene.session.buyStore.amount;
@@ -272,7 +276,7 @@ stepHandler2.on("text", async (ctx) => {
 		const buyAddress = ctx.scene.session.buyStore.buyAddress;
 		const token = await processToken(buyAddress);
 		if (!token) {
-			await ctx.reply("The token could not be found, exiting.");
+			await ctx.reply("I couldn't find the token, unsupported chain or wrong contract address. Please try again");
 			return ctx.scene.leave();
 		}
 		ctx.scene.session.buyStore.token = token.token;

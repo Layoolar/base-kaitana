@@ -30,7 +30,7 @@ type ApiResponse = {
 	tokenData: TokenData;
 	summary: Summary;
 	honeypot: Honeypot;
-	flags: any[];
+	flags: string[];
 	success: boolean;
 };
 

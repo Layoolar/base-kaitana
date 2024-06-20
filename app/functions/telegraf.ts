@@ -28,6 +28,7 @@ interface MyWizardSession extends Scenes.WizardSessionData {
 		token: TokenData | undefined;
 		chain: string | undefined;
 		chatHistory: string[][];
+		language: string | null;
 	};
 	detailsStore: {
 		address: string | undefined;

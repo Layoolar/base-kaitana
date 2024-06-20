@@ -37,7 +37,7 @@ export async function getTokenBalance(walletAddress, tokenAddress, chain) {
 
 		let provider;
 
-		const token = await processToken(tokenAddress);
+		//const token = await processToken(tokenAddress);
 		if (chain === "ethereum") {
 			provider = ethprovider;
 		} else {

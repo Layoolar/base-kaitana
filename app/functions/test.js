@@ -116,7 +116,6 @@ async function getTokenBalance(ownerPublicKey, tokenMintAddress) {
 // 	.catch((err) => {
 // 		console.error("Error fetching token balance:", err);
 // 	});
-
 async function searchDexPairs(query) {
 	const url = `https://api.dexscreener.com/latest/dex/search/?q=${encodeURIComponent(query)}`;
 	const resultsArray = [];
@@ -131,9 +130,22 @@ async function searchDexPairs(query) {
 				symbol: pair.baseToken.symbol,
 				price: pair.priceUsd,
 				mcap: pair.fdv,
+				liquidity: pair.liquidity,
 			});
 		});
-		return resultsArray;
+
+		resultsArray.sort((a, b) => b.mcap - a.mcap);
+		const seenAddresses = new Set();
+		const uniqueResultsArray = resultsArray.filter((item) => {
+			if (seenAddresses.has(item.address)) {
+				return false;
+			} else {
+				seenAddresses.add(item.address);
+				return true;
+			}
+		});
+
+		return uniqueResultsArray;
 	} catch (error) {
 		console.error("Error fetching data from Dex Screener API:", error);
 		return null;
@@ -142,7 +154,7 @@ async function searchDexPairs(query) {
 
 // // Example usage
 (async () => {
-	const query = "BONK"; // Replace with your desired query
+	const query = "lana"; // Replace with your desired query
 
 	const data = await searchDexPairs(query);
 	if (data) {

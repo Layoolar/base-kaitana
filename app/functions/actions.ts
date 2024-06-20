@@ -3,8 +3,10 @@ import { getGreeting, getJoke } from "./commands";
 import fetchData, { fetchCoin } from "./fetchCoins";
 import { Markup } from "telegraf";
 import { openai, queryAi } from "./queryApi";
-import { deleteFile, downloadFile, transcribeAudio } from "./helper";
+
 import { getTrancribedAudioPrompt } from "./prompt";
+import { deleteFile, downloadFile, transcribeAudio, translate } from "./helper";
+import databases, { getUserLanguage, writeUser } from "./databases";
 
 bot.action("send_token", async (ctx) => {
 	return await ctx.scene.enter("transaction-wizard");
@@ -55,6 +57,7 @@ bot.action("bsc", async (ctx) => {
 	bot.action(/coinbsc_(.+)/, async (ctx) => {
 		const coinAddress = ctx.match[1];
 		let selectedCoin = await fetchCoin(coinAddress, coins[0].network);
+		if (!selectedCoin) return;
 		for (let key in selectedCoin) {
 			if (selectedCoin[key] === null) {
 				delete selectedCoin[key];
@@ -159,31 +162,73 @@ bot.action("sol", async (ctx) => {
 // 	}
 // });
 
-//top 4 without ca
-//only ticker
-//regex to remove - from text to speech then send to dexscreener and return as array without ca duplication
-//button for top 3 get summary , button contains name mcap
-//summary has a buy button under
-//homeypot data should be appended under summary check tg risk level,risk ishoneypot,flags[];
+// audio prompts and exit session button under each reply.
+// info for the dm.
+// language english french chinese spanish arabic
+// group is only english
 
+bot.on("voice", async (ctx) => {
+	const userId = ctx.from.id;
+	const userLanguage = getUserLanguage(userId);
 
-bot.on("voice",async (ctx) => {
+	if (ctx.chat.type !== "private") {
+		return ctx.reply(
+			userLanguage === "english"
+				? "Voice commands can only be used in private chat"
+				: await translate("Voice commands can only be used in private chat", userLanguage),
+		);
+	}
+
+	//ctx.scene.leave();
 	const voice = ctx.message.voice;
-	if(	voice.duration>10){
-		return ctx.reply("Maximum duration is 10 seconds");
+	if (voice.duration > 10) {
+		return ctx.reply(await translate("Maximum duration is 10 seconds", userLanguage));
 	}
 
 	try {
-		const filePath = await downloadFile(voice.file_id);
+		//	console.log("here");
+		const filePath = await downloadFile(voice.file_id, userId);
 		const transcription = await transcribeAudio(filePath);
-	
-		ctx.reply(`${transcription}`);
-		//const aiResponse=await queryAi( getTrancribedAudioPrompt( transcription))
+		//console.log(filePath);
+		//console.log(transcription);
 
+		const output = transcription.replace(/[-.]/g, "");
+		await ctx.reply(`${output}`);
 		deleteFile(filePath);
+		//const aiResponse=await queryAi( getTrancribedAudioPrompt( transcription))
+		return await ctx.scene.enter("prompt-wizard", { prompt: output });
 	} catch (error) {
-		return ctx.reply("Failed to transcribe audio.");
+		console.log("this error", error);
+		return await ctx.reply("Failed to transcribe audio.");
 	}
+});
+
+bot.action(/language_(.+)$/, async (ctx) => {
+	const language = ctx.match[1]; // This extracts the language part from the callback data
+	await ctx.reply(`You selected ${language}.`);
+	if (!ctx.from?.id) return ctx.reply("Forbidden");
+	await writeUser({
+		...ctx.from,
+		walletAddress: null,
+		bets: [],
+		privateKey: null,
+		mnemonic: null,
+		ethholding: [],
+		baseholding: [],
+		solWalletAddress: null,
+		solPrivateKey: null,
+		solMnemonic: null,
+		language: language.toLowerCase(),
+	});
+
+	// Reply to the user
+	await ctx.reply(
+		await translate(
+			"Welcome! You have been successfully registered. Use /help to get started.",
+			language.toLowerCase(),
+		),
+	);
+	// Add logic to set the user's language based on the extracted language
 });
 
 export { bot };

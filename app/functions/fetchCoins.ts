@@ -12,6 +12,7 @@ interface DexScreenerPair {
 	mcap: number;
 	liquidity: number;
 }
+const supportedChains = ["solana", "ton", "bsc", "ethereum", "base"];
 
 const fetchData = async (network: string, bet: "bet" | null): Promise<{ data: CoinDataType[] }> => {
 	const url = `https://multichain-api.birdeye.so/${network}/trending/token?u=da39a3ee5e6b4b0d3255bfef95601890afd80709`;
@@ -82,9 +83,10 @@ const fetchCoin = async (address: string | null | undefined, network: string | u
 		});
 		//console.log(response.data.data, "here");
 		return response.data.data;
-	} catch (error) {
-		console.log("Error fetching coin:", error);
-		return null;
+	} catch (error: any) {
+		//console.log("Error fetching coin:", error);
+		throw new Error(error.code);
+		//return null;
 	}
 };
 
@@ -190,7 +192,24 @@ export async function searchDexPairs(query: string) {
 				liquidity: pair.liquidity,
 			});
 		});
-		return resultsArray;
+
+		resultsArray.sort((a, b) => b.mcap - a.mcap);
+
+		const seenAddresses = new Set();
+		const uniqueResultsArray = resultsArray.filter((item) => {
+			if (seenAddresses.has(item.address)) {
+				return false;
+			} else {
+				seenAddresses.add(item.address);
+				return true;
+			}
+		});
+
+		const filteredResultsArray = uniqueResultsArray.filter((item) =>
+			supportedChains.includes(item.chain.toLowerCase()),
+		);
+		const filtered = filteredResultsArray.filter((filter) => filter.mcap);
+		return filtered;
 	} catch (error) {
 		console.error("Error fetching data from Dex Screener API:", error);
 		return null;

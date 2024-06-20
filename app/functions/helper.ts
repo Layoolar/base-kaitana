@@ -1,4 +1,4 @@
-import { fetchCoin } from "./fetchCoins";
+import { fetchCoin, getDexPairDataWithAddress } from "./fetchCoins";
 import { TokenData } from "./timePriceData";
 import { ethers } from "ethers";
 import axios from "axios";
@@ -10,7 +10,7 @@ import solanaWeb3 from "@solana/web3.js";
 import * as bip39 from "bip39";
 import { derivePath } from "ed25519-hd-key";
 import { getSolBalance } from "./checksolbalance";
-import { openai } from "./queryApi";
+import { openai, queryAi } from "./queryApi";
 
 export function isEmpty(obj: any) {
 	return Object.keys(obj).length === 0;
@@ -44,15 +44,25 @@ export function delay(ms: number) {
 }
 
 export async function processToken(address: string | null) {
-	if (address?.slice(0, 2) !== "0x") {
-		// Check if the address starts with "0x" for Ethereum chain
-		const token = (await fetchCoin(address, "solana")) as TokenData;
-		if (token) {
-			return { chain: "solana", address, token };
-		} else {
+	if (!address) {
+		return null; // Return early if the address is null
+	}
+	try {
+		if (address.slice(0, 2) !== "0x") {
+			// Check if the address is for the "solana" or "ton" chain
+			const solanaToken = (await fetchCoin(address, "solana")) as TokenData;
+			if (solanaToken) {
+				return { chain: "solana", address, token: solanaToken };
+			}
+
+			const tonToken = (await fetchCoin(address, "ton")) as TokenData;
+			if (tonToken) {
+				return { chain: "ton", address, token: tonToken };
+			}
+
 			return null; // Token not found
 		}
-	} else {
+
 		// Check for BSC token
 		const bsctoken = (await fetchCoin(address, "bsc")) as TokenData;
 		if (!isEmpty(bsctoken)) {
@@ -69,12 +79,12 @@ export async function processToken(address: string | null) {
 		const basetoken = (await fetchCoin(address, "base")) as TokenData;
 		if (!isEmpty(basetoken)) {
 			return { chain: "base", address, token: basetoken };
-		} else {
-			return null;
 		}
 
 		// If token not found for any chain, return null
-		//return null;
+		return null;
+	} catch (error) {
+		return null;
 	}
 }
 
@@ -284,18 +294,20 @@ export const addMillisecondsToDate = (milliseconds: number) => {
 	return targetDate;
 };
 
-export const downloadFile = async (fileId: string): Promise<string> => {
+export const downloadFile = async (fileId: string,userId:number): Promise<string> => {
 	const file = await bot.telegram.getFileLink(fileId);
 	//const url = `https://api.telegram.org/file/bot${bot.token}/${file.file_path}`;
 	const url = file.href;
 
 	const response = await axios({
 		url,
+
 		method: "GET",
+
 		responseType: "stream",
 	});
 
-	const filePath = path.join(__dirname, "voice_note.ogg");
+	const filePath = path.join(__dirname, userId.toString()+"voice_note.ogg");
 	const writer = fs.createWriteStream(filePath);
 
 	response.data.pipe(writer);
@@ -324,10 +336,16 @@ export const transcribeAudio = async (filePath: string): Promise<string> => {
 			model: "whisper-1",
 			response_format: "text",
 		});
+
 		// @ts-ignore
 		return transcription;
 	} catch (error) {
-		//		console.error("Error:", error);
+		console.error("Error:", error);
+
 		throw error;
 	}
+};
+
+export const translate = async (text: string, language: string): Promise<string> => {
+	return await queryAi(`Translate the following text into {${language}}: {${text}}\n`);
 };
