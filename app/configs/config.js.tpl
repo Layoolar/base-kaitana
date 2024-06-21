@@ -17,7 +17,14 @@ module.exports = {
 		selfSigned: true
 	},
 
-	"databases": { users: "databases/users.json" },
+	"databases": {
+		users: "databases/users.json",
+		ethCoinsData: "databases/ethcoindb.json",
+		solCoinsData: "databases/solcoindb.json",
+		bnbCoinsData: "databases/bnbcoindb.json",
+		leaderboard: "databases/leaderboard.json",
+		groups: "databases/groups.json",
+	},
 
 	// Debug
 	"debug": true,

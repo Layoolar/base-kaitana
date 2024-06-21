@@ -229,10 +229,9 @@ bot.catch((error: any) => {
 });
 const commands = {
 	"/start": "Send this command privately to the bot to register and get started",
-	"/call <b>(CAN ONLY BE USED IN GROUPS)</b>":
-		"This command is used to query a token and put it in focus for getting the details or trading.\nUsage Format: /call {contract address}",
-	"/ask <b>(CAN ONLY BE USED IN GROUPS)</b>":
-		"This command is used to ask questions about the called token and <b>trade</b> the called token, when you indicate buy or sell in your prompt.\nUsage Format: /ask {your question}",
+	"/call":
+		"<b>(CAN ONLY BE USED IN GROUPS)</b> This command is used to query a token and put it in focus for getting the details or trading.\nUsage Format: /call {contract address}",
+	"/ask": "<b>(CAN ONLY BE USED IN GROUPS)</b> This command is used to ask questions about the called token and <b>trade</b> the called token, when you indicate buy or sell in your prompt.\nUsage Format: /ask {your question}",
 	"/schedule":
 		"This command is used to schedule trading.\nUsage format: /schedule i want to buy/sell {contract address} in one hour",
 	"/import": "This command is used to import tokens into your wallet.\nUsage format: /import {contract address}",
@@ -782,7 +781,6 @@ export const neww = async () => {
 			return await ctx.replyWithHTML(
 				response,
 				Markup.inlineKeyboard([
-					
 					Markup.button.callback(
 						{
 							english: "buy",
