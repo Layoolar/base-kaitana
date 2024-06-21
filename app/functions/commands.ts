@@ -139,19 +139,6 @@ export function getGreeting() {
 	}
 }
 
-const isValidWallet = (address: string): boolean => {
-	// ctx.reply;
-	const ethAddressRegex = /^(0x)?[0-9a-fA-F]{40}$/;
-
-	const isValidAddress = ethAddressRegex.test(address);
-
-	if (isValidAddress) {
-		return true;
-	} else {
-		return false;
-	}
-};
-
 export const checkWallet: MiddlewareFn<Context> = async (ctx: Context, next: () => Promise<void>) => {
 	if (!ctx.from) return;
 
@@ -710,6 +697,130 @@ export const neww = async () => {
 			return await ctx.reply("I couldn't find the token, please check the contract address and try again.");
 		}
 	});
+
+	bot.command("/info", checkUserExistence, checkGroup, async (ctx) => {
+		const commandArgs = ctx.message.text.split(" ").slice(1);
+		const ca = commandArgs.join(" ");
+		const userId = ctx.from.id;
+		const userLanguage = databases.getUserLanguage(userId);
+
+		if (!ca) {
+			return await ctx.reply(
+				{
+					english: "You need to send a contract address with your command.",
+					french: "Vous devez envoyer une adresse de contrat avec votre commande.",
+					spanish: "Debes enviar una dirección de contrato con tu comando.",
+					arabic: "يجب عليك إرسال عنوان العقد مع الأمر الخاص بك.",
+					chinese: "您需要在命令中发送合约地址。",
+				}[userLanguage],
+			);
+		}
+
+		const res = await processToken(ca);
+		const coin = res?.token;
+
+		if (!coin) {
+			return await ctx.reply(
+				{
+					english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+					french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+					spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+					arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+					chinese: "我找不到代币，不支持的链或错误的合约地址。",
+				}[userLanguage],
+			);
+		}
+
+		if (coin) {
+			if (isEmpty(coin) || !coin.name) {
+				return await ctx.reply(
+					{
+						english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+						french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+						spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+						arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+						chinese: "我找不到代币，不支持的链或错误的合约地址。",
+					}[userLanguage],
+				);
+			}
+
+			const data = await getDexPairDataWithAddress(coin.address);
+
+			if (!data)
+				return ctx.reply(
+					{
+						english: "An error occurred, please try again later.",
+						french: "Une erreur s'est produite, veuillez réessayer plus tard.",
+						spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
+						arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
+						chinese: "发生错误，请稍后再试。",
+					}[userLanguage],
+				);
+
+			await ctx.replyWithHTML(
+				{
+					english:
+						'<b>"Getting Token Information...</b>\\n\\n<b>Token Name: </b><i>${coin.name}</i>\\n<b>Token Address: </b> <i>${coin.address}</i>',
+					french: '<b>"Obtention des informations sur le jeton...</b>\\n\\n<b>Nom du jeton : </b><i>${coin.name}</i>\\n<b>Adresse du jeton : </b> <i>${coin.address}</i>',
+					spanish:
+						'<b>"Obteniendo información del token...</b>\\n\\n<b>Nombre del token: </b><i>${coin.name}</i>\\n<b>Dirección del token: </b> <i>${coin.address}</i>',
+					arabic: '<b>"الحصول على معلومات الرمز...</b>\\n\\n<b>اسم الرمز: </b><i>${coin.name}</i>\\n<b>عنوان الرمز: </b> <i>${coin.address}</i>',
+					chinese:
+						'<b>"获取代币信息...</b>\\n\\n<b>代币名称: </b><i>${coin.name}</i>\\n<b>代币地址: </b> <i>${coin.address}</i>',
+				}[userLanguage],
+			);
+			const response = await queryAi(
+				`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify(
+					{
+						...coin,
+						mcap: data[0].mcap,
+					},
+				)}. Don't make mention that you are summarizing a given data in your response. Don't say things like 'According to the data provided'. Send the summary back in few short paragraphs. Only return the summary and nothing else. Also wrap important values with HTML <b> bold tags,
+				make the numbers easy for humans to read with commas and add a lot of emojis to your summary to make it aesthetically pleasing, for example add 💰 to price, 💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath, 📈 to % increase ,📉 to % decrease. Reply in ${userLanguage}`,
+			);
+
+			return await ctx.replyWithHTML(
+				response,
+				Markup.inlineKeyboard([
+					
+					Markup.button.callback(
+						{
+							english: "buy",
+							french: "acheter",
+							spanish: "comprar",
+							arabic: "شراء",
+							chinese: "买",
+						}[userLanguage],
+						`proceedbuy_${coin.address}`,
+					),
+					Markup.button.callback(
+						{
+							english: "sell",
+							french: "vendre",
+							spanish: "vender",
+							arabic: "بيع",
+							chinese: "卖",
+						}[userLanguage],
+						`proceedsell_${coin.address}`,
+					),
+					,
+				]),
+			);
+			// console.log(selectedCoin);
+		} else {
+			// console.log(contractAddress);
+			return await ctx.reply(
+				{
+					english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+					french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+					spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+					arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+					chinese: "我找不到代币，不支持的链或错误的合约地址。",
+				}[userLanguage],
+			);
+		}
+	});
+
 	bot.command("/ask", checkUserExistence, async (ctx) => {
 		if (ctx.update.message.chat.type === "private") {
 			if (ctx.update.message.from.is_bot) {
@@ -1511,7 +1622,15 @@ bot.command("/schedule", async (ctx) => {
 		});
 		return;
 	} else {
-		return ctx.reply("We couldn't parse your request, please try again.");
+		return ctx.reply(
+			{
+				english: "I couldn't parse your request, please try again.",
+				french: "Je n'ai pas pu analyser votre demande, veuillez réessayer.",
+				spanish: "No pude analizar tu solicitud, por favor inténtalo de nuevo.",
+				arabic: "لم أتمكن من تحليل طلبك، يرجى المحاولة مرة أخرى.",
+				chinese: "我无法解析您的请求，请重试。",
+			}[userLanguage],
+		);
 	}
 });
 /**

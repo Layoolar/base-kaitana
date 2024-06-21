@@ -173,16 +173,28 @@ bot.on("voice", async (ctx) => {
 
 	if (ctx.chat.type !== "private") {
 		return ctx.reply(
-			userLanguage === "english"
-				? "Voice commands can only be used in private chat"
-				: await translate("Voice commands can only be used in private chat", userLanguage),
+			{
+				english: "Voice commands can only be used in private chat.",
+				french: "Les commandes vocales ne peuvent être utilisées que dans un chat privé.",
+				spanish: "Los comandos de voz solo se pueden usar en un chat privado.",
+				arabic: "يمكن استخدام الأوامر الصوتية في الدردشة الخاصة فقط.",
+				chinese: "语音命令只能在私人聊天中使用。",
+			}[userLanguage],
 		);
 	}
 
 	//ctx.scene.leave();
 	const voice = ctx.message.voice;
 	if (voice.duration > 10) {
-		return ctx.reply(await translate("Maximum duration is 10 seconds", userLanguage));
+		return ctx.reply(
+			{
+				english: "Maximum duration is 10 seconds.",
+				french: "La durée maximale est de 10 secondes.",
+				spanish: "La duración máxima es de 10 segundos.",
+				arabic: "المدة القصوى هي 10 ثوانٍ.",
+				chinese: "最长持续时间为10秒。",
+			}[userLanguage],
+		);
 	}
 
 	try {

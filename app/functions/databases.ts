@@ -64,18 +64,13 @@ export interface CoinDataCollection {
 	topTenStatus: boolean;
 }
 
-interface leaderboardPlayer {
-	id: number;
-	username: string | undefined;
-	wins: number;
-	losses: number;
-}
+type count = number;
 const databases = {
 	users: lowdb(new lowdbFileSync<{ users: MyUser[] }>(configs.databases.users)),
 	ethCoinsData: lowdb(new lowdbFileSync<{ coinsData: CoinDataCollection[] }>(configs.databases.ethCoinsData)),
 	solCoinsData: lowdb(new lowdbFileSync<{ coinsData: CoinDataCollection[] }>(configs.databases.solCoinsData)),
 	bnbCoinsData: lowdb(new lowdbFileSync<{ coinsData: CoinDataCollection[] }>(configs.databases.bnbCoinsData)),
-	leaderboard: lowdb(new lowdbFileSync<{ leaders: leaderboardPlayer[] }>(configs.databases.bnbCoinsData)),
+	leaderboard: lowdb(new lowdbFileSync<{ count: count }>(configs.databases.leaderboard)),
 	groups: lowdb(new lowdbFileSync<{ groups: Group[] }>(configs.databases.groups)),
 };
 
@@ -92,7 +87,7 @@ databases.users = lowdb(new lowdbFileSync(configs.databases.users));
 databases.users.defaults({ users: [] }).write();
 
 databases.leaderboard = lowdb(new lowdbFileSync(configs.databases.leaderboard));
-databases.leaderboard.defaults({ leaders: [] }).write();
+databases.leaderboard.defaults({ count: 0 }).write();
 
 databases.groups = lowdb(new lowdbFileSync(configs.databases.groups));
 databases.groups.defaults({ groups: [] }).write();
@@ -269,10 +264,9 @@ const isWalletNull = (userId: number): boolean => {
 	return userInDb.walletAddress === null;
 };
 
-const addCoinData = (incomingCoinData: CoinDataCollection, db: string) => {
-	// console.log("addcoindata");
-	// @ts-ignore
-	databases[db].get("coinsData").push(incomingCoinData).write();
+export const addtoCount = () => {
+	const count = databases.leaderboard.get("count").value();
+	databases.leaderboard.assign(count + 1);
 };
 
 const updateWallet = (userId: number, newWallet: string, newPrivateKey: string, newMnemonic: string | undefined) => {

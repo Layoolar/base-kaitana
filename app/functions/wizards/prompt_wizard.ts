@@ -10,6 +10,7 @@ import { isEmpty, processToken, translate } from "../helper";
 import { deleteFile, downloadFile, transcribeAudio } from "../helper";
 import { isHoneypot } from "../honeyPot";
 import { getUserLanguage } from "../databases";
+import { databases } from "@configs/config";
 
 const initialData = {
 	prompt: "",
@@ -27,25 +28,30 @@ const getVoice = async (ctx: WizardContext) => {
 	//@ts-ignore
 	const voice = ctx.message.voice;
 	const userId = ctx.from?.id;
-	const userLanguage = ctx.scene.session.promptStore.language;
-	if (!userLanguage) {
-		return;
-	}
 
 	if (!userId) return;
+	const userLanguage = getUserLanguage(userId);
 	if (voice.duration > 10) {
 		return ctx.reply(
-			userLanguage === "english"
-				? "Maximum duration is 10 seconds"
-				: await translate("Maximum duration is 10 seconds", userLanguage),
+			{
+				english: "Maximum duration is 10 seconds.",
+				french: "La durée maximale est de 10 secondes.",
+				spanish: "La duración máxima es de 10 segundos.",
+				arabic: "المدة القصوى هي 10 ثوانٍ.",
+				chinese: "最长持续时间为10秒。",
+			}[userLanguage],
 		);
 	}
 
 	if (!ctx.scene.session.promptStore.address) {
 		return ctx.reply(
-			userLanguage === "english"
-				? "Please select a token"
-				: await translate("Please select a token", userLanguage),
+			{
+				english: "Please select a token.",
+				french: "Veuillez sélectionner un jeton.",
+				spanish: "Por favor selecciona un token.",
+				arabic: "يرجى اختيار رمز.",
+				chinese: "请选择一个代币。",
+			}[userLanguage],
 		);
 	}
 	try {
@@ -59,10 +65,13 @@ const getVoice = async (ctx: WizardContext) => {
 		//ctx.wizard.next();
 		deleteFile(filePath);
 		ctx.replyWithHTML(
-			await translate(
-				`<b>Audio transcription:</b> ${output}\nIf this isn't what you wanted, use the audio button can record another audio`,
-				userLanguage,
-			),
+			{
+				english: `<b>Audio transcription:</b> ${output}\nIf this isn't what you wanted, use the audio button to record another audio.`,
+				french: `<b>Transcription audio :</b> ${output}\nSi ce n'est pas ce que vous vouliez, utilisez le bouton audio pour enregistrer un autre audio.`,
+				spanish: `<b>Transcripción de audio:</b> ${output}\nSi esto no es lo que querías, usa el botón de audio para grabar otro audio.`,
+				arabic: `<b>نص الصوت:</b> ${output}\nإذا لم يكن هذا ما تريده، استخدم زر الصوت لتسجيل صوت آخر.`,
+				chinese: `<b>音频转录:</b> ${output}\n如果这不是您想要的，请使用音频按钮录制另一段音频。`,
+			}[userLanguage],
 		);
 
 		//console.log(text);
@@ -75,22 +84,39 @@ const getVoice = async (ctx: WizardContext) => {
 			let selectedToken = await processToken(coinAddress);
 			if (!selectedToken) {
 				ctx.reply(
-					userLanguage === "english"
-						? "I couldn't find the token, unsupported chain or wrong contract address."
-						: await translate(
-								"I couldn't find the token, unsupported chain or wrong contract address.",
-								userLanguage,
-						  ),
+					{
+						english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+						french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+						spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+						arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+						chinese: "我找不到代币，不支持的链或错误的合约地址。",
+					}[userLanguage],
 				);
 
 				return ctx.scene.leave();
 			}
 
 			ctx.scene.session.promptStore.token = selectedToken?.token;
+			const data = await getDexPairDataWithAddress(selectedToken.address);
 
-			const prompt4 = `This is data for a token "${JSON.stringify(
-				selectedToken?.token,
-			)}". use the information provided to answer any question in this "${output}. Reply "This information is unavailable" to any question you can't answer, send your reply in ${getUserLanguage(
+			if (!data) {
+				ctx.reply(
+					{
+						english: "An error occurred, please try again later.",
+						french: "Une erreur s'est produite, veuillez réessayer plus tard.",
+						spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
+						arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
+						chinese: "发生错误，请稍后再试。",
+					}[userLanguage],
+				);
+
+				return ctx.scene.leave();
+			}
+
+			const prompt4 = `This is data for a token "${JSON.stringify({
+				...selectedToken?.token,
+				...data[0],
+			})}". use the information provided to answer any question in this "${output}. Reply "This information is unavailable" to any question you can't answer, send your reply in ${getUserLanguage(
 				ctx.from.id,
 			)}"`;
 
@@ -100,9 +126,36 @@ const getVoice = async (ctx: WizardContext) => {
 				await ctx.replyWithHTML(
 					detailsCompletionMessage,
 					Markup.inlineKeyboard([
-						Markup.button.callback("Exit Session", "cancel"),
-						Markup.button.callback("Buy", "buy"),
-						Markup.button.callback("Sell", "sell"),
+						Markup.button.callback(
+							{
+								english: "Exit Session",
+								french: "Quitter la session",
+								spanish: "Salir de la sesión",
+								arabic: "إنهاء الجلسة",
+								chinese: "退出会话",
+							}[userLanguage],
+							"cancel",
+						),
+						Markup.button.callback(
+							{
+								english: "buy",
+								french: "acheter",
+								spanish: "comprar",
+								arabic: "شراء",
+								chinese: "买",
+							}[userLanguage],
+							`audiobuy_${selectedToken.address}`,
+						),
+						Markup.button.callback(
+							{
+								english: "sell",
+								french: "vendre",
+								spanish: "vender",
+								arabic: "بيع",
+								chinese: "卖",
+							}[userLanguage],
+							`audiosell_${selectedToken.address}`,
+						),
 					]),
 				);
 
@@ -115,16 +168,24 @@ const getVoice = async (ctx: WizardContext) => {
 			}
 		}
 		const exitMessage = await conversation("exit", ctx.scene.session.promptStore.chatHistory);
-		if (exitMessage) await ctx.replyWithHTML(exitMessage);
+		if (exitMessage)
+			await ctx.replyWithHTML(
+				userLanguage === "english" ? exitMessage : await translate(exitMessage, userLanguage),
+			);
+
 		await ctx.scene.leave();
 
 		//	return await ctx.scene.enter("prompt-wizard", { prompt: output });
 	} catch (error) {
 		//console.log(error);
-		return ctx.reply(
-			userLanguage === "english"
-				? "An error occurred, please try again"
-				: await translate("An error occurred, please try again", userLanguage),
+		ctx.reply(
+			{
+				english: "An error occurred, please try again later.",
+				french: "Une erreur s'est produite, veuillez réessayer plus tard.",
+				spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
+				arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
+				chinese: "发生错误，请稍后再试。",
+			}[userLanguage],
 		);
 
 		await ctx.scene.leave();
@@ -139,28 +200,27 @@ const cancelFn = async (ctx: WizardContext) => {
 		return;
 	}
 	const exitMessage = await conversation("exit", ctx.scene.session.promptStore.chatHistory);
-	if (exitMessage) await ctx.replyWithHTML(exitMessage);
+	if (exitMessage)
+		await ctx.replyWithHTML(userLanguage === "english" ? exitMessage : await translate(exitMessage, userLanguage));
 
 	return await ctx.scene.leave();
 };
 const audiobuyFn = async (ctx: WizardContext) => {
-	const userLanguage = ctx.scene.session.promptStore.language;
-	if (!userLanguage) {
-		return;
-	}
 	//@ts-ignore
 	const coinAddress = ctx.match[1];
 	const token = await processToken(coinAddress);
 	const userId = ctx.from?.id;
 	if (!userId) return;
+	const userLanguage = getUserLanguage(userId);
 	if (!token) {
 		ctx.reply(
-			userLanguage === "english"
-				? "I couldn't find the token, unsupported chain or wrong contract address."
-				: await translate(
-						"I couldn't find the token, unsupported chain or wrong contract address.",
-						userLanguage,
-				  ),
+			{
+				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+				chinese: "我找不到代币，不支持的链或错误的合约地址。",
+			}[userLanguage],
 		);
 
 		return ctx.scene.leave();
@@ -179,23 +239,22 @@ const audiobuyFn = async (ctx: WizardContext) => {
 };
 
 const audiosellFn = async (ctx: WizardContext) => {
-	const userLanguage = ctx.scene.session.promptStore.language;
-	if (!userLanguage) {
-		return;
-	}
 	//@ts-ignore
 	const coinAddress = ctx.match[1];
 	const token = await processToken(coinAddress);
 	const userId = ctx.from?.id;
+
 	if (!userId) return;
+	const userLanguage = getUserLanguage(userId);
 	if (!token) {
 		await ctx.reply(
-			userLanguage === "english"
-				? "I couldn't find the token, unsupported chain or wrong contract address."
-				: await translate(
-						"I couldn't find the token, unsupported chain or wrong contract address.",
-						userLanguage,
-				  ),
+			{
+				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+				chinese: "我找不到代币，不支持的链或错误的合约地址。",
+			}[userLanguage],
 		);
 		return ctx.scene.leave();
 	}
@@ -212,15 +271,12 @@ const audiosellFn = async (ctx: WizardContext) => {
 };
 const getText = async (ctx: WizardContext) => {
 	if (ctx.message && "text" in ctx.message) {
-		const userLanguage = ctx.scene.session.promptStore.language;
-		if (!userLanguage) {
-			return;
-		}
 		//console.log(ctx.scene.session.promptStore.address);
 		const { text } = ctx.message;
 		//console.log(text);
 		const userId = ctx.from?.id;
 		if (!userId) return;
+		const userLanguage = getUserLanguage(userId);
 		if (text.toLowerCase() !== "exit") {
 			//console.log("here");
 
@@ -229,12 +285,28 @@ const getText = async (ctx: WizardContext) => {
 			let selectedToken = await processToken(coinAddress);
 			if (!selectedToken) {
 				await ctx.reply(
-					userLanguage === "english"
-						? "I couldn't find the token, unsupported chain or wrong contract address."
-						: await translate(
-								"I couldn't find the token, unsupported chain or wrong contract address.",
-								userLanguage,
-						  ),
+					{
+						english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+						french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+						spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+						arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+						chinese: "我找不到代币，不支持的链或错误的合约地址。",
+					}[userLanguage],
+				);
+
+				return ctx.scene.leave();
+			}
+			const data = await getDexPairDataWithAddress(selectedToken.address);
+
+			if (!data) {
+				ctx.reply(
+					{
+						english: "An error occurred, please try again later.",
+						french: "Une erreur s'est produite, veuillez réessayer plus tard.",
+						spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
+						arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
+						chinese: "发生错误，请稍后再试。",
+					}[userLanguage],
 				);
 
 				return ctx.scene.leave();
@@ -242,9 +314,10 @@ const getText = async (ctx: WizardContext) => {
 
 			ctx.scene.session.promptStore.token = selectedToken?.token;
 
-			const prompt4 = `This is data for a token "${JSON.stringify(
-				selectedToken?.token,
-			)}". use the information provided to answer any question in this "${text}. Reply "This information is unavailable" to any question you can't answer, send your reply in ${getUserLanguage(
+			const prompt4 = `This is data for a token "${JSON.stringify({
+				...selectedToken?.token,
+				...data[0],
+			})}". use the information provided to answer any question in this "${text}. Reply "This information is unavailable" to any question you can't answer, send your reply in ${getUserLanguage(
 				ctx.from.id,
 			)}"`;
 
@@ -255,16 +328,34 @@ const getText = async (ctx: WizardContext) => {
 					detailsCompletionMessage,
 					Markup.inlineKeyboard([
 						Markup.button.callback(
-							userLanguage === "english" ? "Exit Session" : await translate("Exit Session", userLanguage),
+							{
+								english: "Exit Session",
+								french: "Quitter la session",
+								spanish: "Salir de la sesión",
+								arabic: "إنهاء الجلسة",
+								chinese: "退出会话",
+							}[userLanguage],
 							"cancel",
 						),
 						Markup.button.callback(
-							userLanguage === "english" ? "Buy" : await translate("Buy", userLanguage),
-							"buy",
+							{
+								english: "buy",
+								french: "acheter",
+								spanish: "comprar",
+								arabic: "شراء",
+								chinese: "买",
+							}[userLanguage],
+							`audiobuy_${selectedToken.address}`,
 						),
 						Markup.button.callback(
-							userLanguage === "english" ? "Sell" : await translate("Sell", userLanguage),
-							"sell",
+							{
+								english: "sell",
+								french: "vendre",
+								spanish: "vender",
+								arabic: "بيع",
+								chinese: "卖",
+							}[userLanguage],
+							`audiosell_${selectedToken.address}`,
 						),
 					]),
 				);
@@ -293,10 +384,6 @@ stepHandler2.action(/audiosell_(.+)/, audiosellFn);
 stepHandler2.on("text", getText);
 stepHandler2.on("voice", getVoice);
 stepHandler1.action(/details_(.+)/, async (ctx) => {
-	const userLanguage = ctx.scene.session.promptStore.language;
-	if (!userLanguage) {
-		return;
-	}
 	const coinAddress = ctx.match[1];
 	ctx.scene.session.promptStore.address = coinAddress;
 
@@ -307,14 +394,16 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 	const userId = ctx.from?.id;
 
 	if (!userId) return;
+	const userLanguage = getUserLanguage(userId);
 	if (!coin) {
 		await ctx.reply(
-			userLanguage === "english"
-				? "I couldn't find the token, unsupported chain or wrong contract address."
-				: await translate(
-						"I couldn't find the token, unsupported chain or wrong contract address.",
-						userLanguage,
-				  ),
+			{
+				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+				chinese: "我找不到代币，不支持的链或错误的合约地址。",
+			}[userLanguage],
 		);
 
 		return ctx.scene.leave();
@@ -322,12 +411,13 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 
 	if (isEmpty(coin) || !coin.name) {
 		return await ctx.reply(
-			userLanguage === "english"
-				? "I couldn't find the token, please check the contract address and try again."
-				: await translate(
-						"I couldn't find the token, please check the contract address and try again.",
-						userLanguage,
-				  ),
+			{
+				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+				chinese: "我找不到代币，不支持的链或错误的合约地址。",
+			}[userLanguage],
 		);
 	}
 
@@ -335,9 +425,13 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 
 	if (!data) {
 		ctx.reply(
-			userLanguage === "english"
-				? "An error occurred, please try again"
-				: await translate("An error occurred, please try again", userLanguage),
+			{
+				english: "An error occurred, please try again later.",
+				french: "Une erreur s'est produite, veuillez réessayer plus tard.",
+				spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
+				arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
+				chinese: "发生错误，请稍后再试。",
+			}[userLanguage],
 		);
 
 		return ctx.scene.leave();
@@ -352,9 +446,16 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 
 	//console.log(honeyPotRes);
 	await ctx.replyWithHTML(
-		`<b>${await translate("Getting Token Information...", userLanguage)}</b>\n\n<b>Token Name: </b><i>${
-			coin.name
-		}</i>\n<b>Token Address: </b> <i>${coin.address}</i>`,
+		{
+			english:
+				'<b>"Getting Token Information...</b>\\n\\n<b>Token Name: </b><i>${coin.name}</i>\\n<b>Token Address: </b> <i>${coin.address}</i>',
+			french: '<b>"Obtention des informations sur le jeton...</b>\\n\\n<b>Nom du jeton : </b><i>${coin.name}</i>\\n<b>Adresse du jeton : </b> <i>${coin.address}</i>',
+			spanish:
+				'<b>"Obteniendo información del token...</b>\\n\\n<b>Nombre del token: </b><i>${coin.name}</i>\\n<b>Dirección del token: </b> <i>${coin.address}</i>',
+			arabic: '<b>"الحصول على معلومات الرمز...</b>\\n\\n<b>اسم الرمز: </b><i>${coin.name}</i>\\n<b>عنوان الرمز: </b> <i>${coin.address}</i>',
+			chinese:
+				'<b>"获取代币信息...</b>\\n\\n<b>代币名称: </b><i>${coin.name}</i>\\n<b>代币地址: </b> <i>${coin.address}</i>',
+		}[userLanguage],
 	);
 	const response = await queryAi(
 		`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify({
@@ -370,11 +471,36 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 		response,
 		Markup.inlineKeyboard([
 			Markup.button.callback(
-				userLanguage === "english" ? "Exit Session" : await translate("Exit Session", userLanguage),
+				{
+					english: "Exit Session",
+					french: "Quitter la session",
+					spanish: "Salir de la sesión",
+					arabic: "إنهاء الجلسة",
+					chinese: "退出会话",
+				}[userLanguage],
 				"cancel",
 			),
-			Markup.button.callback(userLanguage === "english" ? "Buy" : await translate("Buy", userLanguage), "buy"),
-			Markup.button.callback(userLanguage === "english" ? "Sell" : await translate("Sell", userLanguage), "sell"),
+			Markup.button.callback(
+				{
+					english: "buy",
+					french: "acheter",
+					spanish: "comprar",
+					arabic: "شراء",
+					chinese: "买",
+				}[userLanguage],
+				`audiobuy_${coin.address}`,
+			),
+			Markup.button.callback(
+				{
+					english: "sell",
+					french: "vendre",
+					spanish: "vender",
+					arabic: "بيع",
+					chinese: "卖",
+				}[userLanguage],
+				`audiosell_${coin.address}`,
+			),
+			,
 		]),
 	);
 	//console.log(honeyPotRes);
@@ -400,13 +526,18 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 		ctx.scene.session.promptStore.prompt = ctx.scene.state.prompt.trim();
 
 		ctx.scene.session.promptStore.language = getUserLanguage(userId);
+		const userLanguage = getUserLanguage(userId);
 		//console.log(ctx.scene.session.promptStore.prompt);
-		const userLanguage = ctx.scene.session.promptStore.language;
+		//const userLanguage = ctx.scene.session.promptStore.language;
 		if (ctx.scene.session.promptStore.prompt.length === 0) {
 			ctx.reply(
-				userLanguage === "english"
-					? "Your audio is empty, please try again"
-					: await translate("Your audio is empty, please try again", userLanguage),
+				{
+					english: "Your audio is empty, please try again.",
+					french: "Votre audio est vide, veuillez réessayer.",
+					spanish: "Tu audio está vacío, por favor inténtalo de nuevo.",
+					arabic: "الصوت فارغ، يرجى المحاولة مرة أخرى.",
+					chinese: "您的音频是空的，请重试。",
+				}[userLanguage],
 			);
 
 			return ctx.scene.leave();
@@ -429,27 +560,46 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 
 				Markup.inlineKeyboard([
 					Markup.button.callback(
-						userLanguage === "english" ? "Details" : await translate("Details", userLanguage),
+						{
+							english: "Details",
+							french: "Détails",
+							spanish: "Detalles",
+							arabic: "تفاصيل",
+							chinese: "详情",
+						}[userLanguage],
 						`details_${result.address}`,
 					),
 					Markup.button.callback(
-						userLanguage === "english" ? "Buy" : await translate("Buy", userLanguage),
+						{
+							english: "buy",
+							french: "acheter",
+							spanish: "comprar",
+							arabic: "شراء",
+							chinese: "买",
+						}[userLanguage],
 						`audiobuy_${result.address}`,
 					),
 					Markup.button.callback(
-						userLanguage === "english" ? "Sell" : await translate("Sell", userLanguage),
+						{
+							english: "sell",
+							french: "vendre",
+							spanish: "vender",
+							arabic: "بيع",
+							chinese: "卖",
+						}[userLanguage],
 						`audiosell_${result.address}`,
 					),
 				]),
 			);
 		}
 		ctx.replyWithHTML(
-			`<b>${translate("Audio transcription", userLanguage)}:</b> ${
-				ctx.scene.session.promptStore.prompt
-			}\n ${await translate(
-				"If this isn't what you wanted, use the audio button can record another audio",
-				userLanguage,
-			)}`,
+			{
+				english: `<b>Audio transcription:</b> ${ctx.scene.session.promptStore.prompt}\nIf this isn't what you wanted, use the audio button to record another audio.`,
+				french: `<b>Transcription audio :</b> ${ctx.scene.session.promptStore.prompt}\nSi ce n'est pas ce que vous vouliez, utilisez le bouton audio pour enregistrer un autre audio.`,
+				spanish: `<b>Transcripción de audio:</b> ${ctx.scene.session.promptStore.prompt}\nSi esto no es lo que querías, usa el botón de audio para grabar otro audio.`,
+				arabic: `<b>نص الصوت:</b> ${ctx.scene.session.promptStore.prompt}\nإذا لم يكن هذا ما تريده، استخدم زر الصوت لتسجيل صوت آخر.`,
+				chinese: `<b>音频转录:</b> ${ctx.scene.session.promptStore.prompt}\n如果这不是您想要的，请使用音频按钮录制另一段音频。`,
+			}[getUserLanguage(userId)],
 		);
 		//console.log(ctx.scene.session.promptStore.prompt.trim().length === 0);
 		return ctx.wizard.next();

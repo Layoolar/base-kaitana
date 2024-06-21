@@ -5,7 +5,14 @@ import { Composer, Context, Markup, Scenes } from "telegraf";
 import { queryAi } from "../queryApi";
 import { getCaPrompt, getamountprompt, getsellamountprompt } from "../prompt";
 import { fetchCoin } from "../fetchCoins";
-import { addUserHolding, getUserWalletDetails, removeUserHolding, sendMessageToAllGroups } from "../databases";
+import {
+	addUserHolding,
+	addtoCount,
+	getUserLanguage,
+	getUserWalletDetails,
+	removeUserHolding,
+	sendMessageToAllGroups,
+} from "../databases";
 import { getEtherBalance, getTokenBalance } from "../checkBalance";
 import { addMillisecondsToDate, delay, getEthPrice, processToken } from "../helper";
 import { sell, sellOnEth } from "../sellfunction";
@@ -29,14 +36,20 @@ const stepHandler2 = new Composer<WizardContext>();
 export const sellWizard = new Scenes.WizardScene<WizardContext>(
 	"sell-wizard",
 	async (ctx) => {
-		if (!ctx.from?.id) {
-			ctx.reply("An error occurred please try again");
-			return ctx.scene.leave();
-		}
+		if (!ctx.from?.id) return;
+		const userLanguage = getUserLanguage(ctx.from?.id);
 
 		const wallet = getUserWalletDetails(ctx.from.id);
 		if (!wallet) {
-			await ctx.reply("You have not generated a wallet yet, kindly send /wallet command privately");
+			await ctx.reply(
+				{
+					english: `You do not have an attached wallet, send a direct message with /wallet to initialise it`,
+					french: `Vous n'avez pas de portefeuille attaché, envoyez un message direct avec /wallet pour l'initialiser`,
+					spanish: `No tienes un monedero adjunto, envía un mensaje directo con /wallet para iniciarlo`,
+					arabic: `ليس لديك محفظة مرفقة، أرسل رسالة مباشرة مع /wallet لتهيئتها`,
+					chinese: ` 您没有附加的钱包，请发送私信并使用 /wallet 来初始化它`,
+				}[userLanguage],
+			);
 			return ctx.scene.leave();
 		}
 		ctx.scene.session.sellStore = JSON.parse(JSON.stringify(initialData));
@@ -53,17 +66,48 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 		ctx.scene.session.sellStore.chain = ctx.scene.state.token.chain;
 
 		if (!ctx.from?.id || !ctx.scene.session.sellStore.token || !ctx.scene.session.sellStore.sellAddress) {
-			ctx.reply("An error occurred please try again");
+			ctx.reply(
+				{
+					english: "An error occurred, please try again",
+					french: "Une erreur s'est produite, veuillez réessayer",
+					spanish: "Se ha producido un error, por favor inténtalo de nuevo",
+					arabic: "حدث خطأ، يرجى المحاولة مرة أخرى",
+					chinese: "发生错误，请重试",
+				}[userLanguage],
+			);
 			return ctx.scene.leave();
 		}
 
 		if (ctx.scene.session.sellStore.amount) {
 			await ctx.replyWithHTML(
-				`Are you sure you want to sell ${ctx.scene.session.sellStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.sellStore.sellAddress}</b>
-                \nAmount: <b>${ctx.scene.session.sellStore.amount} %</b>\nCurrent Price: <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+				{
+					english: `Are you sure you want to sell ${ctx.scene.session.sellStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.sellStore.sellAddress}</b>\nAmount: <b>${ctx.scene.session.sellStore.amount} %</b>\nCurrent Price: <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+					french: `Êtes-vous sûr de vouloir vendre ${ctx.scene.session.sellStore.token?.name} ?\n\n<i>Adresse : <b>${ctx.scene.session.sellStore.sellAddress}</b>\nMontant : <b>${ctx.scene.session.sellStore.amount} %</b>\nPrix actuel : <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+					spanish: `¿Estás seguro/a de querer vender ${ctx.scene.session.sellStore.token?.name} ?\n\n<i>Dirección: <b>${ctx.scene.session.sellStore.sellAddress}</b>\nCantidad: <b>${ctx.scene.session.sellStore.amount} %</b>\nPrecio actual: <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+					arabic: `هل أنت متأكد من رغبتك في بيع ${ctx.scene.session.sellStore.token?.name} ؟\n\n<i>العنوان: <b>${ctx.scene.session.sellStore.sellAddress}</b>\nالمبلغ: <b>${ctx.scene.session.sellStore.amount} %</b>\nالسعر الحالي: <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+					chinese: `您确定要出售 ${ctx.scene.session.sellStore.token?.name} 吗？\n\n<i>地址： <b>${ctx.scene.session.sellStore.sellAddress}</b>\n数量： <b>${ctx.scene.session.sellStore.amount} %</b>\n当前价格： <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+				}[userLanguage],
 				Markup.inlineKeyboard([
-					Markup.button.callback("Yes I am sure", "sendsell"),
-					Markup.button.callback("Cancel", "cancel"),
+					Markup.button.callback(
+						{
+							english: "Yes, I am sure",
+							french: "Oui, je suis sûr(e)",
+							spanish: "Sí, estoy seguro/a",
+							arabic: "نعم، أنا متأكد",
+							chinese: "是的，我确定",
+						}[userLanguage],
+						"sendsell",
+					),
+					Markup.button.callback(
+						{
+							english: "Cancel",
+							french: "Annuler",
+							spanish: "Cancelar",
+							arabic: "إلغاء",
+							chinese: "取消",
+						}[userLanguage],
+						"cancel",
+					),
 				]),
 			);
 
@@ -71,8 +115,25 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 			return ctx.wizard.next();
 		} else {
 			await ctx.replyWithHTML(
-				`What percentage of ${ctx.scene.session.sellStore.token?.name} do you want to sell `,
-				Markup.inlineKeyboard([Markup.button.callback("Cancel", "cancel")]),
+				{
+					english: `What percentage of ${ctx.scene.session.sellStore.token?.name} do you want to sell`,
+					french: `Quel pourcentage de ${ctx.scene.session.sellStore.token?.name} souhaitez-vous vendre`,
+					spanish: `¿Qué porcentaje de ${ctx.scene.session.sellStore.token?.name} quieres vender`,
+					arabic: `ما هي نسبة ${ctx.scene.session.sellStore.token?.name} التي ترغب في بيعها`,
+					chinese: `您想出售${ctx.scene.session.sellStore.token?.name}的百分之多少`,
+				}[userLanguage],
+				Markup.inlineKeyboard([
+					Markup.button.callback(
+						{
+							english: "Cancel",
+							french: "Annuler",
+							spanish: "Cancelar",
+							arabic: "إلغاء",
+							chinese: "取消",
+						}[userLanguage],
+						"cancel",
+					),
+				]),
 			);
 
 			return ctx.wizard.next();
@@ -86,12 +147,30 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 stepHandler2.on("text", async (ctx) => {
 	if (ctx.message && "text" in ctx.message) {
 		const { text } = ctx.message;
-
+		if (!ctx.from?.id) return;
+		const userLanguage = getUserLanguage(ctx.from?.id);
 		const am = await queryAi(getsellamountprompt(text));
 		if (am.toLowerCase() === "null") {
 			await ctx.replyWithHTML(
-				"Please provide a valid value.",
-				Markup.inlineKeyboard([Markup.button.callback("Cancel", "cancel")]),
+				{
+					english: "Please provide a valid value.",
+					french: "Veuillez fournir une valeur valide.",
+					spanish: "Por favor, proporcione un valor válido.",
+					arabic: "يرجى تقديم قيمة صالحة.",
+					chinese: "请提供有效值。",
+				}[userLanguage],
+				Markup.inlineKeyboard([
+					Markup.button.callback(
+						{
+							english: "Cancel",
+							french: "Annuler",
+							spanish: "Cancelar",
+							arabic: "إلغاء",
+							chinese: "取消",
+						}[userLanguage],
+						"cancel",
+					),
+				]),
 			);
 			return;
 		} else {
@@ -103,17 +182,48 @@ stepHandler2.on("text", async (ctx) => {
 
 		const token = await processToken(sellAddress);
 		if (!token) {
-			ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
+			ctx.reply(
+				{
+					english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+					french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+					spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+					arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+					chinese: "我找不到代币，不支持的链或错误的合约地址。",
+				}[userLanguage],
+			);
 			return ctx.scene.leave();
 		}
 		ctx.scene.session.sellStore.token = token.token;
 
 		await ctx.replyWithHTML(
-			`Are you sure you want to sell ${ctx.scene.session.sellStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.sellStore.sellAddress}</b>
-                \nAmount: <b>${ctx.scene.session.sellStore.amount} %</b>\nCurrent Price: <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+			{
+				english: `Are you sure you want to sell ${ctx.scene.session.sellStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.sellStore.sellAddress}</b>\nAmount: <b>${ctx.scene.session.sellStore.amount} %</b>\nCurrent Price: <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+				french: `Êtes-vous sûr de vouloir vendre ${ctx.scene.session.sellStore.token?.name} ?\n\n<i>Adresse : <b>${ctx.scene.session.sellStore.sellAddress}</b>\nMontant : <b>${ctx.scene.session.sellStore.amount} %</b>\nPrix actuel : <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+				spanish: `¿Estás seguro/a de querer vender ${ctx.scene.session.sellStore.token?.name} ?\n\n<i>Dirección: <b>${ctx.scene.session.sellStore.sellAddress}</b>\nCantidad: <b>${ctx.scene.session.sellStore.amount} %</b>\nPrecio actual: <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+				arabic: `هل أنت متأكد من رغبتك في بيع ${ctx.scene.session.sellStore.token?.name} ؟\n\n<i>العنوان: <b>${ctx.scene.session.sellStore.sellAddress}</b>\nالمبلغ: <b>${ctx.scene.session.sellStore.amount} %</b>\nالسعر الحالي: <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+				chinese: `您确定要出售 ${ctx.scene.session.sellStore.token?.name} 吗？\n\n<i>地址： <b>${ctx.scene.session.sellStore.sellAddress}</b>\n数量： <b>${ctx.scene.session.sellStore.amount} %</b>\n当前价格： <b>${ctx.scene.session.sellStore.token?.price}</b></i>`,
+			}[userLanguage],
 			Markup.inlineKeyboard([
-				Markup.button.callback("Yes I am sure", "sendsell"),
-				Markup.button.callback("Cancel", "cancel"),
+				Markup.button.callback(
+					{
+						english: "Yes, I am sure",
+						french: "Oui, je suis sûr(e)",
+						spanish: "Sí, estoy seguro/a",
+						arabic: "نعم، أنا متأكد",
+						chinese: "是的，我确定",
+					}[userLanguage],
+					"sendsell",
+				),
+				Markup.button.callback(
+					{
+						english: "Cancel",
+						french: "Annuler",
+						spanish: "Cancelar",
+						arabic: "إلغاء",
+						chinese: "取消",
+					}[userLanguage],
+					"cancel",
+				),
 			]),
 		);
 
@@ -122,53 +232,109 @@ stepHandler2.on("text", async (ctx) => {
 });
 stepHandler.action("sendsell", async (ctx) => {
 	const { sellAddress, amount, token, time } = ctx.scene.session.sellStore;
-
+	if (!ctx.from?.id) return;
+	const userLanguage = getUserLanguage(ctx.from?.id);
 	if (!sellAddress || !amount || !token) {
-		ctx.reply("An error occurred please try again");
+		ctx.reply(
+			{
+				english: "An error occurred, please try again",
+				french: "Une erreur s'est produite, veuillez réessayer",
+				spanish: "Se ha producido un error, por favor inténtalo de nuevo",
+				arabic: "حدث خطأ، يرجى المحاولة مرة أخرى",
+				chinese: "发生错误，请重试",
+			}[userLanguage],
+		);
 		return ctx.scene.leave();
 	}
 
 	if (time) {
 		if (parseFloat(time) > 86400000) {
-			ctx.reply("Error: Maximum interval is 24 hours");
+			ctx.reply(
+				{
+					english: "Error: Maximum interval is 24 hours",
+					french: "Erreur : L'intervalle maximum est de 24 heures",
+					spanish: "Error: El intervalo máximo es de 24 horas",
+					arabic: "خطأ: الحد الأقصى للفترة هو 24 ساعة",
+					chinese: "错误：最大间隔为24小时",
+				}[userLanguage],
+			);
 			return ctx.scene.leave();
 		}
 
 		const date = addMillisecondsToDate(parseFloat(time));
-		ctx.reply(`Sell has been scheduled for ${date.toTimeString()}`);
+		ctx.reply(
+			{
+				english: `Sell has been scheduled for ${date.toTimeString()}`,
+				french: `La vente a été programmée pour ${date.toTimeString()}`,
+				spanish: `La venta está programada para ${date.toTimeString()}`,
+				arabic: `تم جدولة البيع لـ ${date.toTimeString()}`,
+				chinese: `出售已安排在 ${date.toTimeString()}`,
+			}[userLanguage],
+		);
 		//await delay(parseFloat(time));
 		setTimeout(async () => {
 			try {
 				await executeSell(ctx, amount, token, sellAddress);
 			} catch (error) {
 				console.log(error);
-				ctx.reply("An Erorr occurred, please try again later");
+				ctx.reply(
+					{
+						english: "An error occurred, please try again",
+						french: "Une erreur s'est produite, veuillez réessayer",
+						spanish: "Se ha producido un error, por favor inténtalo de nuevo",
+						arabic: "حدث خطأ، يرجى المحاولة مرة أخرى",
+						chinese: "发生错误，请重试",
+					}[userLanguage],
+				);
 				return await ctx.scene.leave();
 			}
 		}, parseFloat(time));
 	} else {
-		ctx.reply(`Selling ${ctx.scene.session.sellStore.token?.name} ...`);
+		ctx.reply(
+			{
+				english: `Selling ${ctx.scene.session.sellStore.token?.name} ...`,
+				french: `Vente de ${ctx.scene.session.sellStore.token?.name} ...`,
+				spanish: `Vendiendo ${ctx.scene.session.sellStore.token?.name} ...`,
+				arabic: `جاري بيع ${ctx.scene.session.sellStore.token?.name} ...`,
+				chinese: `出售 ${ctx.scene.session.sellStore.token?.name} ...`,
+			}[userLanguage],
+		);
 
 		try {
 			await executeSell(ctx, amount, token, sellAddress);
 		} catch (error) {
 			console.log(error);
-			ctx.reply("An Erorr occurred, please try again later");
+			ctx.reply(
+				{
+					english: "An error occurred, please try again",
+					french: "Une erreur s'est produite, veuillez réessayer",
+					spanish: "Se ha producido un error, por favor inténtalo de nuevo",
+					arabic: "حدث خطأ، يرجى المحاولة مرة أخرى",
+					chinese: "发生错误，请重试",
+				}[userLanguage],
+			);
 			return await ctx.scene.leave();
 		}
 	}
 
 	return await ctx.scene.leave();
 });
+const cancelfn = async (ctx: WizardContext) => {
+	if (!ctx.from?.id) return;
+	await ctx.reply(
+		{
+			english: "You've cancelled the operation",
+			french: "Vous avez annulé l'opération",
+			spanish: "Has cancelado la operación",
+			arabic: "لقد قمت بإلغاء العملية",
+			chinese: "您已取消操作",
+		}[getUserLanguage(ctx.from?.id)],
+	);
 
-stepHandler.action("cancel", async (ctx) => {
-	await ctx.reply("You've cancelled the operation");
 	return await ctx.scene.leave();
-});
-stepHandler2.action("cancel", async (ctx) => {
-	await ctx.reply("You've cancelled the operation");
-	return await ctx.scene.leave();
-});
+};
+stepHandler.action("cancel", cancelfn);
+stepHandler2.action("cancel", cancelfn);
 
 const executeSell = async (
 	ctx: WizardContext,
@@ -177,11 +343,21 @@ const executeSell = async (
 	token: TokenData,
 	sellAddress: string,
 ) => {
-	if (!ctx.from) return await ctx.replyWithHTML("<b>Transaction failed</b>");
+	//if (!ctx.from) return await ctx.replyWithHTML("<b>Transaction failed</b>");
+	if (!ctx.from?.id) return;
+	const userLanguage = getUserLanguage(ctx.from?.id);
 	const wallet = getUserWalletDetails(ctx.from.id);
 	const tokenData = await processToken(sellAddress);
 	if (!tokenData) {
-		ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
+		ctx.reply(
+			{
+				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+				chinese: "我找不到代币，不支持的链或错误的合约地址。",
+			}[userLanguage],
+		);
 		return ctx.scene.leave();
 	}
 
@@ -190,7 +366,15 @@ const executeSell = async (
 		//const res = await getEtherBalance(wallet?.walletAddress);
 		const tokensBalance = await getTokenBalance(wallet?.walletAddress, token.address, "base");
 		if (!tokensBalance) {
-			await ctx.reply("Couldn't get balance, please try again");
+			await ctx.reply(
+				{
+					english: "Couldn't get balance, please try again",
+					french: "Impossible d'obtenir le solde, veuillez réessayer",
+					spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
+					arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
+					chinese: "无法获取余额，请重试",
+				}[userLanguage],
+			);
 			return ctx.scene.leave();
 		}
 
@@ -201,7 +385,15 @@ const executeSell = async (
 		ctx.scene.session.sellStore.currency = "SOL";
 		const solbalance = await getParticularSolTokenBalance(sellAddress, wallet?.solWalletAddress);
 		if (!solbalance || solbalance.length === 0) {
-			await ctx.reply("Couldn't get balance, please try again");
+			await ctx.reply(
+				{
+					english: "Couldn't get balance, please try again",
+					french: "Impossible d'obtenir le solde, veuillez réessayer",
+					spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
+					arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
+					chinese: "无法获取余额，请重试",
+				}[userLanguage],
+			);
 
 			return ctx.scene.leave();
 		}
@@ -210,17 +402,41 @@ const executeSell = async (
 		ctx.scene.session.sellStore.currency = "ETH";
 		const tokensBalance = await getTokenBalance(wallet?.walletAddress, token.address, "ethereum");
 		if (!tokensBalance) {
-			await ctx.reply("Couldn't get balance, please try again");
+			await ctx.reply(
+				{
+					english: "Couldn't get balance, please try again",
+					french: "Impossible d'obtenir le solde, veuillez réessayer",
+					spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
+					arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
+					chinese: "无法获取余额，请重试",
+				}[userLanguage],
+			);
 			return ctx.scene.leave();
 		}
 		ctx.scene.session.sellStore.userBalance = tokensBalance;
 	} else {
-		await ctx.reply("only trading on sol,base and eth yet");
+		await ctx.reply(
+			{
+				english: "Only Trading on Solana, Base and Ethereum are supported at this time",
+				french: "Seuls les échanges sur Solana, Base et Ethereum sont pris en charge pour le moment",
+				spanish: "Solo se admiten transacciones en Solana, Base y Ethereum en este momento",
+				arabic: "يتم دعم التداول فقط على Solana و Base و Ethereum في الوقت الحالي",
+				chinese: "目前仅支持在Solana、Base和Ethereum上交易",
+			}[getUserLanguage(ctx.from?.id)],
+		);
 		return ctx.scene.leave();
 	}
 
 	if (!ctx.scene.session.sellStore.userBalance) {
-		await ctx.reply("Couldn't get balance, please try again");
+		await ctx.reply(
+			{
+				english: "Couldn't get balance, please try again",
+				french: "Impossible d'obtenir le solde, veuillez réessayer",
+				spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
+				arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
+				chinese: "无法获取余额，请重试",
+			}[userLanguage],
+		);
 		return ctx.scene.leave();
 	}
 
@@ -228,7 +444,14 @@ const executeSell = async (
 
 	if (amountintokens > ctx.scene.session.sellStore.userBalance) {
 		ctx.replyWithHTML(
-			`You have insufficient balance (<b>${ctx.scene.session.sellStore.userBalance} ${token.symbol}</b>) to make this transaction. Operation cancelled.`,
+			{
+				english: "You have insufficient balance to make this transaction, please try again with a valid amount",
+				french: "Vous n'avez pas assez de solde pour effectuer cette transaction, veuillez réessayer avec un montant valide",
+				spanish:
+					"No tienes suficiente saldo para realizar esta transacción, por favor inténtalo de nuevo con un monto válido",
+				arabic: "لا يوجد لديك رصيد كافٍ لإتمام هذه العملية، يرجى المحاولة مرة أخرى بمبلغ صالح",
+				chinese: "您的余额不足以完成此交易，请使用有效金额重试",
+			}[userLanguage],
 		);
 		return ctx.scene.leave();
 	}
@@ -238,21 +461,56 @@ const executeSell = async (
 		try {
 			hash = await sellOnEth(wallet?.privateKey, token.address, amountintokens.toFixed(2).toString());
 
-			if (!hash) throw new Error("Transaction failed/expired");
+			if (!hash)
+				throw new Error(
+					{
+						english: "Transaction failed/expired",
+						french: "Transaction échouée/expirée",
+						spanish: "Transacción fallida/caducada",
+						arabic: "فشلت العملية / انتهت الصلاحية",
+						chinese: "交易失败/已过期",
+					}[userLanguage],
+				);
 			await ctx.replyWithHTML(
-				`You sold ${token?.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://etherscan.io/tx/${hash}">${hash}</a>`,
+				{
+					english: `You sold ${token?.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash: <a href="https://etherscan.io/tx/${hash}">${hash}</a>`,
+					french: `Vous avez vendu ${token?.name} \n<i>Montant : <b>${amountintokens} ${token.symbol}</b></i>\n<i>Adresse du contrat : <b>${sellAddress}</b></i>\nHash de transaction : <a href="https://etherscan.io/tx/${hash}">${hash}</a>`,
+					spanish: `Has vendido ${token?.name} \n<i>Cantidad: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Dirección del contrato: <b>${sellAddress}</b></i>\nHash de transacción: <a href="https://etherscan.io/tx/${hash}">${hash}</a>`,
+					arabic: `لقد قمت ببيع ${token?.name} \n<i>المبلغ: <b>${amountintokens} ${token.symbol}</b></i>\n<i>عنوان العقد: <b>${sellAddress}</b></i>\nمعرف المعاملة: <a href="https://etherscan.io/tx/${hash}">${hash}</a>`,
+					chinese: `您已出售 ${token?.name} \n<i>数量： <b>${amountintokens} ${token.symbol}</b></i>\n<i>合约地址： <b>${sellAddress}</b></i>\n交易哈希： <a href="https://etherscan.io/tx/${hash}">${hash}</a>`,
+				}[userLanguage],
 			);
+			const balance = await getTokenBalance(wallet?.walletAddress, sellAddress);
+			if (balance <= 0 && hash) removeUserHolding(ctx.from?.id, sellAddress, "ethereum");
+			addtoCount();
 			//ctx.scene.leave();
 			return hash;
 		} catch (error: any) {
-			ctx.reply(`An Error occured please try again later\nError Message: ${error.message}`);
+			ctx.reply(
+				{
+					english: `An Error occurred please try again later\nError Message: ${error.message}.`,
+					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${error.message}.`,
+					spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${error.message}.`,
+					arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${error.message}.`,
+					chinese: `发生错误，请稍后重试\n错误信息: ${error.message}.`,
+				}[userLanguage],
+			);
 			return ctx.scene.leave();
 		}
 	}
 
 	if (ctx.scene.session.sellStore.chain?.toLowerCase() === "solana") {
 		try {
-			throw new Error("Due to the congestion on the sol ecosystem, Spl tokn trades ar teemporarily unavailable");
+			throw new Error(
+				{
+					english: "Due to the congestion on the SOL ecosystem, Spl token trades are temporarily unavailable",
+					french: "En raison de la congestion sur l'écosystème SOL, les échanges de jetons Spl ne sont temporairement pas disponibles",
+					spanish:
+						"Debido a la congestión en el ecosistema SOL, los intercambios de tokens Spl no están disponibles temporalmente",
+					arabic: "نظرًا للازدحام في نظام SOL، فإن تداول رموز Spl غير متاح مؤقتًا",
+					chinese: "由于SOL生态系统拥堵，Spl代币交易暂时不可用",
+				}[userLanguage],
+			);
 			hash = await sellTokensWithSolana(
 				wallet?.solPrivateKey,
 				sellAddress,
@@ -277,7 +535,15 @@ const executeSell = async (
 			return hash;
 		} catch (error: any) {
 			//await delay(5000);
-			ctx.reply(`An Error occured please try again later\nError Message: ${error.message}.`);
+			ctx.reply(
+				{
+					english: `An Error occurred please try again later\nError Message: ${error.message}.`,
+					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${error.message}.`,
+					spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${error.message}.`,
+					arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${error.message}.`,
+					chinese: `发生错误，请稍后重试\n错误信息: ${error.message}.`,
+				}[userLanguage],
+			);
 			return await ctx.scene.leave();
 		}
 	}
@@ -285,19 +551,42 @@ const executeSell = async (
 
 	try {
 		hash = await sell(wallet?.privateKey, token.address, amountintokens.toFixed(2).toString(), token.decimals);
-		if (!hash) throw new Error("Transaction failed/expired");
+		if (!hash)
+			throw new Error(
+				{
+					english: "Transaction failed/expired",
+					french: "Transaction échouée/expirée",
+					spanish: "Transacción fallida/caducada",
+					arabic: "فشلت العملية / انتهت الصلاحية",
+					chinese: "交易失败/已过期",
+				}[userLanguage],
+			);
 	} catch (error: any) {
-		ctx.reply(`An Error occured please try again later\n
-		Error Message: ${error.message}`);
+		ctx.reply(
+			{
+				english: `An Error occurred please try again later\nError Message: ${error.message}.`,
+				french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${error.message}.`,
+				spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${error.message}.`,
+				arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${error.message}.`,
+				chinese: `发生错误，请稍后重试\n错误信息: ${error.message}.`,
+			}[userLanguage],
+		);
 		return ctx.scene.leave();
 	}
 
 	await ctx.replyWithHTML(
-		`You sold ${token?.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
+		{
+			english: `You sold ${token?.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash: <a href="https://basescan.org/tx/${hash}">${hash}</a>`,
+			french: `Vous avez vendu ${token?.name} \n<i>Montant : <b>${amountintokens} ${token.symbol}</b></i>\n<i>Adresse de contrat : <b>${sellAddress}</b></i>\nHash de transaction : <a href="https://basescan.org/tx/${hash}">${hash}</a>`,
+			spanish: `Has vendido ${token?.name} \n<i>Cantidad: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Dirección del contrato: <b>${sellAddress}</b></i>\nHash de transacción: <a href="https://basescan.org/tx/${hash}">${hash}</a>`,
+			arabic: `لقد قمت ببيع ${token?.name} \n<i>المبلغ: <b>${amountintokens} ${token.symbol}</b></i>\n<i>عنوان العقد: <b>${sellAddress}</b></i>\nمعرف المعاملة: <a href="https://basescan.org/tx/${hash}">${hash}</a>`,
+			chinese: `您已出售 ${token?.name} \n<i>数量： <b>${amountintokens} ${token.symbol}</b></i>\n<i>合约地址： <b>${sellAddress}</b></i>\n交易哈希： <a href="https://basescan.org/tx/${hash}">${hash}</a>`,
+		}[userLanguage],
 	);
 
 	const balance = await getTokenBalance(wallet?.walletAddress, sellAddress);
 	if (balance <= 0 && hash) removeUserHolding(ctx.from?.id, sellAddress, "base");
+	addtoCount();
 	// await sendMessageToAllGroups(
 	// 	`Succssful transaction made throught @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
 	// );
