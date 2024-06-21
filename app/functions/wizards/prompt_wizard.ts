@@ -1,4 +1,4 @@
-import { WizardContext } from "@app/functions/telegraf";
+import bot, { WizardContext } from "@app/functions/telegraf";
 import { Composer, Context, Markup, Scenes } from "telegraf";
 import { queryAi } from "../queryApi";
 import { getBuyPrompt, getCaPrompt, getamountprompt } from "../prompt";
@@ -420,6 +420,15 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 			}[userLanguage],
 		);
 	}
+	await ctx.replyWithHTML(
+		{
+			english: `<b>"Getting Token Information...</b>\\n\\n<b>Token Name: </b><i>${coin.name}</i>\\n<b>Token Address: </b> <i>${coin.address}</i>`,
+			french: `<b>"Obtention des informations sur le jeton...</b>\\n\\n<b>Nom du jeton : </b><i>${coin.name}</i>\\n<b>Adresse du jeton : </b> <i>${coin.address}</i>`,
+			spanish: `<b>"Obteniendo información del token...</b>\\n\\n<b>Nombre del token: </b><i>${coin.name}</i>\\n<b>Dirección del token: </b> <i>${coin.address}</i>`,
+			arabic: `<b>"الحصول على معلومات الرمز...</b>\\n\\n<b>اسم الرمز: </b><i>${coin.name}</i>\\n<b>عنوان الرمز: </b> <i>${coin.address}</i>`,
+			chinese: `<b>"获取代币信息...</b>\\n\\n<b>代币名称: </b><i>${coin.name}</i>\\n<b>代币地址: </b> <i>${coin.address}</i>`,
+		}[userLanguage],
+	);
 
 	const data = await getDexPairDataWithAddress(coin.address);
 
@@ -445,15 +454,7 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 	}
 
 	//console.log(honeyPotRes);
-	await ctx.replyWithHTML(
-		{
-			english: `<b>"Getting Token Information...</b>\\n\\n<b>Token Name: </b><i>${coin.name}</i>\\n<b>Token Address: </b> <i>${coin.address}</i>`,
-			french: `<b>"Obtention des informations sur le jeton...</b>\\n\\n<b>Nom du jeton : </b><i>${coin.name}</i>\\n<b>Adresse du jeton : </b> <i>${coin.address}</i>`,
-			spanish: `<b>"Obteniendo información del token...</b>\\n\\n<b>Nombre del token: </b><i>${coin.name}</i>\\n<b>Dirección del token: </b> <i>${coin.address}</i>`,
-			arabic: `<b>"الحصول على معلومات الرمز...</b>\\n\\n<b>اسم الرمز: </b><i>${coin.name}</i>\\n<b>عنوان الرمز: </b> <i>${coin.address}</i>`,
-			chinese: `<b>"获取代币信息...</b>\\n\\n<b>代币名称: </b><i>${coin.name}</i>\\n<b>代币地址: </b> <i>${coin.address}</i>`,
-		}[userLanguage],
-	);
+
 	const response = await queryAi(
 		`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify({
 			...coin,
@@ -556,36 +557,50 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 				}\n<b>💎Mcap:</b> $${result.mcap.toLocaleString()}`,
 
 				Markup.inlineKeyboard([
-					Markup.button.callback(
-						{
-							english: "Details",
-							french: "Détails",
-							spanish: "Detalles",
-							arabic: "تفاصيل",
-							chinese: "详情",
-						}[userLanguage],
-						`details_${result.address}`,
-					),
-					Markup.button.callback(
-						{
-							english: "buy",
-							french: "acheter",
-							spanish: "comprar",
-							arabic: "شراء",
-							chinese: "买",
-						}[userLanguage],
-						`audiobuy_${result.address}`,
-					),
-					Markup.button.callback(
-						{
-							english: "sell",
-							french: "vendre",
-							spanish: "vender",
-							arabic: "بيع",
-							chinese: "卖",
-						}[userLanguage],
-						`audiosell_${result.address}`,
-					),
+					[
+						Markup.button.callback(
+							{
+								english: "Details",
+								french: "Détails",
+								spanish: "Detalles",
+								arabic: "تفاصيل",
+								chinese: "详情",
+							}[userLanguage],
+							`details_${result.address}`,
+						),
+						Markup.button.callback(
+							{
+								english: "buy",
+								french: "acheter",
+								spanish: "comprar",
+								arabic: "شراء",
+								chinese: "买",
+							}[userLanguage],
+							`audiobuy_${result.address}`,
+						),
+						Markup.button.callback(
+							{
+								english: "sell",
+								french: "vendre",
+								spanish: "vender",
+								arabic: "بيع",
+								chinese: "卖",
+							}[userLanguage],
+							`audiosell_${result.address}`,
+						),
+					],
+					[
+						Markup.button.callback(
+							{
+								english: "Exit Session",
+								french: "Quitter la session",
+								spanish: "Salir de la sesión",
+								arabic: "إنهاء الجلسة",
+								chinese: "退出会话",
+							}[userLanguage],
+							"cancel",
+						),
+					],
 				]),
 			);
 		}
@@ -598,6 +613,7 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 				chinese: `<b>音频转录:</b> ${ctx.scene.session.promptStore.prompt}\n如果这不是您想要的，请使用音频按钮录制另一段音频。`,
 			}[getUserLanguage(userId)],
 		);
+		bot.action("cancel", cancelFn);
 		//console.log(ctx.scene.session.promptStore.prompt.trim().length === 0);
 		return ctx.wizard.next();
 	},

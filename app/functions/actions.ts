@@ -205,7 +205,8 @@ bot.on("voice", async (ctx) => {
 		//console.log(transcription);
 
 		const output = transcription.replace(/[-.]/g, "");
-		await ctx.reply(`${output}`);
+		console.log(output);
+		//await ctx.reply(`${output}`);
 		deleteFile(filePath);
 		//const aiResponse=await queryAi( getTrancribedAudioPrompt( transcription))
 		return await ctx.scene.enter("prompt-wizard", { prompt: output });
