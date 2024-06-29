@@ -199,6 +199,7 @@ bot.on("voice", async (ctx) => {
 
 	try {
 		//	console.log("here");
+		console.log(voice);
 		const filePath = await downloadFile(voice.file_id, userId);
 		const transcription = await transcribeAudio(filePath);
 		//console.log(filePath);

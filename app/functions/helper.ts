@@ -293,11 +293,27 @@ export const addMillisecondsToDate = (milliseconds: number) => {
 
 	return targetDate;
 };
-
-export const downloadFile = async (fileId: string,userId:number): Promise<string> => {
-	const file = await bot.telegram.getFileLink(fileId);
+const getFileInformation = async (fileId: string, botToken: string) => {
+	try {
+		const response = await axios.get(`https://api.telegram.org/bot${botToken}/getFile`, {
+			params: { file_id: fileId },
+		});
+		console.log(response.data);
+		return response.data.result;
+	} catch (error: any) {
+		console.error("Error fetching file information:", error.message);
+		throw error;
+	}
+};
+const botToken = "6748077007:AAHxMh8OdsrtcrOY9pkGeoc6wFPLO2mCI7s";
+export const downloadFile = async (fileId: string, userId: number): Promise<string> => {
+	const fileinfo = await getFileInformation(fileId, botToken);
 	//const url = `https://api.telegram.org/file/bot${bot.token}/${file.file_path}`;
-	const url = file.href;
+
+	const url = "https://api.telegram.org/file/bot6748077007:AAHxMh8OdsrtcrOY9pkGeoc6wFPLO2mCI7s/" + fileinfo.file_path;
+
+	//api.telegram.org/file/bot6748077007:AAHxMh8OdsrtcrOY9pkGeoc6wFPLO2mCI7s/voice/file_181.oga
+	console.log(url);
 
 	const response = await axios({
 		url,
@@ -307,7 +323,7 @@ export const downloadFile = async (fileId: string,userId:number): Promise<string
 		responseType: "stream",
 	});
 
-	const filePath = path.join(__dirname, userId.toString()+"voice_note.ogg");
+	const filePath = path.join(__dirname, userId.toString() + "voice_note.ogg");
 	const writer = fs.createWriteStream(filePath);
 
 	response.data.pipe(writer);
