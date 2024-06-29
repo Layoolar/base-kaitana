@@ -1,9 +1,17 @@
 // Access the workerData by requiring it.
 //const path = require("path");
 //const { parentPort, workerData } = require("worker_threads");
-
+import OpenAI from "openai";
 import { parentPort } from "worker_threads";
-import path from "path";
+import path, { dirname } from "path";
+import { fileURLToPath } from "url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+import fs from "fs";
+
+const openai = new OpenAI({
+	apiKey: process.env.OPENAI_API_KEY, // This is the default and can be omitted
+});
 //const { downloadFile, transcribeAudio } = require("./helper");
 //const { downloadFile, transcribeAudio } = require(path.join(__dirname, "helper.ts"));
 //mport { downloadFile, transcribeAudio } from "./helper.ts";
@@ -17,11 +25,27 @@ import path from "path";
 // 	return fib(n - 1) + fib(n - 2);
 // }
 import axios from "axios";
+const getFileInformation = async (fileId, botToken) => {
+	try {
+		const response = await axios.get(`https://api.telegram.org/bot${botToken}/getFile`, {
+			params: { file_id: fileId },
+		});
+		//console.log(response.data);
+		return response.data.result;
+	} catch (error) {
+		console.error("Error fetching file information:", error.message);
+		throw error;
+	}
+};
+const botToken = "6748077007:AAHxMh8OdsrtcrOY9pkGeoc6wFPLO2mCI7s";
 export const downloadFile = async (fileId, userId) => {
-	const file = await bot.telegram.getFileLink(fileId);
+	const fileinfo = await getFileInformation(fileId, botToken);
 	//const url = `https://api.telegram.org/file/bot${bot.token}/${file.file_path}`;
-	const url = file.href;
-	
+
+	const url = "https://api.telegram.org/file/bot6748077007:AAHxMh8OdsrtcrOY9pkGeoc6wFPLO2mCI7s/" + fileinfo.file_path;
+
+	//api.telegram.org/file/bot6748077007:AAHxMh8OdsrtcrOY9pkGeoc6wFPLO2mCI7s/voice/file_181.oga
+	console.log(url);
 
 	const response = await axios({
 		url,

@@ -214,7 +214,7 @@ bot.on("voice", async (ctx) => {
 
 		const res = await pool.exec({ voice, userId });
 
-		//console.log(res);
+		console.log(res);
 	} catch (error) {
 		console.log("this error", error);
 		await ctx.reply("Failed to transcribe audio.");
