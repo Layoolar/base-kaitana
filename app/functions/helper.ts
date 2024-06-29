@@ -294,10 +294,11 @@ export const addMillisecondsToDate = (milliseconds: number) => {
 	return targetDate;
 };
 
-export const downloadFile = async (fileId: string,userId:number): Promise<string> => {
+export const downloadFile = async (fileId: string, userId: number): Promise<string> => {
 	const file = await bot.telegram.getFileLink(fileId);
 	//const url = `https://api.telegram.org/file/bot${bot.token}/${file.file_path}`;
 	const url = file.href;
+	console.log(url);
 
 	const response = await axios({
 		url,
@@ -307,7 +308,7 @@ export const downloadFile = async (fileId: string,userId:number): Promise<string
 		responseType: "stream",
 	});
 
-	const filePath = path.join(__dirname, userId.toString()+"voice_note.ogg");
+	const filePath = path.join(__dirname, userId.toString() + "voice_note.ogg");
 	const writer = fs.createWriteStream(filePath);
 
 	response.data.pipe(writer);

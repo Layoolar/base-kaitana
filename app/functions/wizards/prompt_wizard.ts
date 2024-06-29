@@ -4,7 +4,7 @@ import { queryAi } from "../queryApi";
 import { getBuyPrompt, getCaPrompt, getamountprompt } from "../prompt";
 import { fetchCoin, getDexPairDataWithAddress, searchDexPairs, sendAllChainData } from "../fetchCoins";
 import { TokenData } from "../timePriceData";
-import { json } from "express";
+//import { json } from "express";
 import { conversation } from "../queryApi";
 import { isEmpty, processToken, translate } from "../helper";
 import { deleteFile, downloadFile, transcribeAudio } from "../helper";
@@ -193,6 +193,9 @@ const getVoice = async (ctx: WizardContext) => {
 	}
 	//ctx.wizard.selectStep(1);
 };
+//start pn group will break bot
+//sending auido without selecting language;
+//add regx for leavinf only worhs
 
 const cancelFn = async (ctx: WizardContext) => {
 	const userLanguage = ctx.scene.session.promptStore.language;

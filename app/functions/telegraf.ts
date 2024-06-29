@@ -1,5 +1,5 @@
 import { Context, Scenes, Telegraf } from "telegraf";
-import configs from "@configs/config";
+import configs from "../configs/config";
 import { TokenData } from "./timePriceData";
 
 // Extend Session with store containing type of data to store

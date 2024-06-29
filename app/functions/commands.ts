@@ -10,8 +10,8 @@
 
 import { bot } from "@app/functions/actions";
 import { Markup, MiddlewareFn, Context } from "telegraf";
-import * as databases from "@app/functions/databases";
-import config from "@configs/config";
+import * as databases from "./databases";
+import config from "../configs/config";
 import { launchPolling, launchWebhook } from "./launcher";
 import { createSolWallet } from "./solhelper";
 import fetchData, {
@@ -255,7 +255,7 @@ bot.help(async (ctx) => {
 		Object.entries(commands).map(async ([command, description]) => {
 			const translatedDescription =
 				userLanguage === "english" ? description : await translate(description, userLanguage);
-			return `${command}: ${translatedDescription}`;
+			return `${command}: ${description}`;
 		}),
 	).then((commandsWithTranslations) => commandsWithTranslations.join("\n\n"));
 

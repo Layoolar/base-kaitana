@@ -1,12 +1,19 @@
-import { bot } from "@app/functions/wizards";
+import { bot } from "./wizards";
 import { getGreeting, getJoke } from "./commands";
 import fetchData, { fetchCoin } from "./fetchCoins";
 import { Markup } from "telegraf";
-import { openai, queryAi } from "./queryApi";
+import { queryAi } from "./queryApi";
+import { StaticPool } from "node-worker-threads-pool";
+import { getUserLanguage, writeUser } from "./databases";
+import path from "path";
 
-import { getTrancribedAudioPrompt } from "./prompt";
-import { deleteFile, downloadFile, transcribeAudio, translate } from "./helper";
-import databases, { getUserLanguage, writeUser } from "./databases";
+const filePath = path.join(__dirname, "worker.mjs");
+//onsole.log(pathh);
+const pool = new StaticPool({
+	size: 2,
+	task: filePath,
+	workerData: "workerData!",
+});
 
 bot.action("send_token", async (ctx) => {
 	return await ctx.scene.enter("transaction-wizard");
@@ -77,6 +84,12 @@ bot.action("bsc", async (ctx) => {
 	// 	await ctx.reply("Operation cancelled.");
 	// });
 });
+
+//uploading to worker node on express migrate to dynamo;
+//start from from group
+//sending vn before choosing lang
+//regex to leave words
+//language checking
 
 bot.action("eth", async (ctx) => {
 	const chain = "ethereum";
@@ -183,7 +196,6 @@ bot.on("voice", async (ctx) => {
 		);
 	}
 
-	//ctx.scene.leave();
 	const voice = ctx.message.voice;
 	if (voice.duration > 10) {
 		return ctx.reply(
@@ -198,21 +210,14 @@ bot.on("voice", async (ctx) => {
 	}
 
 	try {
-		//	console.log("here");
-		const filePath = await downloadFile(voice.file_id, userId);
-		const transcription = await transcribeAudio(filePath);
-		//console.log(filePath);
-		//console.log(transcription);
+		console.log(userId);
 
-		const output = transcription.replace(/[-.]/g, "");
-		console.log(output);
-		//await ctx.reply(`${output}`);
-		deleteFile(filePath);
-		//const aiResponse=await queryAi( getTrancribedAudioPrompt( transcription))
-		return await ctx.scene.enter("prompt-wizard", { prompt: output });
+		const res = await pool.exec({ voice, userId });
+
+		//console.log(res);
 	} catch (error) {
 		console.log("this error", error);
-		return await ctx.reply("Failed to transcribe audio.");
+		await ctx.reply("Failed to transcribe audio.");
 	}
 });
 
@@ -236,10 +241,13 @@ bot.action(/language_(.+)$/, async (ctx) => {
 
 	// Reply to the user
 	await ctx.reply(
-		await translate(
-			"Welcome! You have been successfully registered. Use /help to get started.",
-			language.toLowerCase(),
-		),
+		{
+			english: "Welcome! You have been successfully registered. Use /help to get started.",
+			french: "Bienvenue ! Vous avez été enregistré avec succès. Utilisez /help pour commencer.",
+			spanish: "¡Bienvenido! Te has registrado exitosamente. Usa /help para empezar.",
+			arabic: "مرحبًا! لقد تم تسجيلك بنجاح. استخدم /help للبدء.",
+			chinese: "欢迎！您已成功注册。使用 /help 开始。",
+		}[getUserLanguage(ctx.from.id)],
 	);
 	// Add logic to set the user's language based on the extracted language
 });
