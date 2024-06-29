@@ -198,18 +198,11 @@ bot.on("voice", async (ctx) => {
 	}
 
 	try {
-		//	console.log("here");
-		console.log(voice);
 		const filePath = await downloadFile(voice.file_id, userId);
 		const transcription = await transcribeAudio(filePath);
-		//console.log(filePath);
-		//console.log(transcription);
 
 		const output = transcription.replace(/[-.]/g, "");
-		console.log(output);
-		//await ctx.reply(`${output}`);
-		deleteFile(filePath);
-		//const aiResponse=await queryAi( getTrancribedAudioPrompt( transcription))
+
 		return await ctx.scene.enter("prompt-wizard", { prompt: output });
 	} catch (error) {
 		console.log("this error", error);
