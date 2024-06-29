@@ -210,11 +210,11 @@ bot.on("voice", async (ctx) => {
 	}
 
 	try {
-		console.log(userId);
+		
 
 		const res = await pool.exec({ voice, userId });
 
-		console.log(res);
+		return await ctx.scene.enter("prompt-wizard", { prompt: res });
 	} catch (error) {
 		console.log("this error", error);
 		await ctx.reply("Failed to transcribe audio.");

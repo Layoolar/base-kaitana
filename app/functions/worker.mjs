@@ -1,30 +1,16 @@
-// Access the workerData by requiring it.
-//const path = require("path");
-//const { parentPort, workerData } = require("worker_threads");
 import OpenAI from "openai";
 import { parentPort } from "worker_threads";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
 import fs from "fs";
+import axios from "axios";
 
 const openai = new OpenAI({
 	apiKey: process.env.OPENAI_API_KEY, // This is the default and can be omitted
 });
-//const { downloadFile, transcribeAudio } = require("./helper");
-//const { downloadFile, transcribeAudio } = require(path.join(__dirname, "helper.ts"));
-//mport { downloadFile, transcribeAudio } from "./helper.ts";
-
-// Something you shouldn"t run in main thread
-// since it will block.
-// function fib(n) {
-// 	if (n < 2) {
-// 		return n;
-// 	}
-// 	return fib(n - 1) + fib(n - 2);
-// }
-import axios from "axios";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const botToken = process.env.BOT_TOKEN;
 const getFileInformation = async (fileId, botToken) => {
 	try {
 		const response = await axios.get(`https://api.telegram.org/bot${botToken}/getFile`, {
@@ -37,7 +23,7 @@ const getFileInformation = async (fileId, botToken) => {
 		throw error;
 	}
 };
-const botToken = "6748077007:AAHxMh8OdsrtcrOY9pkGeoc6wFPLO2mCI7s";
+
 export const downloadFile = async (fileId, userId) => {
 	const fileinfo = await getFileInformation(fileId, botToken);
 	//const url = `https://api.telegram.org/file/bot${bot.token}/${file.file_path}`;
@@ -45,7 +31,7 @@ export const downloadFile = async (fileId, userId) => {
 	const url = "https://api.telegram.org/file/bot6748077007:AAHxMh8OdsrtcrOY9pkGeoc6wFPLO2mCI7s/" + fileinfo.file_path;
 
 	//api.telegram.org/file/bot6748077007:AAHxMh8OdsrtcrOY9pkGeoc6wFPLO2mCI7s/voice/file_181.oga
-	console.log(url);
+	//console.log(url);
 
 	const response = await axios({
 		url,
@@ -95,7 +81,7 @@ const transcribeAudio = async (filePath) => {
 };
 
 async function processVoiceMessage(voice, userId) {
-	console.log(voice, userId);
+	//console.log(voice, userId);
 	const filePath = await downloadFile(voice.file_id, userId);
 	//console.log(filePath);
 	const transcription = await transcribeAudio(filePath);
