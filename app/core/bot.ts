@@ -1,6 +1,10 @@
-import * as command from "@app/functions/commands";
-import * as hears from "@app/functions/hears";
+import * as command from "../functions/commands";
+
+import * as hears from "../functions/hears";
+
 import "dotenv/config";
+
+//import cors from 'cors'
 
 // index.js (or your application's entry point file)
 // Load .env file into process.env

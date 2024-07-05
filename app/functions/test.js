@@ -153,13 +153,13 @@ async function searchDexPairs(query) {
 }
 
 // // Example usage
-(async () => {
-	const query = "lana"; // Replace with your desired query
+// (async () => {
+// 	const query = "lana"; // Replace with your desired query
 
-	const data = await searchDexPairs(query);
-	if (data) {
-		console.log("Dex Screener Search Data:", data);
-	} else {
-		console.log("Failed to fetch Dex Screener search data.");
-	}
-})();
+// 	const data = await searchDexPairs(query);
+// 	if (data) {
+// 		console.log("Dex Screener Search Data:", data);
+// 	} else {
+// 		console.log("Failed to fetch Dex Screener search data.");
+// 	}
+// })();

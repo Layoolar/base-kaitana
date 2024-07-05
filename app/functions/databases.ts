@@ -22,15 +22,19 @@ import type { TelegramUserInterface } from "@app/types/databases.type";
 import configs from "@configs/config";
 import lowdb from "lowdb";
 import lowdbFileSync from "lowdb/adapters/FileSync";
-import { BetData, CoinDataType } from "./commands";
+import { BetData, CoinDataType, Log } from "./commands";
 import fetchData from "./fetchCoins";
 // onst ChartJsImage = require("chartjs-to-image");
 import ChartJsImage from "chartjs-to-image";
 import bot from "./telegraf";
+import AWS from "aws-sdk";
+import { createLogTable } from "./awslogs";
+import { createGroupTable } from "./awsGroups";
+import { createUserTable } from "./AWSusers";
 
 //
 
-interface MyUser extends TelegramUserInterface {
+export interface MyUser extends TelegramUserInterface {
 	walletAddress: string | null;
 	bets: BetData[] | [];
 	privateKey: string | null;
@@ -72,6 +76,7 @@ const databases = {
 	bnbCoinsData: lowdb(new lowdbFileSync<{ coinsData: CoinDataCollection[] }>(configs.databases.bnbCoinsData)),
 	leaderboard: lowdb(new lowdbFileSync<{ count: count }>(configs.databases.leaderboard)),
 	groups: lowdb(new lowdbFileSync<{ groups: Group[] }>(configs.databases.groups)),
+	logs: lowdb(new lowdbFileSync<{ logs: Log[]; filteredLogs: Log[] }>(configs.databases.logs)),
 };
 
 databases.ethCoinsData = lowdb(new lowdbFileSync(configs.databases.ethCoinsData));
@@ -91,6 +96,9 @@ databases.leaderboard.defaults({ count: 0 }).write();
 
 databases.groups = lowdb(new lowdbFileSync(configs.databases.groups));
 databases.groups.defaults({ groups: [] }).write();
+
+databases.logs = lowdb(new lowdbFileSync(configs.databases.logs));
+databases.logs.defaults({ logs: [], filteredLogs: [] }).write();
 
 /**
  * writeUser()
@@ -439,6 +447,38 @@ const getHistoricalDataAndGraph = async (tokenName: string, chain: string) => {
 // analyse the data and mention if there is a common market trend that can give informartion in buy or sell.
 
 // main("exit");
+
+const removeOldLogs = async (): Promise<void> => {
+	const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+	const logs = databases.logs.get("filteredLogs").value();
+
+	const updatedLogs = logs.filter((log: Log) => new Date(log.date) >= oneHourAgo);
+	databases.logs.set("filteredLogs", updatedLogs).write();
+};
+
+// setInterval(async () => {
+// 	await removeOldLogs();
+// }, 10 * 60 * 1000);
+export const addOrUpdateLog = (log: Log) => {
+	const existingLog = databases.logs.get("logs").find({ ca: log.ca }).value();
+
+	if (existingLog) {
+		existingLog.queries += 1;
+		existingLog.token = log.token; // Update other fields if necessary
+		existingLog.date = new Date().toISOString(); // Update date to current date
+		databases.logs.get("logs").push(existingLog).write();
+	} else {
+		log.queries = 1; // Initialize queries to 1 for new logs
+		log.date = new Date().toISOString(); // Set date to current date for new logs
+		databases.logs.get("logs").push(log).write();
+		databases.logs.get("filteredLogs").push(log).write();
+	}
+};
+const getAllLogs = (): Log[] => {
+	const logs = databases.logs.get("logs").value();
+
+	return logs;
+};
 
 export {
 	databases,
