@@ -1635,6 +1635,11 @@ bot.command("/schedule", async (ctx) => {
  *
  */
 
+bot.command("analysis", checkGroup, async (ctx) => {
+	await ctx.scene.enter("analysis-wizard");
+	return;
+});
+
 const quit = async (): Promise<void> => {
 	bot.command("quit", (ctx) => {
 		ctx.telegram.leaveChat(ctx.message.chat.id);
