@@ -53,6 +53,12 @@ import { getSolBalance, getSolTokenAccounts } from "./checksolbalance";
 // interface coins extends CoinDataType{
 
 // }
+export interface Log {
+	ca: string;
+	token: TokenData;
+	date: string;
+	queries: number;
+}
 export interface CoinDataType {
 	token: string;
 	rank: number;
@@ -228,17 +234,89 @@ bot.catch((error: any) => {
 	}
 });
 const commands = {
-	"/start": "Send this command privately to the bot to register and get started",
-	"/call":
-		"<b>(CAN ONLY BE USED IN GROUPS)</b> This command is used to query a token and put it in focus for getting the details or trading.\nUsage Format: /call {contract address}",
-	"/ask": "<b>(CAN ONLY BE USED IN GROUPS)</b> This command is used to ask questions about the called token and <b>trade</b> the called token, when you indicate buy or sell in your prompt.\nUsage Format: /ask {your question}",
-	"/schedule":
-		"This command is used to schedule trading.\nUsage format: /schedule i want to buy/sell {contract address} in one hour",
-	"/import": "This command is used to import tokens into your wallet.\nUsage format: /import {contract address}",
-	"/delete": "This command to delete tokens from your wallet.\nUsage format: /delete {contract address}",
-	"/buy": "This command can be used to buy tokens.\nUsage format: /buy {your prompt to buy}",
-	"/sell": "This command can be used to sell tokens.\nUsage format: /sell {your prompt to sell}",
-	"/wallet": "This command can be used to  manange your wallet.\nUsage format: /wallet",
+	english: {
+		"/start": "Send this command privately to the bot to register and get started",
+		"/call":
+			"<b>(CAN ONLY BE USED IN GROUPS)</b> This command is used to query a token and put it in focus for getting the details or trading.\nUsage Format: /call {contract address}",
+		"/ask": "<b>(CAN ONLY BE USED IN GROUPS)</b> This command is used to ask questions about the called token and <b>trade</b> the called token, when you indicate buy or sell in your prompt.\nUsage Format: /ask {your question}",
+		"/schedule":
+			"This command is used to schedule trading.\nUsage format: /schedule i want to buy/sell {contract address} in one hour",
+		"/import":
+			"This command is used privately to import tokens into your wallet.\nUsage format: /import {contract address}",
+		"/delete":
+			"This command is used privately to delete tokens from your wallet.\nUsage format: /delete {contract address}",
+		"/buy": "This command can be used to buy tokens.\nUsage format: /buy {your prompt to buy}",
+		"/sell": "This command can be used to sell tokens.\nUsage format: /sell {your prompt to sell}",
+		"/wallet": "This command can be used privately to manage your wallet.\nUsage format: /wallet",
+		"/info": "Get information about a token privately.\nUsage format: /info {contract address}",
+		"/analysis": "Analyse a token privately.\nUsage format: /analysis",
+	},
+	french: {
+		"/start": "Envoyez cette commande en privé au bot pour vous inscrire et commencer",
+		"/call":
+			"<b>(NE PEUT ÊTRE UTILISÉ QUE DANS DES GROUPES)</b> Cette commande est utilisée pour interroger un jeton et le mettre en avant pour obtenir les détails ou le trader.\nFormat d'utilisation : /call {adresse du contrat}",
+		"/ask": "<b>(NE PEUT ÊTRE UTILISÉ QUE DANS DES GROUPES)</b> Cette commande est utilisée pour poser des questions sur le jeton appelé et <b>trader</b> le jeton appelé, lorsque vous indiquez acheter ou vendre dans votre message.\nFormat d'utilisation : /ask {votre question}",
+		"/schedule":
+			"Cette commande est utilisée pour planifier des transactions.\nFormat d'utilisation : /schedule je veux acheter/vendre {adresse du contrat} dans une heure",
+		"/import":
+			"Cette commande est utilisée en privé pour importer des jetons dans votre portefeuille.\nFormat d'utilisation : /import {adresse du contrat}",
+		"/delete":
+			"Cette commande est utilisée en privé pour supprimer des jetons de votre portefeuille.\nFormat d'utilisation : /delete {adresse du contrat}",
+		"/buy": "Cette commande peut être utilisée pour acheter des jetons.\nFormat d'utilisation : /buy {votre message pour acheter}",
+		"/sell":
+			"Cette commande peut être utilisée pour vendre des jetons.\nFormat d'utilisation : /sell {votre message pour vendre}",
+		"/wallet":
+			"Cette commande peut être utilisée en privé pour gérer votre portefeuille.\nFormat d'utilisation : /wallet",
+		"/info": "Obtenez des informations sur un jeton en privé.\nFormat d'utilisation : /info {adresse du contrat}",
+		"/analysis": "Analyser un jeton en privé.\nFormat d'utilisation : /analysis",
+	},
+	spanish: {
+		"/start": "Envía este comando en privado al bot para registrarte y empezar",
+		"/call":
+			"<b>(SOLO SE PUEDE USAR EN GRUPOS)</b> Este comando se utiliza para consultar un token y ponerlo en el centro de atención para obtener los detalles o comerciar.\nFormato de uso: /call {dirección del contrato}",
+		"/ask": "<b>(SOLO SE PUEDE USAR EN GRUPOS)</b> Este comando se utiliza para hacer preguntas sobre el token llamado y <b>comerciar</b> el token llamado, cuando indicas comprar o vender en tu mensaje.\nFormato de uso: /ask {tu pregunta}",
+		"/schedule":
+			"Este comando se utiliza para programar operaciones.\nFormato de uso: /schedule quiero comprar/vender {dirección del contrato} en una hora",
+		"/import":
+			"Este comando se utiliza en privado para importar tokens a tu billetera.\nFormato de uso: /import {dirección del contrato}",
+		"/delete":
+			"Este comando se utiliza en privado para eliminar tokens de tu billetera.\nFormato de uso: /delete {dirección del contrato}",
+		"/buy": "Este comando se puede usar para comprar tokens.\nFormato de uso: /buy {tu mensaje para comprar}",
+		"/sell": "Este comando se puede usar para vender tokens.\nFormato de uso: /sell {tu mensaje para vender}",
+		"/wallet": "Este comando se puede usar en privado para gestionar tu billetera.\nFormato de uso: /wallet",
+		"/info": "Obtén información sobre un token en privado.\nFormato de uso: /info {dirección del contrato}",
+		"/analysis": "Analiza un token en privado.\nFormato de uso: /analysis",
+	},
+	arabic: {
+		"/start": "أرسل هذا الأمر بشكل خاص إلى الروبوت للتسجيل والبدء",
+		"/call":
+			"<b>(يمكن استخدامه فقط في المجموعات)</b> يتم استخدام هذا الأمر لاستعلام عن رمز مميز وجعله محور التركيز للحصول على التفاصيل أو التداول.\nتنسيق الاستخدام: /call {عنوان العقد}",
+		"/ask": "<b>(يمكن استخدامه فقط في المجموعات)</b> يتم استخدام هذا الأمر لطرح الأسئلة حول الرمز المميز المدعو و <b>التداول</b> بالرمز المميز المدعو، عندما تشير إلى الشراء أو البيع في رسالتك.\nتنسيق الاستخدام: /ask {سؤالك}",
+		"/schedule":
+			"يستخدم هذا الأمر لجدولة التداول.\nتنسيق الاستخدام: /schedule أريد شراء/بيع {عنوان العقد} في غضون ساعة",
+		"/import":
+			"يستخدم هذا الأمر بشكل خاص لاستيراد الرموز المميزة إلى محفظتك.\nتنسيق الاستخدام: /import {عنوان العقد}",
+		"/delete": "يستخدم هذا الأمر بشكل خاص لحذف الرموز المميزة من محفظتك.\nتنسيق الاستخدام: /delete {عنوان العقد}",
+		"/buy": "يمكن استخدام هذا الأمر لشراء الرموز المميزة.\nتنسيق الاستخدام: /buy {رسالتك للشراء}",
+		"/sell": "يمكن استخدام هذا الأمر لبيع الرموز المميزة.\nتنسيق الاستخدام: /sell {رسالتك للبيع}",
+		"/wallet": "يمكن استخدام هذا الأمر بشكل خاص لإدارة محفظتك.\nتنسيق الاستخدام: /wallet",
+		"/info": "احصل على معلومات حول رمز مميز بشكل خاص.\nتنسيق الاستخدام: /info {عنوان العقد}",
+		"/analysis": "تحليل رمز مميز بشكل خاص.\nتنسيق الاستخدام: /analysis",
+	},
+	chinese: {
+		"/start": "私下向机器人发送此命令以注册并开始",
+		"/call":
+			"<b>(只能在群组中使用)</b> 此命令用于查询代币并将其集中以获取详细信息或进行交易。\n使用格式：/call {合约地址}",
+		"/ask": "<b>(只能在群组中使用)</b> 此命令用于询问有关所调用代币的问题，并在提示中指示买卖时<b>交易</b>所调用的代币。\n使用格式：/ask {你的问题}",
+		"/schedule": "此命令用于安排交易。\n使用格式：/schedule 我想在一小时内买/卖 {合约地址}",
+		"/import": "此命令用于私下将代币导入您的钱包。\n使用格式：/import {合约地址}",
+		"/delete": "此命令用于私下从您的钱包中删除代币。\n使用格式：/delete {合约地址}",
+		"/buy": "此命令可用于购买代币。\n使用格式：/buy {您的购买提示}",
+		"/sell": "此命令可用于出售代币。\n使用格式：/sell {您的销售提示}",
+		"/wallet": "此命令可用于私下管理您的钱包。\n使用格式：/wallet",
+		"/info": "私下获取有关代币的信息。\n使用格式：/info {合约地址}",
+		"/analysis": "私下分析代币。\n使用格式：/analysis",
+	},
 };
 
 bot.help(async (ctx) => {
@@ -252,9 +330,7 @@ bot.help(async (ctx) => {
 	const userLanguage = databases.getUserLanguage(ctx.from.id);
 
 	const commandsList = await Promise.all(
-		Object.entries(commands).map(async ([command, description]) => {
-			const translatedDescription =
-				userLanguage === "english" ? description : await translate(description, userLanguage);
+		Object.entries(commands[userLanguage]).map(async ([command, description]) => {
 			return `${command}: ${description}`;
 		}),
 	).then((commandsWithTranslations) => commandsWithTranslations.join("\n\n"));
@@ -666,6 +742,7 @@ export const neww = async () => {
 		}
 
 		if (coin) {
+			databases.addOrUpdateLog({ ca: ca, date: new Date().toISOString(), queries: 0, token: coin });
 			databases.updateCurrentCalledAndPushToHistory(ctx.chat.id, ca);
 
 			if (isEmpty(coin) || !coin.name) {
@@ -742,7 +819,7 @@ export const neww = async () => {
 					}[userLanguage],
 				);
 			}
-
+			databases.addOrUpdateLog({ ca: ca, date: new Date().toISOString(), queries: 0, token: coin });
 			const data = await getDexPairDataWithAddress(coin.address);
 
 			if (!data)
@@ -836,11 +913,12 @@ export const neww = async () => {
 		const processedToken = await processToken(selectedCa);
 		//console.log(selectedCa);
 		const coin = processedToken?.token;
+
 		if (!coin) return await ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
 
 		const userid = ctx.from.id;
 		const userLanguage = databases.getUserLanguage(userid);
-
+		databases.addOrUpdateLog({ ca: selectedCa, date: new Date().toISOString(), queries: 0, token: coin });
 		const response = await queryAi(getBuyPrompt(prompt));
 		// console.log(response);
 
@@ -1634,6 +1712,10 @@ bot.command("/schedule", async (ctx) => {
  * If user exit from bot
  *
  */
+bot.command("analysis", checkGroup, async (ctx) => {
+	await ctx.scene.enter("analysis-wizard");
+	return;
+});
 
 const quit = async (): Promise<void> => {
 	bot.command("quit", (ctx) => {
