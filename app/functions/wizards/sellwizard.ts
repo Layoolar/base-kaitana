@@ -5,14 +5,7 @@ import { Composer, Context, Markup, Scenes } from "telegraf";
 import { queryAi } from "../queryApi";
 import { getCaPrompt, getamountprompt, getsellamountprompt } from "../prompt";
 import { fetchCoin } from "../fetchCoins";
-import {
-	addUserHolding,
-	addtoCount,
-	getUserLanguage,
-	getUserWalletDetails,
-	removeUserHolding,
-	sendMessageToAllGroups,
-} from "../databases";
+
 import { getEtherBalance, getTokenBalance } from "../checkBalance";
 import { addMillisecondsToDate, delay, getEthPrice, processToken } from "../helper";
 import { sell, sellOnEth } from "../sellfunction";
@@ -21,6 +14,8 @@ import { time } from "console";
 import { TokenData } from "../timePriceData";
 import { getParticularSolTokenBalance } from "../checksolbalance";
 import { sellTokensWithSolana } from "../solana";
+import { getUserLanguage, getUserWalletDetails, removeUserHolding } from "../AWSusers";
+import { addtoCount } from "../databases";
 
 const initialData = {
 	sellAddress: null,
@@ -29,7 +24,9 @@ const initialData = {
 	token: null,
 	time: undefined,
 	userBalance: null,
+	language: "",
 };
+
 const stepHandler = new Composer<WizardContext>();
 const stepHandler2 = new Composer<WizardContext>();
 
@@ -37,9 +34,9 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 	"sell-wizard",
 	async (ctx) => {
 		if (!ctx.from?.id) return;
-		const userLanguage = getUserLanguage(ctx.from?.id);
+		const userLanguage = await getUserLanguage(ctx.from?.id);
 
-		const wallet = getUserWalletDetails(ctx.from.id);
+		const wallet = await getUserWalletDetails(ctx.from.id);
 		if (!wallet) {
 			await ctx.reply(
 				{
@@ -53,8 +50,10 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 			return ctx.scene.leave();
 		}
 		ctx.scene.session.sellStore = JSON.parse(JSON.stringify(initialData));
-		//@ts-ignore
 
+		ctx.scene.session.sellStore.language = userLanguage;
+
+		//@ts-ignore
 		ctx.scene.session.sellStore.sellAddress = ctx.scene.state.address;
 		//@ts-ignore
 		ctx.scene.session.sellStore.token = ctx.scene.state.token.token;
@@ -148,7 +147,7 @@ stepHandler2.on("text", async (ctx) => {
 	if (ctx.message && "text" in ctx.message) {
 		const { text } = ctx.message;
 		if (!ctx.from?.id) return;
-		const userLanguage = getUserLanguage(ctx.from?.id);
+		const userLanguage = ctx.scene.session.sellStore.language;
 		const am = await queryAi(getsellamountprompt(text));
 		if (am.toLowerCase() === "null") {
 			await ctx.replyWithHTML(
@@ -233,7 +232,7 @@ stepHandler2.on("text", async (ctx) => {
 stepHandler.action("sendsell", async (ctx) => {
 	const { sellAddress, amount, token, time } = ctx.scene.session.sellStore;
 	if (!ctx.from?.id) return;
-	const userLanguage = getUserLanguage(ctx.from?.id);
+	const userLanguage = ctx.scene.session.sellStore.language;
 	if (!sellAddress || !amount || !token) {
 		ctx.reply(
 			{
@@ -328,7 +327,7 @@ const cancelfn = async (ctx: WizardContext) => {
 			spanish: "Has cancelado la operación",
 			arabic: "لقد قمت بإلغاء العملية",
 			chinese: "您已取消操作",
-		}[getUserLanguage(ctx.from?.id)],
+		}[ctx.scene.session.sellStore.language],
 	);
 
 	return await ctx.scene.leave();
@@ -345,8 +344,8 @@ const executeSell = async (
 ) => {
 	//if (!ctx.from) return await ctx.replyWithHTML("<b>Transaction failed</b>");
 	if (!ctx.from?.id) return;
-	const userLanguage = getUserLanguage(ctx.from?.id);
-	const wallet = getUserWalletDetails(ctx.from.id);
+	const userLanguage = ctx.scene.session.sellStore.language;
+	const wallet = await getUserWalletDetails(ctx.from.id);
 	const tokenData = await processToken(sellAddress);
 	if (!tokenData) {
 		ctx.reply(
@@ -422,7 +421,7 @@ const executeSell = async (
 				spanish: "Solo se admiten transacciones en Solana, Base y Ethereum en este momento",
 				arabic: "يتم دعم التداول فقط على Solana و Base و Ethereum في الوقت الحالي",
 				chinese: "目前仅支持在Solana、Base和Ethereum上交易",
-			}[getUserLanguage(ctx.from?.id)],
+			}[userLanguage],
 		);
 		return ctx.scene.leave();
 	}
@@ -481,7 +480,8 @@ const executeSell = async (
 				}[userLanguage],
 			);
 			const balance = await getTokenBalance(wallet?.walletAddress, sellAddress);
-			if (balance <= 0 && hash) removeUserHolding(ctx.from?.id, sellAddress, "ethereum");
+			if (balance <= 0 && hash) await removeUserHolding(ctx.from?.id, sellAddress, "ethereum");
+
 			addtoCount();
 			//ctx.scene.leave();
 			return hash;

@@ -5,13 +5,6 @@ import { Composer, Markup, Scenes } from "telegraf";
 import { queryAi } from "../queryApi";
 import { getamountprompt } from "../prompt";
 
-import {
-	addUserHolding,
-	addtoCount,
-	getUserLanguage,
-	getUserWalletDetails,
-	sendMessageToAllGroups,
-} from "../databases";
 import { buyOnBase, buyOnEth } from "../buyfunction";
 import type { BigNumber } from "ethers";
 import { getEtherBalance } from "../checkBalance";
@@ -19,6 +12,20 @@ import { addMillisecondsToDate, delay, getEthPrice, getSolPrice, processToken } 
 import { TokenData } from "../timePriceData";
 import { getSolBalance } from "../checksolbalance";
 import { buyTokensWithSolana } from "../solana";
+
+import {
+	addUserHolding,
+	getUser,
+	getUserLanguage,
+	getUserWalletDetails,
+	isWalletAddressNull,
+	removeUserHolding,
+	updateSolWallet,
+	updateWallet,
+} from "../AWSusers";
+import { addGroup, getCurrentCalled, updateCurrentCalledAndCallHistory } from "../awsGroups";
+import { updateLog } from "../awslogs";
+import { addtoCount } from "../databases";
 
 export type TransactionReceipt = {
 	to: string | null; // Address this transaction is sent to
@@ -46,6 +53,7 @@ const initialData = {
 	token: null,
 	userBalance: null,
 	time: undefined,
+	language: "",
 };
 
 const stepHandler = new Composer<WizardContext>();
@@ -56,7 +64,7 @@ stepHandler.action("sendbuy", async (ctx) => {
 	let tokenAmount: string;
 	let amount = ctx.scene.session.buyStore.amount;
 	if (!ctx.from?.id) return;
-	const userLanguage = getUserLanguage(ctx.from?.id);
+	const userLanguage = ctx.scene.session.buyStore.language;
 	if (!buyAddress || !amount || !token || !userBalance) {
 		ctx.reply(
 			{
@@ -111,7 +119,7 @@ stepHandler.action("sendbuy", async (ctx) => {
 			return ctx.scene.leave();
 		}
 		tokenAmount = (parseFloat(amount) / ethprice).toString();
-		console.log(tokenAmount);
+		//console.log(tokenAmount);
 	} else if (ctx.scene.session.buyStore.chain?.toLowerCase() === "solana") {
 		//tokenAmount = ""
 		const solprice = (await getSolPrice()) as number;
@@ -251,7 +259,7 @@ const cancelfn = async (ctx: WizardContext) => {
 			spanish: "Has cancelado la operación",
 			arabic: "لقد قمت بإلغاء العملية",
 			chinese: "您已取消操作",
-		}[getUserLanguage(ctx.from?.id)],
+		}[ctx.scene.session.buyStore.language],
 	);
 
 	return await ctx.scene.leave();
@@ -266,8 +274,9 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			return ctx.scene.leave();
 		}
 
-		const wallet = getUserWalletDetails(ctx.from.id);
-		const userLanguage = getUserLanguage(ctx.from.id);
+		const wallet = await getUserWalletDetails(ctx.from.id);
+		const userLanguage = await getUserLanguage(ctx.from.id);
+
 		if (!wallet) {
 			await ctx.reply(
 				{
@@ -281,6 +290,8 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			return ctx.scene.leave();
 		}
 		ctx.scene.session.buyStore = JSON.parse(JSON.stringify(initialData));
+
+		ctx.scene.session.buyStore.language = userLanguage;
 		//{ address: ca, token: token, time: time, amount: amount }
 		// @ts-ignore
 		ctx.scene.session.buyStore.buyAddress = ctx.scene.state.address;
@@ -313,7 +324,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 						spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
 						arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
 						chinese: "无法获取余额，请重试",
-					}[userLanguage],
+					}[ctx.scene.session.buyStore.language],
 				);
 				return ctx.scene.leave();
 			}
@@ -330,7 +341,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 						spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
 						arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
 						chinese: "无法获取余额，请重试",
-					}[userLanguage],
+					}[ctx.scene.session.buyStore.language],
 				);
 
 				return ctx.scene.leave();
@@ -347,7 +358,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 						spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
 						arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
 						chinese: "无法获取余额，请重试",
-					}[userLanguage],
+					}[ctx.scene.session.buyStore.language],
 				);
 				return ctx.scene.leave();
 			}
@@ -363,7 +374,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 					spanish: "Se ha producido un error, por favor inténtalo de nuevo",
 					arabic: "حدث خطأ، يرجى المحاولة مرة أخرى",
 					chinese: "发生错误，请重试",
-				}[userLanguage],
+				}[ctx.scene.session.buyStore.language],
 			);
 			return ctx.scene.leave();
 		}
@@ -377,7 +388,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 					spanish: `¿Estás seguro/a de querer comprar ${ctx.scene.session.buyStore.token?.name} ?\\n\\n<i>Dirección: <b>${ctx.scene.session.buyStore.buyAddress}</b>\\nCantidad: <b>${ctx.scene.session.buyStore.amount} </b>\\nPrecio actual: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
 					arabic: `هل أنت متأكد من رغبتك في شراء ${ctx.scene.session.buyStore.token?.name}؟\\n\\n<i>العنوان: <b>${ctx.scene.session.buyStore.buyAddress}</b>\\nالمبلغ: <b>${ctx.scene.session.buyStore.amount} </b>\\nالسعر الحالي: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
 					chinese: `您确定要购买 ${ctx.scene.session.buyStore.token?.name} 吗？\\n\\n<i>地址： <b>${ctx.scene.session.buyStore.buyAddress}</b>\\n数量： <b>${ctx.scene.session.buyStore.amount} </b>\\n当前价格： <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
-				}[userLanguage],
+				}[ctx.scene.session.buyStore.language],
 				Markup.inlineKeyboard([
 					Markup.button.callback(
 						{
@@ -386,7 +397,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 							spanish: "Sí, estoy seguro/a",
 							arabic: "نعم، أنا متأكد",
 							chinese: "是的，我确定",
-						}[userLanguage],
+						}[ctx.scene.session.buyStore.language],
 						"sendbuy",
 					),
 					Markup.button.callback(
@@ -396,7 +407,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 							spanish: "Cancelar",
 							arabic: "إلغاء",
 							chinese: "取消",
-						}[userLanguage],
+						}[ctx.scene.session.buyStore.language],
 						"cancel",
 					),
 				]),
@@ -412,7 +423,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 					spanish: `¿Qué cantidad (USD) de ${ctx.scene.session.buyStore.token?.name} deseas comprar`,
 					arabic: `ما هو المبلغ (بالدولار الأمريكي) من ${ctx.scene.session.buyStore.token?.name} الذي ترغب في شرائه`,
 					chinese: `您想购买多少（美元）的 ${ctx.scene.session.buyStore.token?.name}`,
-				}[userLanguage],
+				}[ctx.scene.session.buyStore.language],
 				Markup.inlineKeyboard([
 					Markup.button.callback(
 						{
@@ -421,7 +432,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 							spanish: "Cancelar",
 							arabic: "إلغاء",
 							chinese: "取消",
-						}[userLanguage],
+						}[ctx.scene.session.buyStore.language],
 						"cancel",
 					),
 				]),
@@ -442,7 +453,7 @@ stepHandler2.on("text", async (ctx) => {
 	if (ctx.message && "text" in ctx.message) {
 		const { text } = ctx.message;
 		if (!ctx.from?.id) return;
-		const userLanguage = getUserLanguage(ctx.from?.id);
+		const userLanguage = ctx.scene.session.buyStore.language;
 		// console.log(text);
 		const am = await queryAi(getamountprompt(text));
 		if (am.toLowerCase() === "null") {
@@ -536,8 +547,8 @@ const executeBuy = async (
 		return await ctx.scene.leave();
 	}
 
-	const wallet = getUserWalletDetails(ctx.from.id);
-	const userLanguage = getUserLanguage(ctx.from.id);
+	const wallet = await getUserWalletDetails(ctx.from.id);
+	const userLanguage = ctx.scene.session.buyStore.language;
 	//let userBalance=ctx.scene.session.buyStore.userBalance;
 
 	if (userBalance <= amount) {
@@ -585,7 +596,8 @@ const executeBuy = async (
 			// 	`Successful transaction made through @nova_trader_bot.\n Transaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
 			// );
 			if (hash) {
-				addUserHolding(ctx.from?.id, buyAddress, "ethereum");
+				await addUserHolding(ctx.from?.id, buyAddress, "ethereum");
+
 				addtoCount();
 			}
 			return hash;
@@ -629,7 +641,7 @@ const executeBuy = async (
 			// );
 
 			// if (hash) {
-			// 	addUserHolding(ctx.from?.id, buyAddress, "solana");
+			// 	await addUserHolding(ctx.from?.id, buyAddress, "solana");
 			// }
 			return hash;
 		} catch (error: any) {
@@ -680,7 +692,7 @@ const executeBuy = async (
 	// 	`Successful transaction made through @nova_trader_bot.\n Transaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
 	// );
 	if (hash) {
-		addUserHolding(ctx.from?.id, buyAddress, "base");
+		await addUserHolding(ctx.from?.id, buyAddress, "base");
 	}
 	addtoCount();
 	return hash;

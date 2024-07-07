@@ -1,5 +1,6 @@
 import AWS from "aws-sdk";
 import { Group } from "./databases";
+//import { DynamoDB } from "@aws-sdk/client-dynamodb";
 
 AWS.config.update({
 	region: "eu-west-2", // e.g., 'us-west-2'
@@ -35,21 +36,24 @@ export const createGroupTable = async (): Promise<void> => {
 	}
 };
 
-createGroupTable();
-
 const docClient = new AWS.DynamoDB.DocumentClient();
 
-export const addGroup = async (group: Group): Promise<void> => {
+export const addGroup = async (group: Group) => {
 	const params = {
 		TableName: groupTableName,
 		Item: group,
+		ConditionExpression: "attribute_not_exists(id)", // Ensure the group doesn't already exist
 	};
 
 	try {
 		await docClient.put(params).promise();
 		console.log("Group added successfully");
-	} catch (err) {
-		console.error("Unable to add group. Error JSON:", JSON.stringify(err, null, 2));
+	} catch (err: any) {
+		if (err.code === "ConditionalCheckFailedException") {
+			console.log("Group already exists");
+		} else {
+			console.error("Unable to add group. Error JSON:", JSON.stringify(err, null, 2));
+		}
 	}
 };
 
@@ -126,5 +130,26 @@ export const updateCurrentCalledAndCallHistory = async (groupId: number, newCurr
 		console.log(`Group with ID ${groupId} updated successfully.`);
 	} catch (err) {
 		console.error(`Unable to update group. Error JSON:`, JSON.stringify(err, null, 2));
+	}
+};
+export const getCurrentCalled = async (groupId: number): Promise<string | null> => {
+	const params = {
+		TableName: groupTableName,
+		Key: { id: groupId },
+		ProjectionExpression: "currentCalled",
+	};
+
+	try {
+		const data = await docClient.get(params).promise();
+		if (data.Item) {
+			console.log("currentCalled retrieved successfully:", data.Item.currentCalled);
+			return data.Item.currentCalled;
+		} else {
+			console.log("Group not found.");
+			return null;
+		}
+	} catch (err) {
+		console.error("Unable to get currentCalled. Error JSON:", JSON.stringify(err, null, 2));
+		return null;
 	}
 };

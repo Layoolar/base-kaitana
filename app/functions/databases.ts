@@ -33,7 +33,7 @@ import { createGroupTable } from "./awsGroups";
 import { createUserTable } from "./AWSusers";
 
 //
-
+//createLogTable();
 export interface MyUser extends TelegramUserInterface {
 	walletAddress: string | null;
 	bets: BetData[] | [];
@@ -113,8 +113,15 @@ databases.logs.defaults({ logs: [], filteredLogs: [] }).write();
  *
  */
 
+AWS.config.update({
+	region: "eu-west-2", // e.g., 'us-west-2'
+	accessKeyId: process.env.DYNAMO_ACCESS_KEY,
+	secretAccessKey: process.env.DYNAMO_SECRET_KEY,
+});
+
+
 // Function to update currentCalled and push it into the callHistory array for a group
-export function updateCurrentCalledAndPushToHistory(groupId: number, currentCalled: string) {
+function updateCurrentCalledAndPushToHistory(groupId: number, currentCalled: string) {
 	// Find the group in the database
 	const group = databases.groups.get("groups").find({ id: groupId });
 
@@ -145,7 +152,7 @@ export function updateCurrentCalledAndPushToHistory(groupId: number, currentCall
 
 // updateCurrentCalledAndPushToHistory(groupIdToUpdate, newCurrentCalled);
 
-export function getCurrentCalled(groupId: number) {
+function getCurrentCalled(groupId: number) {
 	// Find the group in the database
 	const group = databases.groups.get("groups").find({ id: groupId });
 
@@ -156,7 +163,8 @@ export function getCurrentCalled(groupId: number) {
 		return null;
 	}
 }
-export function getCallHistory(groupId: number) {
+
+function getCallHistory(groupId: number) {
 	// Find the group in the database
 	const group = databases.groups.get("groups").find({ id: groupId });
 
@@ -169,7 +177,7 @@ export function getCallHistory(groupId: number) {
 	}
 }
 // console.log(databases.users.get("users").value());
-export function addGroup(groupId: number) {
+function addGroup(groupId: number) {
 	// Check if the group already exists in the database
 	const group = databases.groups.get("groups").find({ id: groupId }).value();
 	// console.log(group);
@@ -180,7 +188,7 @@ export function addGroup(groupId: number) {
 	//	console.log(`Group ${groupId} has been added to the database.`);
 }
 
-export const addUserHolding = async (userId: number, contractAddress: string, chain: string): Promise<void> => {
+const addUserHolding = async (userId: number, contractAddress: string, chain: string): Promise<void> => {
 	const user = databases.users.get("users").find({ id: userId }).value();
 	if (chain == "ethereum") {
 		if (user) {
@@ -198,17 +206,8 @@ export const addUserHolding = async (userId: number, contractAddress: string, ch
 		}
 	}
 };
-export async function sendMessageToAllGroups(message: string) {
-	const chatId = -1002064195192;
-	try {
-		await bot.telegram.sendMessage(chatId, message, { parse_mode: "HTML", disable_web_page_preview: true });
-		return "ok";
-	} catch (error) {
-		return null;
-	}
-}
 
-export const removeUserHolding = async (userId: number, contractAddress: string, chain: string): Promise<void> => {
+const removeUserHolding = async (userId: number, contractAddress: string, chain: string): Promise<void> => {
 	const user = databases.users.get("users").find({ id: userId }).value();
 
 	if (chain == "ethereum") {
@@ -251,11 +250,11 @@ const checkUserExists = (userId: number): boolean => {
 	const userInDb = databases.users.get("users").find({ id: userId }).value();
 	return !!userInDb;
 };
-const getUserLanguage = (userId: number) => {
-	const userInDb = databases.users.get("users").find({ id: userId }).value();
+// const getUserLanguage = (userId: number) => {
+// 	const userInDb = databases.users.get("users").find({ id: userId }).value();
 
-	return userInDb.language as "english" | "french" | "spanish" | "arabic" | "chinese";
-};
+// 	return userInDb.language as "english" | "french" | "spanish" | "arabic" | "chinese";
+// };
 
 // const updateWallet = (userId: number, newWallet: string): boolean => {
 // 	const userInDb = databases.users.get("users").find({ id: userId });
@@ -293,7 +292,7 @@ const updateWallet = (userId: number, newWallet: string, newPrivateKey: string, 
 		return false;
 	}
 };
-export const updateSolWallet = (userId: number, newWallet: string, newPrivateKey: string) => {
+const updateSolWallet = (userId: number, newWallet: string, newPrivateKey: string) => {
 	const userInDb = databases.users.get("users").find({ id: userId });
 
 	if (userInDb.value()) {
@@ -459,7 +458,7 @@ const removeOldLogs = async (): Promise<void> => {
 // setInterval(async () => {
 // 	await removeOldLogs();
 // }, 10 * 60 * 1000);
-export const addOrUpdateLog = (log: Log) => {
+const addOrUpdateLog = (log: Log) => {
 	const existingLog = databases.logs.get("logs").find({ ca: log.ca }).value();
 
 	if (existingLog) {
@@ -479,15 +478,3 @@ const getAllLogs = (): Log[] => {
 
 	return logs;
 };
-
-export {
-	databases,
-	writeUser,
-	checkUserExists,
-	getUserLanguage,
-	updateWallet,
-	isWalletNull,
-	getHistoricalDataAndGraph,
-	getUserWalletDetails,
-};
-export default databases;

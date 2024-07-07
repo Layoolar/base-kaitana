@@ -1,11 +1,12 @@
 import { Composer, Markup, Scenes } from "telegraf";
 import { WizardContext } from "@app/functions/telegraf";
-import { getUserWalletDetails } from "../databases";
+
 import { getEtherBalance } from "../checkBalance";
 import { getEthPrice } from "../helper";
 import { queryAi } from "../queryApi";
 import { getCaPrompt, getamountprompt } from "../prompt";
 import { sendEth } from "../sendEth";
+import { getUserWalletDetails } from "../AWSusers";
 const initialData = {
 	recipientAddress: "",
 	amount: "",
@@ -76,7 +77,8 @@ export const sendWizard = new Scenes.WizardScene<WizardContext>(
 		ctx.scene.session.sendStore.chain = ctx.scene.state.chain;
 
 		const user_id = ctx.from?.id;
-		const wallet = getUserWalletDetails(ctx.from.id);
+		
+		const wallet = await getUserWalletDetails(user_id);
 
 		const userBalance = await getEtherBalance(wallet?.walletAddress);
 		const ethprice = await getEthPrice();

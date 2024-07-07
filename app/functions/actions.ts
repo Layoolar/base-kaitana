@@ -4,12 +4,13 @@ import fetchData, { fetchCoin } from "./fetchCoins";
 import { Markup } from "telegraf";
 import { queryAi } from "./queryApi";
 import { StaticPool } from "node-worker-threads-pool";
-import { getUserLanguage, writeUser } from "./databases";
+
 import path from "path";
+import { createUser, getUserLanguage } from "./AWSusers";
 
 const filePath = path.join(__dirname, "worker.mjs");
 //onsole.log(pathh);
-const pool = new StaticPool({
+export const pool = new StaticPool({
 	size: 2,
 	task: filePath,
 	workerData: "workerData!",
@@ -182,7 +183,8 @@ bot.action("sol", async (ctx) => {
 
 bot.on("voice", async (ctx) => {
 	const userId = ctx.from.id;
-	const userLanguage = getUserLanguage(userId);
+	
+	const userLanguage =await getUserLanguage(userId);
 
 	if (ctx.chat.type !== "private") {
 		return ctx.reply(
@@ -220,33 +222,39 @@ bot.on("voice", async (ctx) => {
 });
 
 bot.action(/language_(.+)$/, async (ctx) => {
-	const language = ctx.match[1]; // This extracts the language part from the callback data
+	const language = ctx.match[1].toLowerCase() as "english" | "french" | "spanish" | "arabic" | "chinese" // This extracts the language part from the callback data
 	await ctx.reply(`You selected ${language}.`);
 	if (!ctx.from?.id) return ctx.reply("Forbidden");
-	await writeUser({
-		...ctx.from,
-		walletAddress: null,
-		bets: [],
-		privateKey: null,
-		mnemonic: null,
-		ethholding: [],
-		baseholding: [],
-		solWalletAddress: null,
-		solPrivateKey: null,
-		solMnemonic: null,
-		language: language.toLowerCase(),
-	});
+	try {
+			await createUser({
+				...ctx.from,
+				walletAddress: null,
+				bets: [],
+				privateKey: null,
+				mnemonic: null,
+				ethholding: [],
+				baseholding: [],
+				solWalletAddress: null,
+				solPrivateKey: null,
+				solMnemonic: null,
+				language: language.toLowerCase(),
+			});
 
-	// Reply to the user
-	await ctx.reply(
-		{
-			english: "Welcome! You have been successfully registered. Use /help to get started.",
-			french: "Bienvenue ! Vous avez été enregistré avec succès. Utilisez /help pour commencer.",
-			spanish: "¡Bienvenido! Te has registrado exitosamente. Usa /help para empezar.",
-			arabic: "مرحبًا! لقد تم تسجيلك بنجاح. استخدم /help للبدء.",
-			chinese: "欢迎！您已成功注册。使用 /help 开始。",
-		}[getUserLanguage(ctx.from.id)],
-	);
+			 
+			// Reply to the user
+			await ctx.reply(
+				{
+					english: "Welcome! You have been successfully registered. Use /help to get started.",
+					french: "Bienvenue ! Vous avez été enregistré avec succès. Utilisez /help pour commencer.",
+					spanish: "¡Bienvenido! Te has registrado exitosamente. Usa /help para empezar.",
+					arabic: "مرحبًا! لقد تم تسجيلك بنجاح. استخدم /help للبدء.",
+					chinese: "欢迎！您已成功注册。使用 /help 开始。",
+				}[language],
+			);
+	} catch (error) {
+		
+	}
+
 	// Add logic to set the user's language based on the extracted language
 });
 

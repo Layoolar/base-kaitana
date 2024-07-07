@@ -104,13 +104,8 @@ export const getUser = async (userId: number) => {
 export const getUserLanguage = async (userId: number) => {
 	const user = await getUser(userId);
 
-	if (user) {
-		console.log("User language retrieved successfully:", user.language);
-		return user.language as "english" | "french" | "spanish" | "arabic" | "chinese";
-	} else {
-		console.log("User does not exist or does not have a language set.");
-		return null;
-	}
+	console.log("User language retrieved successfully:", user?.language);
+	return user?.language as "english" | "french" | "spanish" | "arabic" | "chinese";
 };
 
 export const isWalletAddressNull = async (userId: number) => {

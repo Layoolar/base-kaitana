@@ -3,35 +3,52 @@ import { TokenData } from "./timePriceData";
 import { Log } from "./commands";
 
 AWS.config.update({
-	region: "eu-west-2", // e.g., 'us-west-2'
-	accessKeyId: process.env.DYNAMO_ACCESS_KEY,
-	secretAccessKey: process.env.DYNAMO_SECRET_KEY,
+	region: "eu-west-2", // Your AWS region
+	accessKeyId: process.env.DYNAMO_ACCESS_KEY || "", // Your access key
+	secretAccessKey: process.env.DYNAMO_SECRET_KEY || "", // Your secret key
 });
 
 const dynamodb = new AWS.DynamoDB();
-const logTableName = "Logs";
 const docClient = new AWS.DynamoDB.DocumentClient();
+const logTableName = "Logs";
 
+/**
+ * Create the Logs table if it does not already exist.
+ */
 export const createLogTable = async (): Promise<void> => {
 	const params = {
 		TableName: logTableName,
 		KeySchema: [
-			{ AttributeName: "ca", KeyType: "HASH" }, // Partition key
-			{ AttributeName: "date", KeyType: "RANGE" }, // Sort key
+			{ AttributeName: "ca", KeyType: "HASH" }, // Partition key for the table
 		],
 		AttributeDefinitions: [
 			{ AttributeName: "ca", AttributeType: "S" },
-			{ AttributeName: "date", AttributeType: "S" },
+			{ AttributeName: "postedDate", AttributeType: "S" }, // Attribute for the GSI
 		],
 		ProvisionedThroughput: {
 			ReadCapacityUnits: 5,
 			WriteCapacityUnits: 5,
 		},
+		GlobalSecondaryIndexes: [
+			{
+				IndexName: "DateIndex",
+				KeySchema: [
+					{ AttributeName: "postedDate", KeyType: "HASH" }, // Partition key for GSI
+				],
+				Projection: {
+					ProjectionType: "ALL",
+				},
+				ProvisionedThroughput: {
+					ReadCapacityUnits: 5,
+					WriteCapacityUnits: 5,
+				},
+			},
+		],
 	};
 
 	try {
-		const data = await dynamodb.createTable(params).promise();
-		console.log("Table created successfully:", data);
+		await dynamodb.createTable(params).promise();
+		console.log("Table created successfully");
 	} catch (err: any) {
 		if (err.code === "ResourceInUseException") {
 			console.log("Table already exists.");
@@ -41,25 +58,27 @@ export const createLogTable = async (): Promise<void> => {
 	}
 };
 
-// Call the create table function
-createLogTable().then(() => {
-	console.log("Create table operation completed.");
-});
-
-export const updateLog = async (ca: string, token: TokenData): Promise<void> => {
+/**
+ * Update or create a log entry.
+ * If the log entry exists, update the queries and cryptoToken.
+ * If the log entry does not exist, create a new entry with the current time.
+ * @param ca - The unique identifier for the log entry
+ * @param cryptoToken - The token data associated with the log entry
+ */
+export const updateLog = async (ca: string, cryptoToken: TokenData): Promise<void> => {
 	const currentTime = new Date().toISOString();
 
 	const params = {
 		TableName: logTableName,
 		Key: { ca },
 		UpdateExpression: `
-      SET token = :token,
-          date = :date,
+      SET cryptoToken = :cryptoToken,
+          postedDate = :postedDate,
           queries = if_not_exists(queries, :start) + :inc
     `,
 		ExpressionAttributeValues: {
-			":token": token,
-			":date": currentTime, // Store as ISO string
+			":cryptoToken": cryptoToken,
+			":postedDate": currentTime, // Store as ISO string
 			":start": 0,
 			":inc": 1,
 		},
@@ -67,20 +86,24 @@ export const updateLog = async (ca: string, token: TokenData): Promise<void> => 
 	};
 
 	try {
-		const data = await docClient.update(params).promise();
-		console.log("Log updated successfully:", data);
+		await docClient.update(params).promise();
+		console.log("Log updated successfully");
 	} catch (err) {
 		console.error("Unable to update log. Error JSON:", JSON.stringify(err, null, 2));
 	}
 };
 
+/**
+ * Retrieve all logs with the postedDate less than one hour ago.
+ * @returns An array of log entries
+ */
 export const getRecentLogs = async () => {
 	const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString(); // ISO string of one hour ago
 
 	const params = {
 		TableName: logTableName,
 		IndexName: "DateIndex", // GSI name
-		KeyConditionExpression: "date > :oneHourAgo",
+		KeyConditionExpression: "postedDate > :oneHourAgo",
 		ExpressionAttributeValues: {
 			":oneHourAgo": oneHourAgo,
 		},
@@ -91,12 +114,12 @@ export const getRecentLogs = async () => {
 
 		const logs = data.Items?.map((item) => ({
 			ca: item.ca,
-			token: item.token,
-			date: item.date, // Already in ISO string format
+			cryptoToken: item.cryptoToken,
+			date: item.postedDate,
 			queries: item.queries,
 		}));
 		console.log("Recent logs retrieved successfully:", logs);
-		return logs as Log[];
+		return logs;
 	} catch (err) {
 		console.error("Unable to retrieve recent logs. Error JSON:", JSON.stringify(err, null, 2));
 		return [];

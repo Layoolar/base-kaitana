@@ -7,7 +7,7 @@ import { TokenData, generateTimeAndPriceGraph } from "../timePriceData";
 import { toUnicode } from "punycode";
 import { fetchOHLCVData } from "../fetchCandlestickData";
 import { isEmpty, processToken } from "../helper";
-import { getUserLanguage } from "../databases";
+import { getUserLanguage } from "../AWSusers";
 
 const initialData = {
 	address: "",
@@ -44,7 +44,7 @@ stepHandler.action(/timeframe_(.+)/, async (ctx) => {
 	//console.log("in here");
 	const userid = ctx.from?.id;
 	if (!userid) return;
-	const userLanguage = getUserLanguage(userid);
+	const userLanguage = await getUserLanguage(userid);
 
 	await ctx.reply(
 		{
@@ -93,7 +93,7 @@ stepHandler.action(/type_(.+)/, async (ctx) => {
 	const type = ctx.match[1];
 	const userid = ctx.from?.id;
 	if (!userid) return;
-	const userLanguage = getUserLanguage(userid);
+	const userLanguage = await getUserLanguage(userid);
 	if (type === "candlestick") {
 		await ctx.reply(
 			{
@@ -166,6 +166,8 @@ You must choose out of up or down and give reason, make it conversational
 
 stepHandler.action("cancel", async (ctx) => {
 	if (!ctx.from?.id) return;
+
+	const userLanguage = await getUserLanguage(ctx.from.id);
 	await ctx.reply(
 		{
 			english: "You've cancelled the operation",
@@ -173,7 +175,7 @@ stepHandler.action("cancel", async (ctx) => {
 			spanish: "Has cancelado la operación",
 			arabic: "لقد قمت بإلغاء العملية",
 			chinese: "您已取消操作",
-		}[getUserLanguage(ctx.from?.id)],
+		}[userLanguage],
 	);
 	ctx.answerCbQuery();
 	return await ctx.scene.leave();
@@ -183,7 +185,7 @@ stepHandler.on("text", async (ctx) => {
 		const { text } = ctx.message;
 		const address = await queryAi(getCaPrompt(text));
 		if (!ctx.from?.id) return;
-		const userLanguage = getUserLanguage(ctx.from.id);
+		const userLanguage = await getUserLanguage(ctx.from.id);
 
 		if (address.toLowerCase() === "null") {
 			// Reply with a warning emoji for invalid input
@@ -283,7 +285,7 @@ export const analysisWizard = new Scenes.WizardScene<WizardContext>(
 		const userid = ctx.from?.id;
 
 		if (!userid) return;
-		const userLanguage = getUserLanguage(userid);
+		const userLanguage = await getUserLanguage(userid);
 		await ctx.replyWithHTML(
 			{
 				english: "🔎 Please submit the contract address of the token you want to analyze",

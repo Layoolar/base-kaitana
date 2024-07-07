@@ -43,6 +43,7 @@ interface MyWizardSession extends Scenes.WizardSessionData {
 		time: undefined | string;
 		chain: string | null;
 		userBalance: null | number;
+		language: "english" | "french" | "spanish" | "arabic" | "chinese";
 	};
 	sellStore: {
 		sellAddress: string | null;
@@ -52,6 +53,7 @@ interface MyWizardSession extends Scenes.WizardSessionData {
 		time: undefined | string;
 		chain: string | null;
 		userBalance: null | number;
+		language: "english" | "french" | "spanish" | "arabic" | "chinese";
 	};
 	sendStore: {
 		recipientAddress: string;

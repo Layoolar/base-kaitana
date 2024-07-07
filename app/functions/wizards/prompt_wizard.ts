@@ -7,10 +7,13 @@ import { TokenData } from "../timePriceData";
 //import { json } from "express";
 import { conversation } from "../queryApi";
 import { isEmpty, processToken, translate } from "../helper";
-import { deleteFile, downloadFile, transcribeAudio } from "../helper";
+
 import { isHoneypot } from "../honeyPot";
-import { getUserLanguage } from "../databases";
+
+import { getUserLanguage } from "../AWSusers";
 import { databases } from "@configs/config";
+import { pool } from "../actions";
+import { updateLog } from "../awslogs";
 
 const initialData = {
 	prompt: "",
@@ -30,7 +33,7 @@ const getVoice = async (ctx: WizardContext) => {
 	const userId = ctx.from?.id;
 
 	if (!userId) return;
-	const userLanguage = getUserLanguage(userId);
+	const userLanguage = await getUserLanguage(userId);
 	if (voice.duration > 10) {
 		return ctx.reply(
 			{
@@ -55,15 +58,7 @@ const getVoice = async (ctx: WizardContext) => {
 		);
 	}
 	try {
-		const filePath = await downloadFile(voice.file_id, userId);
-		const transcription = await transcribeAudio(filePath);
-
-		const output = transcription.replace(/[-.,]/g, "");
-
-		//ctx.reply(`${output}`);
-		//const aiResponse=await queryAi( getTrancribedAudioPrompt( transcription))
-		//ctx.wizard.next();
-		deleteFile(filePath);
+		const output = await pool.exec({ voice, userId });
 		ctx.replyWithHTML(
 			{
 				english: `<b>Audio transcription:</b> ${output}\nIf this isn't what you wanted, use the audio button to record another audio.`,
@@ -116,9 +111,7 @@ const getVoice = async (ctx: WizardContext) => {
 			const prompt4 = `This is data for a token "${JSON.stringify({
 				...selectedToken?.token,
 				...data[0],
-			})}". use the information provided to answer any question in this "${output}. Reply "This information is unavailable" to any question you can't answer, send your reply in ${getUserLanguage(
-				ctx.from.id,
-			)}"`;
+			})}". use the information provided to answer any question in this "${output}. Reply "This information is unavailable" to any question you can't answer, send your reply in ${userLanguage}"`;
 
 			const detailsCompletionMessage = await conversation(prompt4, ctx.scene.session.promptStore.chatHistory);
 
@@ -214,7 +207,7 @@ const audiobuyFn = async (ctx: WizardContext) => {
 	const token = await processToken(coinAddress);
 	const userId = ctx.from?.id;
 	if (!userId) return;
-	const userLanguage = getUserLanguage(userId);
+	const userLanguage = await getUserLanguage(userId);
 	if (!token) {
 		ctx.reply(
 			{
@@ -248,7 +241,7 @@ const audiosellFn = async (ctx: WizardContext) => {
 	const userId = ctx.from?.id;
 
 	if (!userId) return;
-	const userLanguage = getUserLanguage(userId);
+	const userLanguage = await getUserLanguage(userId);
 	if (!token) {
 		await ctx.reply(
 			{
@@ -279,7 +272,7 @@ const getText = async (ctx: WizardContext) => {
 		//console.log(text);
 		const userId = ctx.from?.id;
 		if (!userId) return;
-		const userLanguage = getUserLanguage(userId);
+		const userLanguage = await getUserLanguage(userId);
 		if (text.toLowerCase() !== "exit") {
 			//console.log("here");
 
@@ -320,9 +313,7 @@ const getText = async (ctx: WizardContext) => {
 			const prompt4 = `This is data for a token "${JSON.stringify({
 				...selectedToken?.token,
 				...data[0],
-			})}". use the information provided to answer any question in this "${text}. Reply "This information is unavailable" to any question you can't answer, send your reply in ${getUserLanguage(
-				ctx.from.id,
-			)}"`;
+			})}". use the information provided to answer any question in this "${text}. Reply "This information is unavailable" to any question you can't answer, send your reply in ${userLanguage}"`;
 
 			const detailsCompletionMessage = await conversation(prompt4, ctx.scene.session.promptStore.chatHistory);
 
@@ -397,7 +388,7 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 	const userId = ctx.from?.id;
 
 	if (!userId) return;
-	const userLanguage = getUserLanguage(userId);
+	const userLanguage = await getUserLanguage(userId);
 	if (!coin) {
 		await ctx.reply(
 			{
@@ -423,6 +414,7 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 			}[userLanguage],
 		);
 	}
+	await updateLog(coinAddress, coin);
 	await ctx.replyWithHTML(
 		{
 			english: `<b>"Getting Token Information...</b>\\n\\n<b>Token Name: </b><i>${coin.name}</i>\\n<b>Token Address: </b> <i>${coin.address}</i>`,
@@ -463,9 +455,7 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 			...coin,
 			...data[0],
 		})}. Don't make mention that you are summarizing a given data in your response. Don't say things like 'According to the data provided'. Send the summary back in few short paragraphs. Only return the summary and nothing else. Also wrap important values with HTML <b> bold tags,
-				make the numbers easy for humans to read with commas and add a lot of emojis to your summary to make it aesthetically pleasing, for example add 💰 to price, 💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath, 📈 to % increase ,📉 to % decrease, reply in ${getUserLanguage(
-					userId,
-				)}`,
+				make the numbers easy for humans to read with commas and add a lot of emojis to your summary to make it aesthetically pleasing, for example add 💰 to price, 💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath, 📈 to % increase ,📉 to % decrease, reply in ${userLanguage}`,
 	);
 
 	await ctx.replyWithHTML(
@@ -526,8 +516,8 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 		//@ts-ignore
 		ctx.scene.session.promptStore.prompt = ctx.scene.state.prompt.trim();
 
-		ctx.scene.session.promptStore.language = getUserLanguage(userId);
-		const userLanguage = getUserLanguage(userId);
+		ctx.scene.session.promptStore.language = await getUserLanguage(userId);
+		const userLanguage = await getUserLanguage(userId);
 		//console.log(ctx.scene.session.promptStore.prompt);
 		//const userLanguage = ctx.scene.session.promptStore.language;
 		if (ctx.scene.session.promptStore.prompt.length === 0) {
@@ -614,7 +604,7 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 				spanish: `<b>Transcripción de audio:</b> ${ctx.scene.session.promptStore.prompt}\nSi esto no es lo que querías, usa el botón de audio para grabar otro audio.`,
 				arabic: `<b>نص الصوت:</b> ${ctx.scene.session.promptStore.prompt}\nإذا لم يكن هذا ما تريده، استخدم زر الصوت لتسجيل صوت آخر.`,
 				chinese: `<b>音频转录:</b> ${ctx.scene.session.promptStore.prompt}\n如果这不是您想要的，请使用音频按钮录制另一段音频。`,
-			}[getUserLanguage(userId)],
+			}[userLanguage],
 		);
 		bot.action("cancel", cancelFn);
 		//console.log(ctx.scene.session.promptStore.prompt.trim().length === 0);
