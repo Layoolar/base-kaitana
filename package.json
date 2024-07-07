@@ -106,9 +106,9 @@
 		"replace-in-file": "^6.2.0",
 		"shelljs": "^0.8.4",
 		"ts-jest": "^26.5.5",
-		"ts-node": "^9.1.1",
+		"ts-node": "^10.9.2",
 		"ts-patch": "^2.0.1",
-		"typescript": "^4.2.4",
+		"typescript": "^5.5.3",
 		"typescript-transform-paths": "^2.2.3",
 		"yargs": "^16.2.0"
 	},

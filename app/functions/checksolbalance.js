@@ -1,5 +1,7 @@
-const solanaWeb3 = require("@solana/web3.js");
-const splToken = require("@solana/spl-token");
+// const solanaWeb3 = require("@solana/web3.js");
+// const splToken = require("@solana/spl-token");
+import solanaWeb3 from "@solana/web3.js";
+import splToken from "@solana/spl-token";
 // import { processToken } from "./helper";
 
 // Define the RPC endpoint

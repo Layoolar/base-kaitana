@@ -19,7 +19,7 @@
 // 	}[];
 // }
 import type { TelegramUserInterface } from "@app/types/databases.type";
-import configs from "@configs/config";
+import configs from "../configs/config";
 import lowdb from "lowdb";
 import lowdbFileSync from "lowdb/adapters/FileSync";
 import { BetData, CoinDataType, Log } from "./commands";
@@ -118,7 +118,6 @@ AWS.config.update({
 	accessKeyId: process.env.DYNAMO_ACCESS_KEY,
 	secretAccessKey: process.env.DYNAMO_SECRET_KEY,
 });
-
 
 // Function to update currentCalled and push it into the callHistory array for a group
 function updateCurrentCalledAndPushToHistory(groupId: number, currentCalled: string) {

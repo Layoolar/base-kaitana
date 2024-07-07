@@ -1,6 +1,6 @@
 import { Scenes, session } from "telegraf";
 import { WizardContext } from "@app/functions/telegraf";
-import bot from "@app/functions/telegraf";
+import bot from "../telegraf";
 import { transactionWizard } from "./transaction_wizard";
 
 import { chartWizard } from "./chart_wizard";

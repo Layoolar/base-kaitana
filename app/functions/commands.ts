@@ -8,25 +8,17 @@
  *
  */
 
-import { bot } from "@app/functions/actions";
+import { bot } from "./actions";
 import { Markup, MiddlewareFn, Context } from "telegraf";
 import * as databases from "./databases";
 import config from "../configs/config";
 import { launchPolling, launchWebhook } from "./launcher";
 import { createSolWallet } from "./solhelper";
-import fetchData, {
-	fetchCoin,
-	fetchCoinGeckoData,
-	fetchDxToolsPairData,
-	formatCoinsMessage,
-	getDexPairDataWithAddress,
-	sendAllChainData,
-} from "./fetchCoins";
-import { v4 as uuidv4 } from "uuid";
+import { getDexPairDataWithAddress } from "./fetchCoins";
+
 import { queryAi } from "./queryApi";
 import { TokenData, generateTimeAndPriceGraph } from "./timePriceData";
-import { calculatePoint } from "mermaid/dist/utils";
-import { error, log } from "console";
+
 import {
 	getBuyPrompt,
 	getCaPrompt,
@@ -373,13 +365,15 @@ bot.action("genwallet", async (ctx) => {
 		ctx.reply(translations[userLanguage]);
 		return;
 	}
-	ctx.reply({
-		english: "Generating Wallet...",
-		french: "Génération du portefeuille...",
-		spanish: "Generando billetera...",
-		arabic: "جاري إنشاء المحفظة...",
-		chinese: "生成钱包中...",
-	}[userLanguage]);
+	ctx.reply(
+		{
+			english: "Generating Wallet...",
+			french: "Génération du portefeuille...",
+			spanish: "Generando billetera...",
+			arabic: "جاري إنشاء المحفظة...",
+			chinese: "生成钱包中...",
+		}[userLanguage],
+	);
 	const wallet = createWallet();
 	const solWallet = createSolWallet();
 
@@ -911,7 +905,6 @@ export const neww = async () => {
 						}[userLanguage],
 						`proceedsell_${coin.address}`,
 					),
-					,
 				]),
 			);
 			// console.log(selectedCoin);
@@ -1803,7 +1796,7 @@ const start = async () => {
 
 		const groupId = ctx.chat.id;
 		const userId = ctx.update.message.from.id;
-		const language = await getUserLanguage(userId);
+
 		if (ctx.update.message.chat.type === "private") {
 			// Check if the message is from a bot
 			if (ctx.update.message.from.is_bot) {
@@ -1814,6 +1807,13 @@ const start = async () => {
 			const existingUser = await getUser(userId); // Replace with your method to get user by ID
 
 			if (existingUser) {
+				const language = (await existingUser.language) as keyof {
+					english: "You are already registered. Use /help to get started.";
+					french: "Vous êtes déjà inscrit. Utilisez /help pour commencer.";
+					spanish: "Ya estás registrado. Usa /help para empezar.";
+					arabic: "أنت مسجل بالفعل. استخدم /help للبدء.";
+					chinese: "您已经注册了。使用 /help 开始。";
+				};
 				await ctx.reply(
 					{
 						english: "You are already registered. Use /help to get started.",
@@ -1840,15 +1840,14 @@ const start = async () => {
 		} else {
 			// Handle group chats
 			const usernameOrLastName = ctx.message.from.username || ctx.message.from.last_name || "user";
-			await ctx.reply(
-				{
-					english: `@${usernameOrLastName}, send a private message to the bot to get started.`,
-					french: `@${usernameOrLastName}, envoyez un message privé au bot pour commencer.`,
-					spanish: `@${usernameOrLastName}, envía un mensaje privado al bot para empezar.`,
-					arabic: `@${usernameOrLastName}، أرسل رسالة خاصة إلى الروبوت للبدء.`,
-					chinese: `@${usernameOrLastName}，发送私信给机器人开始。`,
-				}[language],
-			);
+			await ctx.reply(`@${usernameOrLastName}, send a private message to the bot to get started.`);
+			// {
+			// 		english: `@${usernameOrLastName}, send a private message to the bot to get started.`,
+			// 		french: `@${usernameOrLastName}, envoyez un message privé au bot pour commencer.`,
+			// 		spanish: `@${usernameOrLastName}, envía un mensaje privado al bot para empezar.`,
+			// 		arabic: `@${usernameOrLastName}، أرسل رسالة خاصة إلى الروبوت للبدء.`,
+			// 		chinese: `@${usernameOrLastName}，发送私信给机器人开始。`,
+			// 	}[language],
 		}
 	});
 };

@@ -7,7 +7,7 @@
  * @license: MIT License
  *
  */
-import bot from "@app/functions/telegraf";
+import bot from "./telegraf";
 
 /**
  * hears: any taxt

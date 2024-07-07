@@ -1,4 +1,4 @@
-import { WizardContext } from "@app/functions/telegraf";
+import { WizardContext } from "../telegraf";
 
 import { Composer, Markup, Scenes } from "telegraf";
 

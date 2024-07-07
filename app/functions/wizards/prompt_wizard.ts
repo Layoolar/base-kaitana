@@ -1,4 +1,4 @@
-import bot, { WizardContext } from "@app/functions/telegraf";
+import bot, { WizardContext } from "../telegraf";
 import { Composer, Context, Markup, Scenes } from "telegraf";
 import { queryAi } from "../queryApi";
 import { getBuyPrompt, getCaPrompt, getamountprompt } from "../prompt";
@@ -491,7 +491,6 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 				}[userLanguage],
 				`audiosell_${coin.address}`,
 			),
-			,
 		]),
 	);
 	//console.log(honeyPotRes);
