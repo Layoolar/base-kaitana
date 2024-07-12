@@ -155,6 +155,8 @@ export async function getDexPairDataWithAddress(pairAddresses: string) {
 
 	try {
 		const response = await axios.get(url);
+
+		if (!response.data.pairs) return [];
 		response.data.pairs.forEach((pair: any) => {
 			resultsArray.push({
 				chain: pair.chainId,

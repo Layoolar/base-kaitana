@@ -3,19 +3,18 @@ import { WizardContext } from "@app/functions/telegraf";
 import { Composer, Context, Markup, Scenes } from "telegraf";
 
 import { queryAi } from "../queryApi";
-import { getCaPrompt, getamountprompt, getsellamountprompt } from "../prompt";
-import { fetchCoin } from "../fetchCoins";
+import { getsellamountprompt } from "../prompt";
 
 import { getEtherBalance, getTokenBalance } from "../checkBalance";
-import { addMillisecondsToDate, delay, getEthPrice, processToken } from "../helper";
+import { addMillisecondsToDate, getEthPrice, processToken } from "../helper";
 import { sell, sellOnEth } from "../sellfunction";
-import { TransactionReceipt } from "./buywizard";
-import { time } from "console";
+
 import { TokenData } from "../timePriceData";
 import { getParticularSolTokenBalance } from "../checksolbalance";
 import { sellTokensWithSolana } from "../solana";
 import { getUserLanguage, getUserWalletDetails, removeUserHolding } from "../AWSusers";
 import { addtoCount } from "../databases";
+import { updateTransaction } from "../awslogs";
 
 const initialData = {
 	sellAddress: null,
@@ -344,9 +343,26 @@ const executeSell = async (
 ) => {
 	//if (!ctx.from) return await ctx.replyWithHTML("<b>Transaction failed</b>");
 	if (!ctx.from?.id) return;
+
 	const userLanguage = ctx.scene.session.sellStore.language;
 	const wallet = await getUserWalletDetails(ctx.from.id);
 	const tokenData = await processToken(sellAddress);
+	const ethprice = (await getEthPrice()) as number;
+	const userEthBalance = await getEtherBalance(wallet?.walletAddress);
+	if (!userEthBalance) {
+		await ctx.reply(
+			{
+				english: "Couldn't get balance, please try again",
+				french: "Impossible d'obtenir le solde, veuillez réessayer",
+				spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
+				arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
+				chinese: "无法获取余额，请重试",
+			}[ctx.scene.session.sellStore.language],
+		);
+
+		return ctx.scene.leave();
+	}
+
 	if (!tokenData) {
 		ctx.reply(
 			{
@@ -458,7 +474,13 @@ const executeSell = async (
 	let hash;
 	if (ctx.scene.session.sellStore.chain?.toLowerCase() === "ethereum") {
 		try {
-			hash = await sellOnEth(wallet?.privateKey, token.address, amountintokens.toFixed(2).toString());
+			hash = await sellOnEth(
+				wallet?.privateKey,
+				token.address,
+				amountintokens.toFixed(2).toString(),
+				tokenData.token.decimals,
+				parseFloat(userEthBalance?.eth),
+			);
 
 			if (!hash)
 				throw new Error(
@@ -482,17 +504,27 @@ const executeSell = async (
 			const balance = await getTokenBalance(wallet?.walletAddress, sellAddress);
 			if (balance <= 0 && hash) await removeUserHolding(ctx.from?.id, sellAddress, "ethereum");
 
+			await updateTransaction((amountintokens * token.price) / ethprice);
+
 			addtoCount();
 			//ctx.scene.leave();
 			return hash;
 		} catch (error: any) {
 			ctx.reply(
 				{
-					english: `An Error occurred please try again later\nError Message: ${error.message}.`,
-					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${error.message}.`,
-					spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${error.message}.`,
-					arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${error.message}.`,
-					chinese: `发生错误，请稍后重试\n错误信息: ${error.message}.`,
+					english: `An Error occurred please try again later\nError Message: ${
+						error.message || "internal server error"
+					}.`,
+					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
+						error.message || "Erreur interne du serveur"
+					}.`,
+					spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${
+						error.message || "Error interno del servidor"
+					}.`,
+					arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${
+						error.message || "خطأ داخلي في الخادم"
+					}.`,
+					chinese: `发生错误，请稍后重试\n错误信息: ${error.message || "服务器内部错误"}.`,
 				}[userLanguage],
 			);
 			return ctx.scene.leave();
@@ -537,11 +569,19 @@ const executeSell = async (
 			//await delay(5000);
 			ctx.reply(
 				{
-					english: `An Error occurred please try again later\nError Message: ${error.message}.`,
-					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${error.message}.`,
-					spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${error.message}.`,
-					arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${error.message}.`,
-					chinese: `发生错误，请稍后重试\n错误信息: ${error.message}.`,
+					english: `An Error occurred please try again later\nError Message: ${
+						error.message || "internal server error"
+					}.`,
+					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
+						error.message || "Erreur interne du serveur"
+					}.`,
+					spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${
+						error.message || "Error interno del servidor"
+					}.`,
+					arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${
+						error.message || "خطأ داخلي في الخادم"
+					}.`,
+					chinese: `发生错误，请稍后重试\n错误信息: ${error.message || "服务器内部错误"}.`,
 				}[userLanguage],
 			);
 			return await ctx.scene.leave();
@@ -550,7 +590,13 @@ const executeSell = async (
 	//console.log(wallet?.privateKey, token.address, amountintokens, token.decimals);
 
 	try {
-		hash = await sell(wallet?.privateKey, token.address, amountintokens.toFixed(2).toString(), token.decimals);
+		hash = await sell(
+			wallet?.privateKey,
+			token.address,
+			amountintokens.toFixed(2).toString(),
+			token.decimals,
+			parseFloat(userEthBalance?.base),
+		);
 		if (!hash)
 			throw new Error(
 				{
@@ -564,11 +610,19 @@ const executeSell = async (
 	} catch (error: any) {
 		ctx.reply(
 			{
-				english: `An Error occurred please try again later\nError Message: ${error.message}.`,
-				french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${error.message}.`,
-				spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${error.message}.`,
-				arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${error.message}.`,
-				chinese: `发生错误，请稍后重试\n错误信息: ${error.message}.`,
+				english: `An Error occurred please try again later\nError Message: ${
+					error.message || "internal server error"
+				}.`,
+				french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
+					error.message || "Erreur interne du serveur"
+				}.`,
+				spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${
+					error.message || "Error interno del servidor"
+				}.`,
+				arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${
+					error.message || "خطأ داخلي في الخادم"
+				}.`,
+				chinese: `发生错误，请稍后重试\n错误信息: ${error.message || "服务器内部错误"}.`,
 			}[userLanguage],
 		);
 		return ctx.scene.leave();
@@ -586,7 +640,8 @@ const executeSell = async (
 
 	const balance = await getTokenBalance(wallet?.walletAddress, sellAddress);
 	if (balance <= 0 && hash) removeUserHolding(ctx.from?.id, sellAddress, "base");
-	addtoCount();
+
+	await updateTransaction((amountintokens * token.price) / ethprice);
 	// await sendMessageToAllGroups(
 	// 	`Succssful transaction made throught @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
 	// );

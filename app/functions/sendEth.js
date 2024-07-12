@@ -1,7 +1,7 @@
 import { ethers } from "ethers";
 
 // Function to send ETH
-export async function sendEth(senderPrivateKey, recipientAddress, amountInEth, chain) {
+export async function sendEth(senderPrivateKey, recipientAddress, amountInEth, chain, senderAddress) {
 	try {
 		let provider; // Connect to the Ethereum network using your private key
 		if (chain === "ethereum") {
@@ -22,7 +22,8 @@ export async function sendEth(senderPrivateKey, recipientAddress, amountInEth, c
 
 		// Construct transaction object
 		const tx = {
-			chainId: 8453,
+			chainId: chain === "ethereum" ? 1 : 8453,
+			from: senderAddress,
 			nonce: nonce,
 			to: recipientAddress,
 			value: amountInWei,
@@ -39,7 +40,7 @@ export async function sendEth(senderPrivateKey, recipientAddress, amountInEth, c
 		// console.log(`Transaction sent successfully!`);
 		return txResponse;
 	} catch (error) {
-		//console.log("Error sending ETH:", error);
+		console.log("Error sending ETH:", error);
 		return null;
 	}
 }

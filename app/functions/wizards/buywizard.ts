@@ -24,7 +24,7 @@ import {
 	updateWallet,
 } from "../AWSusers";
 import { addGroup, getCurrentCalled, updateCurrentCalledAndCallHistory } from "../awsGroups";
-import { updateLog } from "../awslogs";
+import { updateLog, updateTransaction } from "../awslogs";
 import { addtoCount } from "../databases";
 
 export type TransactionReceipt = {
@@ -105,7 +105,7 @@ stepHandler.action("sendbuy", async (ctx) => {
 		ctx.scene.session.buyStore.chain?.toLowerCase() === "base"
 	) {
 		const ethprice = (await getEthPrice()) as number;
-		console.log(ethprice);
+
 		if (!ethprice) {
 			ctx.reply(
 				{
@@ -119,7 +119,6 @@ stepHandler.action("sendbuy", async (ctx) => {
 			return ctx.scene.leave();
 		}
 		tokenAmount = (parseFloat(amount) / ethprice).toString();
-		//console.log(tokenAmount);
 	} else if (ctx.scene.session.buyStore.chain?.toLowerCase() === "solana") {
 		//tokenAmount = ""
 		const solprice = (await getSolPrice()) as number;
@@ -231,6 +230,7 @@ stepHandler.action("sendbuy", async (ctx) => {
 			// 	userBalance:number
 			// )
 			//console.log(tokenAmount);
+
 			receipt = await executeBuy(ctx, parseFloat(tokenAmount), token, buyAddress, userBalance);
 			// console.log(receipt);
 		} catch (error) {
@@ -273,11 +273,14 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 		if (!ctx.from?.id) {
 			return ctx.scene.leave();
 		}
+		const user = await getUser(ctx.from.id);
+		if (!user) {
+			return ctx.scene.leave();
+		}
+		//const wallet = await getUserWalletDetails(ctx.from.id);
+		const userLanguage = user?.language;
 
-		const wallet = await getUserWalletDetails(ctx.from.id);
-		const userLanguage = await getUserLanguage(ctx.from.id);
-
-		if (!wallet) {
+		if (!user?.walletAddress) {
 			await ctx.reply(
 				{
 					english: `You do not have an attached wallet, send a direct message with /wallet to initialise it`,
@@ -313,9 +316,24 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 		const chain = ctx.scene.session.buyStore.chain;
 		//let userBalance;
 
+		if (chain?.toLowerCase() !== "ethereum" && chain?.toLowerCase() !== "base") {
+			return await ctx.reply(
+				{
+					english:
+						"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
+					french: "Nous prenons actuellement uniquement en charge les échanges sur Ethereum, Binance Smart Chain et Solana pour le moment. Veuillez patienter pendant que nous travaillons à prendre en charge d'autres jetons.",
+					spanish:
+						"Actualmente solo admitimos operaciones de trading en Ethereum, Binance Smart Chain y Solana. Por favor, tenga paciencia mientras trabajamos en admitir otros tokens.",
+					arabic: "نحن ندعم حاليًا التداول فقط على Ethereum و Binance Smart Chain و Solana في الوقت الحالي. يرجى التحلي بالصبر بينما نعمل على دعم رموز أخرى.",
+					chinese:
+						"目前我们只支持在以太坊、币安智能链和Solana上交易。请您耐心等待，我们正在努力支持其他代币。",
+				}[userLanguage],
+			);
+		}
+
 		if (chain === "base") {
 			ctx.scene.session.buyStore.currency = "ETH";
-			const res = await getEtherBalance(wallet?.walletAddress);
+			const res = await getEtherBalance(user.walletAddress);
 			if (!res) {
 				await ctx.reply(
 					{
@@ -332,7 +350,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			//userBalance = res?.base;
 		} else if (chain === "solana") {
 			ctx.scene.session.buyStore.currency = "SOL";
-			const solbalance = await getSolBalance(wallet?.solWalletAddress);
+			const solbalance = await getSolBalance(user.solWalletAddress);
 			if (!solbalance) {
 				await ctx.reply(
 					{
@@ -349,7 +367,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			ctx.scene.session.buyStore.userBalance = solbalance;
 		} else {
 			ctx.scene.session.buyStore.currency = "ETH";
-			const res = await getEtherBalance(wallet?.walletAddress);
+			const res = await getEtherBalance(user.walletAddress);
 			if (!res) {
 				await ctx.reply(
 					{
@@ -366,7 +384,21 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 		}
 
 		//const ethprice = await getEthPrice();
+
 		if (!ctx.scene.session.buyStore.userBalance) {
+			if (ctx.scene.session.buyStore.userBalance === 0) {
+				ctx.reply(
+					{
+						english: "Wallet balance is currently zero, please fund your wallet and try again",
+						french: "Le solde du portefeuille est actuellement à zéro, veuillez approvisionner votre portefeuille et réessayer",
+						spanish:
+							"El saldo de la cartera está actualmente en cero, por favor fondee su cartera e intente nuevamente",
+						arabic: "رصيد المحفظة حاليًا صفر، يرجى تمويل محفظتك والمحاولة مرة أخرى",
+						chinese: "钱包余额当前为零，请充值您的钱包然后重试",
+					}[ctx.scene.session.buyStore.language],
+				);
+				return ctx.scene.leave();
+			}
 			ctx.reply(
 				{
 					english: "An error occurred, please try again",
@@ -383,11 +415,11 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 		if (ctx.scene.session.buyStore.amount) {
 			await ctx.replyWithHTML(
 				{
-					english: `Are you sure you want to buy ${ctx.scene.session.buyStore.token?.name} ?\\n\\n<i>Address: <b>${ctx.scene.session.buyStore.buyAddress}</b>\\nAmount: <b>${ctx.scene.session.buyStore.amount} </b>\\nCurrent Price: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
-					french: `Êtes-vous sûr de vouloir acheter ${ctx.scene.session.buyStore.token?.name} ?\\n\\n<i>Adresse : <b>${ctx.scene.session.buyStore.buyAddress}</b>\\nMontant : <b>${ctx.scene.session.buyStore.amount} </b>\\nPrix actuel : <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
-					spanish: `¿Estás seguro/a de querer comprar ${ctx.scene.session.buyStore.token?.name} ?\\n\\n<i>Dirección: <b>${ctx.scene.session.buyStore.buyAddress}</b>\\nCantidad: <b>${ctx.scene.session.buyStore.amount} </b>\\nPrecio actual: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
-					arabic: `هل أنت متأكد من رغبتك في شراء ${ctx.scene.session.buyStore.token?.name}؟\\n\\n<i>العنوان: <b>${ctx.scene.session.buyStore.buyAddress}</b>\\nالمبلغ: <b>${ctx.scene.session.buyStore.amount} </b>\\nالسعر الحالي: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
-					chinese: `您确定要购买 ${ctx.scene.session.buyStore.token?.name} 吗？\\n\\n<i>地址： <b>${ctx.scene.session.buyStore.buyAddress}</b>\\n数量： <b>${ctx.scene.session.buyStore.amount} </b>\\n当前价格： <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+					english: `Are you sure you want to buy ${ctx.scene.session.buyStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.buyStore.buyAddress}</b>\nAmount: <b>${ctx.scene.session.buyStore.amount} </b>\nCurrent Price: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+					french: `Êtes-vous sûr de vouloir acheter ${ctx.scene.session.buyStore.token?.name} ?\n\n<i>Adresse : <b>${ctx.scene.session.buyStore.buyAddress}</b>\nMontant : <b>${ctx.scene.session.buyStore.amount} </b>\nPrix actuel : <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+					spanish: `¿Estás seguro/a de querer comprar ${ctx.scene.session.buyStore.token?.name} ?\n\n<i>Dirección: <b>${ctx.scene.session.buyStore.buyAddress}</b>\nCantidad: <b>${ctx.scene.session.buyStore.amount} </b>\nPrecio actual: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+					arabic: `هل أنت متأكد من رغبتك في شراء ${ctx.scene.session.buyStore.token?.name}؟\n\n<i>العنوان: <b>${ctx.scene.session.buyStore.buyAddress}</b>\nالمبلغ: <b>${ctx.scene.session.buyStore.amount} </b>\nالسعر الحالي: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+					chinese: `您确定要购买 ${ctx.scene.session.buyStore.token?.name} 吗？\n\n<i>地址： <b>${ctx.scene.session.buyStore.buyAddress}</b>\n数量： <b>${ctx.scene.session.buyStore.amount} </b>\n当前价格： <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
 				}[ctx.scene.session.buyStore.language],
 				Markup.inlineKeyboard([
 					Markup.button.callback(
@@ -503,11 +535,11 @@ stepHandler2.on("text", async (ctx) => {
 
 		await ctx.replyWithHTML(
 			{
-				english: `Are you sure you want to buy ${ctx.scene.session.buyStore.token?.name} ?\\n\\n<i>Address: <b>${ctx.scene.session.buyStore.buyAddress}</b>\\nAmount: <b>${ctx.scene.session.buyStore.amount} </b>\\nCurrent Price: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
-				french: `Êtes-vous sûr de vouloir acheter ${ctx.scene.session.buyStore.token?.name} ?\\n\\n<i>Adresse : <b>${ctx.scene.session.buyStore.buyAddress}</b>\\nMontant : <b>${ctx.scene.session.buyStore.amount} </b>\\nPrix actuel : <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
-				spanish: `¿Estás seguro/a de querer comprar ${ctx.scene.session.buyStore.token?.name} ?\\n\\n<i>Dirección: <b>${ctx.scene.session.buyStore.buyAddress}</b>\\nCantidad: <b>${ctx.scene.session.buyStore.amount} </b>\\nPrecio actual: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
-				arabic: `هل أنت متأكد من رغبتك في شراء ${ctx.scene.session.buyStore.token?.name}؟\\n\\n<i>العنوان: <b>${ctx.scene.session.buyStore.buyAddress}</b>\\nالمبلغ: <b>${ctx.scene.session.buyStore.amount} </b>\\nالسعر الحالي: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
-				chinese: `您确定要购买 ${ctx.scene.session.buyStore.token?.name} 吗？\\n\\n<i>地址： <b>${ctx.scene.session.buyStore.buyAddress}</b>\\n数量： <b>${ctx.scene.session.buyStore.amount} </b>\\n当前价格： <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+				english: `Are you sure you want to buy ${ctx.scene.session.buyStore.token?.name} ?\n\n<i>Address: <b>${ctx.scene.session.buyStore.buyAddress}</b>\nAmount: <b>${ctx.scene.session.buyStore.amount} </b>\nCurrent Price: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+				french: `Êtes-vous sûr de vouloir acheter ${ctx.scene.session.buyStore.token?.name} ?\n\n<i>Adresse : <b>${ctx.scene.session.buyStore.buyAddress}</b>\nMontant : <b>${ctx.scene.session.buyStore.amount} </b>\nPrix actuel : <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+				spanish: `¿Estás seguro/a de querer comprar ${ctx.scene.session.buyStore.token?.name} ?\n\n<i>Dirección: <b>${ctx.scene.session.buyStore.buyAddress}</b>\nCantidad: <b>${ctx.scene.session.buyStore.amount} </b>\nPrecio actual: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+				arabic: `هل أنت متأكد من رغبتك في شراء ${ctx.scene.session.buyStore.token?.name}؟\n\n<i>العنوان: <b>${ctx.scene.session.buyStore.buyAddress}</b>\nالمبلغ: <b>${ctx.scene.session.buyStore.amount} </b>\nالسعر الحالي: <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
+				chinese: `您确定要购买 ${ctx.scene.session.buyStore.token?.name} 吗？\n\n<i>地址： <b>${ctx.scene.session.buyStore.buyAddress}</b>\n数量： <b>${ctx.scene.session.buyStore.amount} </b>\n当前价格： <b>${ctx.scene.session.buyStore.token?.price}</b></i>`,
 			}[userLanguage],
 			Markup.inlineKeyboard([
 				Markup.button.callback(
@@ -571,7 +603,13 @@ const executeBuy = async (
 		try {
 			//	console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
 
-			hash = await buyOnEth(wallet?.privateKey, buyAddress, amount.toFixed(15).toString());
+			hash = await buyOnEth(
+				wallet?.privateKey,
+				buyAddress,
+				amount.toFixed(15).toString(),
+				userLanguage,
+				userBalance,
+			);
 			if (!hash)
 				throw new Error(
 					{
@@ -598,17 +636,25 @@ const executeBuy = async (
 			if (hash) {
 				await addUserHolding(ctx.from?.id, buyAddress, "ethereum");
 
-				addtoCount();
+				await updateTransaction(amount);
 			}
 			return hash;
 		} catch (error: any) {
 			ctx.reply(
 				{
-					english: `An Error occurred please try again later\nError Message: ${error.message}.`,
-					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${error.message}.`,
-					spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${error.message}.`,
-					arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${error.message}.`,
-					chinese: `发生错误，请稍后重试\n错误信息: ${error.message}.`,
+					english: `An Error occurred please try again later\nError Message: ${
+						error.message || "internal server error"
+					}.`,
+					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
+						error.message || "Erreur interne du serveur"
+					}.`,
+					spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${
+						error.message || "Error interno del servidor"
+					}.`,
+					arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${
+						error.message || "خطأ داخلي في الخادم"
+					}.`,
+					chinese: `发生错误，请稍后重试\n错误信息: ${error.message || "服务器内部错误"}.`,
 				}[userLanguage],
 			);
 			return await ctx.scene.leave();
@@ -648,12 +694,19 @@ const executeBuy = async (
 			//await delay(5000);
 			ctx.reply(
 				{
-					english: "An Error occurred please try again later\nError Message: ${error.message}.",
-					french: "Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${error.message}.",
-					spanish:
-						"Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${error.message}.",
-					arabic: "حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${error.message}.",
-					chinese: "发生错误，请稍后重试\n错误信息: ${error.message}.",
+					english: `An Error occurred please try again later\nError Message: ${
+						error.message || "internal server error"
+					}.`,
+					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
+						error.message || "Erreur interne du serveur"
+					}.`,
+					spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${
+						error.message || "Error interno del servidor"
+					}.`,
+					arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${
+						error.message || "خطأ داخلي في الخادم"
+					}.`,
+					chinese: `发生错误，请稍后重试\n错误信息: ${error.message || "服务器内部错误"}.`,
 				}[userLanguage],
 			);
 			return await ctx.scene.leave();
@@ -662,16 +715,30 @@ const executeBuy = async (
 	try {
 		//	console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
 
-		hash = await buyOnBase(wallet?.privateKey, buyAddress, amount.toFixed(15).toString());
+		hash = await buyOnBase(
+			wallet?.privateKey,
+			buyAddress,
+			amount.toFixed(15).toString(),
+			userLanguage,
+			userBalance,
+		);
 		if (!hash) throw new Error("Transaction failed/expired");
 	} catch (error: any) {
 		ctx.reply(
 			{
-				english: `An Error occurred please try again later\nError Message: ${error.message}.`,
-				french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${error.message}.`,
-				spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${error.message}.`,
-				arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${error.message}.`,
-				chinese: `发生错误，请稍后重试\n错误信息: ${error.message}.`,
+				english: `An Error occurred please try again later\nError Message: ${
+					error.message || "internal server error"
+				}.`,
+				french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
+					error.message || "Erreur interne du serveur"
+				}.`,
+				spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${
+					error.message || "Error interno del servidor"
+				}.`,
+				arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${
+					error.message || "خطأ داخلي في الخادم"
+				}.`,
+				chinese: `发生错误，请稍后重试\n错误信息: ${error.message || "服务器内部错误"}.`,
 			}[userLanguage],
 		);
 
@@ -693,7 +760,8 @@ const executeBuy = async (
 	// );
 	if (hash) {
 		await addUserHolding(ctx.from?.id, buyAddress, "base");
+		await updateTransaction(amount);
 	}
-	addtoCount();
+
 	return hash;
 };

@@ -51,7 +51,7 @@ import {
 	updateWallet,
 } from "./AWSusers";
 import { addGroup, getCurrentCalled, updateCurrentCalledAndCallHistory } from "./awsGroups";
-import { updateLog } from "./awslogs";
+import { getTransactions, updateLog, updateTransaction } from "./awslogs";
 // import { getEthPrice, getTokenInfo } from "./test";
 
 // interface coins extends CoinDataType{
@@ -105,8 +105,8 @@ export type BetData = {
 
 bot.use(async (ctx, next) => {
 	// If the message is from a group and the group ID is not registered, register it
-	//console.log("here");
-	if (ctx.chat)
+
+	if (ctx.chat) {
 		if (ctx.chat.type === "group" || ctx.chat.type === "supergroup") {
 			//console.log("here");
 			// const res = databases.getCallHistory(ctx.chat.id);
@@ -118,6 +118,8 @@ bot.use(async (ctx, next) => {
 			//console.log(ctx.chat.id);
 			//console.log(`Group ${ctx.chat.id} has been automatically registered.`);
 		}
+	}
+
 	return next();
 });
 
@@ -190,7 +192,7 @@ export const checkUserExistence: MiddlewareFn<Context> = async (ctx: Context, ne
 
 	const user = await getUser(ctx.from?.id);
 	if (!user) {
-		ctx.reply(translations[userLanguage]);
+		ctx.reply(translations.english);
 		return;
 	}
 	await next();
@@ -199,7 +201,7 @@ const checkGroup: MiddlewareFn<Context> = async (ctx, next) => {
 	if (!ctx.from) {
 		return;
 	}
-	if (!ctx.from) return;
+
 	const userLanguage = await getUserLanguage(ctx.from.id);
 	let translations = {
 		english: "This command can only be sent as a direct message",
@@ -383,11 +385,11 @@ bot.action("genwallet", async (ctx) => {
 	}
 
 	let translations2 = {
-		english: `Wallet generated successfully, your ETH wallet address is: <b><code>${wallet.walletAddress}</code></b>\nPrivate key: <code>${wallet.privateKey}</code>.\n\nAnd your SOL wallet address is: <b><code>${solWallet.publicKey}</code></b>\nPrivate key: <code>${solWallet.privateKeyBase58}</code> \n\nWallet Address and private keys are above, click on them to copy. This message will be deleted in one minute. You can use /wallet to re-check your wallet details.`,
-		french: `Portefeuille généré avec succès, votre adresse de portefeuille ETH est : <b><code>${wallet.walletAddress}</code></b>\nClé privée : <code>${wallet.privateKey}</code>.\n\nEt votre adresse de portefeuille SOL est : <b><code>${solWallet.publicKey}</code></b>\nClé privée : <code>${solWallet.privateKeyBase58}</code> \n\nLes adresses de portefeuille et les clés privées se trouvent ci-dessus, cliquez dessus pour les copier. Ce message sera supprimé dans une minute. Vous pouvez utiliser /wallet pour vérifier à nouveau les détails de votre portefeuille.`,
-		spanish: `Monedero generado exitosamente, tu dirección de monedero ETH es: <b><code>${wallet.walletAddress}</code></b>\nClave privada: <code>${wallet.privateKey}</code>.\n\nY tu dirección de monedero SOL es: <b><code>${solWallet.publicKey}</code></b>\nClave privada: <code>${solWallet.privateKeyBase58}</code> \n\nLas direcciones de monedero y las claves privadas están arriba, haz clic en ellas para copiarlas. Este mensaje será eliminado en un minuto. Puedes usar /wallet para volver a verificar los detalles de tu monedero.`,
-		arabic: `تم إنشاء المحفظة بنجاح، عنوان محفظتك ETH هو: <b><code>${wallet.walletAddress}</code></b>\nالمفتاح الخاص: <code>${wallet.privateKey}</code>.\n\nوعنوان محفظتك SOL هو: <b><code>${solWallet.publicKey}</code></b>\nالمفتاح الخاص: <code>${solWallet.privateKeyBase58}</code> \n\nعناوين المحافظ والمفاتيح الخاصة أعلاه، انقر فوقها لنسخها. سيتم حذف هذه الرسالة في دقيقة واحدة. يمكنك استخدام /wallet لإعادة التحقق من تفاصيل محفظتك.`,
-		chinese: `钱包生成成功，您的ETH钱包地址为：<b><code>${wallet.walletAddress}</code></b>\n私钥：<code>${wallet.privateKey}</code>。\n\n您的SOL钱包地址为：<b><code>${solWallet.publicKey}</code></b>\n私钥：<code>${solWallet.privateKeyBase58}</code> \n\n上方为钱包地址和私钥，请点击以复制。此消息将在一分钟内被删除。您可以使用 /wallet 重新检查您的钱包详情。`,
+		english: `Wallet generated successfully, your ETH wallet address is: <b><code>${wallet.walletAddress}</code></b>\nPrivate key: <code>${wallet.privateKey}</code>.\n\nWallet Address and private keys are above, click on them to copy. This message will be deleted in one minute. You can use /wallet to re-check your wallet details.`,
+		french: `Portefeuille généré avec succès, votre adresse de portefeuille ETH est : <b><code>${wallet.walletAddress}</code></b>\nClé privée : <code>${wallet.privateKey}</code>.\n\nLes adresses de portefeuille et les clés privées se trouvent ci-dessus, cliquez dessus pour les copier. Ce message sera supprimé dans une minute. Vous pouvez utiliser /wallet pour vérifier à nouveau les détails de votre portefeuille.`,
+		spanish: `Monedero generado exitosamente, tu dirección de monedero ETH es: <b><code>${wallet.walletAddress}</code></b>\nClave privada: <code>${wallet.privateKey}</code>.\n\nLas direcciones de monedero y las claves privadas están arriba, haz clic en ellas para copiarlas. Este mensaje será eliminado en un minuto. Puedes usar /wallet para volver a verificar los detalles de tu monedero.`,
+		arabic: `تم إنشاء المحفظة بنجاح، عنوان محفظتك ETH هو: <b><code>${wallet.walletAddress}</code></b>\nالمفتاح الخاص: <code>${wallet.privateKey}</code>.\n\nعناوين المحافظ والمفاتيح الخاصة أعلاه، انقر فوقها لنسخها. سيتم حذف هذه الرسالة في دقيقة واحدة. يمكنك استخدام /wallet لإعادة التحقق من تفاصيل محفظتك.`,
+		chinese: `钱包生成成功，您的ETH钱包地址为：<b><code>${wallet.walletAddress}</code></b>\n私钥：<code>${wallet.privateKey}</code>。\n\n上方为钱包地址和私钥，请点击以复制。此消息将在一分钟内被删除。您可以使用 /wallet 重新检查您的钱包详情。`,
 	};
 	await ctx
 		.replyWithHTML(translations2[userLanguage])
@@ -416,11 +418,11 @@ bot.action("exportkey", async (ctx) => {
 
 	const walletDetails = await getUserWalletDetails(ctx.from.id);
 	let translations = {
-		english: `The private key for your ETH wallet is <b><code>${walletDetails?.privateKey}</code></b>\n\nThe private key for your Sol wallet is <b><code>${walletDetails?.solPrivateKey}</code></b>\n\nThis message will be deleted in one minute.`,
-		french: `La clé privée de votre portefeuille ETH est <b><code>${walletDetails?.privateKey}</code></b>\n\nLa clé privée de votre portefeuille Sol est <b><code>${walletDetails?.solPrivateKey}</code></b>\n\nCe message sera supprimé dans une minute.`,
-		spanish: `La clave privada de tu monedero ETH es <b><code>${walletDetails?.privateKey}</code></b>\n\nLa clave privada de tu monedero Sol es <b><code>${walletDetails?.solPrivateKey}</code></b>\n\nEste mensaje será eliminado en un minuto.`,
-		arabic: `المفتاح الخاص لمحفظتك ETH هو <b><code>${walletDetails?.privateKey}</code></b>\n\nالمفتاح الخاص لمحفظتك Sol هو <b><code>${walletDetails?.solPrivateKey}</code></b>\n\nسيتم حذف هذه الرسالة في دقيقة واحدة.`,
-		chinese: `您的ETH钱包的私钥为 <b><code>${walletDetails?.privateKey}</code></b>\n\n您的Sol钱包的私钥为 <b><code>${walletDetails?.solPrivateKey}</code></b>\n\n此消息将在一分钟内被删除。`,
+		english: `The private key for your ETH wallet is <b><code>${walletDetails?.privateKey}</code></b>\n\nThis message will be deleted in one minute.`,
+		french: `La clé privée de votre portefeuille ETH est <b><code>${walletDetails?.privateKey}</code></b>\n\nCe message sera supprimé dans une minute.`,
+		spanish: `La clave privada de tu monedero ETH es <b><code>${walletDetails?.privateKey}</code></b>\n\nEste mensaje será eliminado en un minuto.`,
+		arabic: `المفتاح الخاص لمحفظتك ETH هو <b><code>${walletDetails?.privateKey}</code></b>\n\nسيتم حذف هذه الرسالة في دقيقة واحدة.`,
+		chinese: `您的ETH钱包的私钥为 <b><code>${walletDetails?.privateKey}</code></b>\n\n此消息将在一分钟内被删除。`,
 	};
 	await ctx
 		.replyWithHTML(translations[userLanguage])
@@ -448,11 +450,11 @@ bot.action("walletaddress", async (ctx) => {
 	const userLanguage = await getUserLanguage(ctx.from.id);
 	const walletDetails = await getUserWalletDetails(ctx.from.id);
 	let translations = {
-		english: `Your ETH wallet address is <b><code>${walletDetails?.walletAddress}</code></b>\n\nYour SOL wallet address is <b><code>${walletDetails?.solWalletAddress}</code></b>`,
-		french: `Votre adresse de portefeuille ETH est <b><code>${walletDetails?.walletAddress}</code></b>\n\nVotre adresse de portefeuille SOL est <b><code>${walletDetails?.solWalletAddress}</code></b>`,
-		spanish: `Tu dirección de monedero ETH es <b><code>${walletDetails?.walletAddress}</code></b>\n\nTu dirección de monedero SOL es <b><code>${walletDetails?.solWalletAddress}</code></b>`,
-		arabic: `عنوان محفظتك ETH هو <b><code>${walletDetails?.walletAddress}</code></b>\n\nعنوان محفظتك SOL هو <b><code>${walletDetails?.solWalletAddress}</code></b>`,
-		chinese: `您的ETH钱包地址为 <b><code>${walletDetails?.walletAddress}</code></b>\n\n您的SOL钱包地址为 <b><code>${walletDetails?.solWalletAddress}</code></b>`,
+		english: `Your ETH wallet address is <b><code>${walletDetails?.walletAddress}</code></b>`,
+		french: `Votre adresse de portefeuille ETH est <b><code>${walletDetails?.walletAddress}</code></b>`,
+		spanish: `Tu dirección de monedero ETH es <b><code>${walletDetails?.walletAddress}</code></b>`,
+		arabic: `عنوان محفظتك ETH هو <b><code>${walletDetails?.walletAddress}</code></b>`,
+		chinese: `您的ETH钱包地址为 <b><code>${walletDetails?.walletAddress}</code></b>`,
 	};
 	/// console.log(walletDetails);
 	await ctx.replyWithHTML(translations[userLanguage]);
@@ -478,7 +480,6 @@ bot.action("checkbalance", checkUserExistence, async (ctx) => {
 		Markup.inlineKeyboard([
 			[Markup.button.callback("Base balance", "basebalance")],
 			[Markup.button.callback("ETH balance", "ethbalance")],
-			[Markup.button.callback("Solana balance", "solbalance")],
 		]),
 	);
 });
@@ -544,6 +545,7 @@ bot.action("basebalance", async (ctx) => {
 		}
 	}
 });
+
 bot.action("solbalance", async (ctx) => {
 	if (!ctx.from) return;
 	const userLanguage = await getUserLanguage(ctx.from.id);
@@ -666,9 +668,10 @@ bot.action("ethbalance", async (ctx) => {
 		}
 	}
 });
-bot.command("/wallet", checkGroup, checkUserExistence, async (ctx) => {
+
+bot.command("wallet", checkUserExistence, checkGroup, async (ctx) => {
 	const user_id = ctx.from?.id;
-	// console.log(user_id);
+
 	const userLanguage = await getUserLanguage(user_id);
 	let translations = {
 		english: "You don't have a wallet yet",
@@ -722,7 +725,16 @@ bot.command("/wallet", checkGroup, checkUserExistence, async (ctx) => {
 					],
 
 					[
-						//Markup.button.callback("Send ETH", "sendeth"),
+						Markup.button.callback(
+							{
+								english: "Send ETH",
+								french: "Envoyer de l'ETH",
+								spanish: "Enviar ETH",
+								arabic: "إرسال ETH",
+								chinese: "发送ETH",
+							}[userLanguage],
+							"sendeth",
+						),
 						Markup.button.callback(
 							{
 								english: "Check balances",
@@ -743,7 +755,7 @@ bot.command("/wallet", checkGroup, checkUserExistence, async (ctx) => {
 });
 
 export const neww = async () => {
-	bot.command("/call", checkUserExistence, async (ctx) => {
+	bot.command("call", async (ctx) => {
 		if (ctx.update.message.chat.type === "private") {
 			if (ctx.update.message.from.is_bot) {
 				return;
@@ -786,11 +798,14 @@ export const neww = async () => {
 			await ctx.replyWithHTML(
 				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${coin.name}</i>\n<b>Token Address: </b> <i>${coin.address}</i>`,
 			);
+			let mcap;
+			if (data[0]) mcap = data[0].mcap;
+			else mcap = "";
 			const response = await queryAi(
 				`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify(
 					{
 						...coin,
-						mcap: data[0].mcap,
+						mcap: mcap,
 					},
 				)}. Don't make mention that you are summarizing a given data in your response. Don't say things like 'According to the data provided'. Send the summary back in few short paragraphs. Only return the summary and nothing else. Also wrap important values with HTML <b> bold tags,
 				make the numbers easy for humans to read with commas and add a lot of emojis to your summary to make it aesthetically pleasing, for example add 💰 to price, 💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath, 📈 to % increase ,📉 to % decrease`,
@@ -804,7 +819,7 @@ export const neww = async () => {
 		}
 	});
 
-	bot.command("/info", checkUserExistence, checkGroup, async (ctx) => {
+	bot.command("info", checkUserExistence, checkGroup, async (ctx) => {
 		const commandArgs = ctx.message.text.split(" ").slice(1);
 		const ca = commandArgs.join(" ");
 		const userId = ctx.from.id;
@@ -872,11 +887,16 @@ export const neww = async () => {
 					chinese: `<b>"获取代币信息...</b>\\n\\n<b>代币名称: </b><i>${coin.name}</i>\\n<b>代币地址: </b> <i>${coin.address}</i>`,
 				}[userLanguage],
 			);
+
+			let mcap;
+			if (data[0]) mcap = data[0].mcap;
+			else mcap = "";
 			const response = await queryAi(
 				`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify(
 					{
 						...coin,
-						mcap: data[0].mcap,
+
+						mcap: mcap,
 					},
 				)}. Don't make mention that you are summarizing a given data in your response. Don't say things like 'According to the data provided'. Send the summary back in few short paragraphs. Only return the summary and nothing else. Also wrap important values with HTML <b> bold tags,
 				make the numbers easy for humans to read with commas and add a lot of emojis to your summary to make it aesthetically pleasing, for example add 💰 to price, 💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath, 📈 to % increase ,📉 to % decrease. Reply in ${userLanguage}`,
@@ -922,7 +942,7 @@ export const neww = async () => {
 		}
 	});
 
-	bot.command("/ask", checkUserExistence, async (ctx) => {
+	bot.command("ask", checkUserExistence, async (ctx) => {
 		if (ctx.update.message.chat.type === "private") {
 			if (ctx.update.message.from.is_bot) {
 				return;
@@ -1165,15 +1185,11 @@ bot.action(/proceedbuy_(.+)/, async (ctx) => {
 		);
 	}
 
-	if (
-		token.chain.toLowerCase() !== "ethereum" &&
-		token.chain.toLowerCase() !== "base" &&
-		token.chain.toLowerCase() !== "solana"
-	) {
+	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
 		return await ctx.reply(
 			{
 				english:
-					"We currently only support trading on Ethereum, Binance Smart Chain, and Solana for now. Please bear with us as we are working on supporting other tokens.",
+					"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
 				french: "Nous prenons actuellement uniquement en charge les échanges sur Ethereum, Binance Smart Chain et Solana pour le moment. Veuillez patienter pendant que nous travaillons à prendre en charge d'autres jetons.",
 				spanish:
 					"Actualmente solo admitimos operaciones de trading en Ethereum, Binance Smart Chain y Solana. Por favor, tenga paciencia mientras trabajamos en admitir otros tokens.",
@@ -1212,15 +1228,11 @@ bot.action(/proceedsell_(.+)/, async (ctx) => {
 			}[userLanguage],
 		);
 	}
-	if (
-		token.chain.toLowerCase() !== "ethereum" &&
-		token.chain.toLowerCase() !== "base" &&
-		token.chain.toLowerCase() !== "solana"
-	) {
+	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
 		return await ctx.reply(
 			{
 				english:
-					"We currently only support trading on Ethereum, Binance Smart Chain, and Solana for now. Please bear with us as we are working on supporting other tokens.",
+					"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
 				french: "Nous prenons actuellement uniquement en charge les échanges sur Ethereum, Binance Smart Chain et Solana pour le moment. Veuillez patienter pendant que nous travaillons à prendre en charge d'autres jetons.",
 				spanish:
 					"Actualmente solo admitimos operaciones de trading en Ethereum, Binance Smart Chain y Solana. Por favor, tenga paciencia mientras trabajamos en admitir otros tokens.",
@@ -1231,7 +1243,7 @@ bot.action(/proceedsell_(.+)/, async (ctx) => {
 	}
 	return await ctx.scene.enter("sell-wizard", { address: ca, token: token, time: time, amount: amount });
 });
-bot.command("/import", checkGroup, async (ctx) => {
+bot.command("import", async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const ca = commandArgs.join(" ");
 	const userid = ctx.from?.id;
@@ -1277,7 +1289,7 @@ bot.command("/import", checkGroup, async (ctx) => {
 		);
 	}
 });
-bot.command("/delete", checkGroup, async (ctx) => {
+bot.command("delete", checkGroup, async (ctx) => {
 	const userid = ctx.from?.id;
 
 	if (!userid) return;
@@ -1325,7 +1337,7 @@ bot.command("/delete", checkGroup, async (ctx) => {
 });
 
 const coinActions = () => {};
-bot.command("/buy", async (ctx) => {
+bot.command("buy", async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const prompt = commandArgs.join(" ");
 	const userid = ctx.from?.id;
@@ -1380,16 +1392,17 @@ bot.command("/buy", async (ctx) => {
 			}[userLanguage],
 		);
 	}
-
-	await ctx.reply(
-		{
-			english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
-			french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
-			spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
-			arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
-			chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
-		}[userLanguage],
-	);
+	if (ctx.chat.type !== "private") {
+		await ctx.reply(
+			{
+				english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
+				french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
+				spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
+				arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
+				chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
+			}[userLanguage],
+		);
+	}
 
 	const message = await ctx.telegram.sendMessage(
 		ctx.from?.id,
@@ -1436,7 +1449,7 @@ bot.command("/buy", async (ctx) => {
 		);
 	});
 });
-bot.command("/sell", async (ctx) => {
+bot.command("sell", async (ctx) => {
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const prompt = commandArgs.join(" ");
 	const userid = ctx.from?.id;
@@ -1471,15 +1484,18 @@ bot.command("/sell", async (ctx) => {
 	if (!(await getUserWalletDetails(ctx.from.id))?.walletAddress) {
 		return await ctx.reply("You have not generated a wallet yet, kindly send /wallet command privately");
 	}
-	await ctx.reply(
-		{
-			english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
-			french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
-			spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
-			arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
-			chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
-		}[userLanguage],
-	);
+	if (ctx.chat.type !== "private") {
+		await ctx.reply(
+			{
+				english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
+				french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
+				spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
+				arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
+				chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
+			}[userLanguage],
+		);
+	}
+
 	const message = await ctx.telegram.sendMessage(
 		ctx.from?.id,
 		{
@@ -1525,7 +1541,7 @@ bot.command("/sell", async (ctx) => {
 		);
 	});
 });
-bot.command("/schedule", async (ctx) => {
+bot.command("schedule", async (ctx) => {
 	const currentUnixTime = Math.floor(Date.now() / 1000);
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const prompt = commandArgs.join(" ");
@@ -1744,10 +1760,6 @@ bot.command("/schedule", async (ctx) => {
  * If user exit from bot
  *
  */
-bot.command("analysis", checkGroup, async (ctx) => {
-	await ctx.scene.enter("analysis-wizard");
-	return;
-});
 
 bot.command("analysis", checkGroup, async (ctx) => {
 	await ctx.scene.enter("analysis-wizard");
@@ -1881,6 +1893,13 @@ const start = async () => {
  * Send welcome message
  *
  */
+bot.command("stats1997", async (ctx) => {
+	//await updateTransaction(1, 0.1);
+
+	const transaction = await getTransactions();
+	console.log(transaction);
+	//ctx.reply(transaction)
+});
 const launch = async (): Promise<void> => {
 	const mode = config.mode;
 	if (mode === "webhook") {

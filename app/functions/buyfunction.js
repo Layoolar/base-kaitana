@@ -8,7 +8,7 @@ require("dotenv").config();
 // return;
 
 //Ethereum network settings
-export const buyOnBase = async (privateKey, tokenAddress, amountInEth) => {
+export const buyOnBase = async (privateKey, tokenAddress, amountInEth, userLanguage, userBalance) => {
 	try {
 		const provider = new ethers.providers.JsonRpcProvider(
 			`https://base-mainnet.g.alchemy.com/v2/A1lKz4G5uuXNB7q-l2tnKfz6oyqUgFTK`,
@@ -34,11 +34,41 @@ export const buyOnBase = async (privateKey, tokenAddress, amountInEth) => {
 			gasLimit: 500000,
 		});
 
+		const gasEstimate = await provider.estimateGas(tx);
+		const gasPrice = await provider.getGasPrice();
+		const maxPriorityFeePerGas = ethers.utils.parseUnits("2", "gwei"); // Example priority fee
+		const maxFeePerGas = gasPrice.add(maxPriorityFeePerGas);
+		const gasFee = gasEstimate.mul(maxFeePerGas);
+
+		const gas = ethers.utils.formatEther(gasFee);
+		const totalAmount = amountInEth + parseFloat(gas);
+
+		console.log(totalAmount, userBalance);
+		//console.log(totalAmount)
+
+		if (userBalance <= totalAmount) {
+			throw new Error(
+				{
+					english:
+						"You have insufficient balance to make this transaction, please try again with a valid amount",
+					french: "Vous n'avez pas assez de solde pour effectuer cette transaction, veuillez réessayer avec un montant valide",
+					spanish:
+						"No tienes suficiente saldo para realizar esta transacción, por favor inténtalo de nuevo con un monto válido",
+					arabic: "لا يوجد لديك رصيد كافٍ لإتمام هذه العملية، يرجى المحاولة مرة أخرى بمبلغ صالح",
+					chinese: "您的余额不足以完成此交易，请使用有效金额重试",
+				}[userLanguage],
+			);
+		}
+
 		const receipt = await tx.wait();
 		//	console.log("Trade successful!");
 		return receipt.transactionHash;
 	} catch (error) {
-		throw new Error(error.code);
+		if (error.code.trim().length > 3) {
+			throw new Error(error.code);
+		} else {
+			throw new Error(error.message);
+		}
 	}
 };
 
@@ -84,13 +114,13 @@ export const buyOnBase = async (privateKey, tokenAddress, amountInEth) => {
 // 		console.error("Error executing trade:", error);
 // 	});
 
-export const buyOnEth = async (privateKey, tokenAddress, amountInEth) => {
+export const buyOnEth = async (privateKey, tokenAddress, amountInEth, userLanguage, userBalance) => {
 	try {
 		const provider = new ethers.providers.JsonRpcProvider(
 			`https://mainnet.infura.io/v3/3534bf3949ca4b1f88e6023ff4ea3223`,
 		);
 
-		privateKey = "0x1d3052a35a3773e79152579b5fd805128e394d19dcd09f7af0c055b1065e59d1";
+		//privateKey = "0x1d3052a35a3773e79152579b5fd805128e394d19dcd09f7af0c055b1065e59d1";
 
 		const uniswapRouterAddress = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
 		const uniswapRouterABI = [
@@ -107,10 +137,39 @@ export const buyOnEth = async (privateKey, tokenAddress, amountInEth) => {
 			gasLimit: 500000,
 		});
 
+		const gasEstimate = await provider.estimateGas(tx);
+		const gasPrice = await provider.getGasPrice();
+		const maxPriorityFeePerGas = ethers.utils.parseUnits("2", "gwei"); // Example priority fee
+		const maxFeePerGas = gasPrice.add(maxPriorityFeePerGas);
+		const gasFee = gasEstimate.mul(maxFeePerGas);
+
+		const gas = ethers.utils.formatEther(gasFee);
+		
+		const totalAmount = amountInEth + parseFloat(gas);
+
+	
+		if (userBalance <= totalAmount) {
+			throw new Error(
+				{
+					english:
+						"You have insufficient balance to make this transaction, please try again with a valid amount",
+					french: "Vous n'avez pas assez de solde pour effectuer cette transaction, veuillez réessayer avec un montant valide",
+					spanish:
+						"No tienes suficiente saldo para realizar esta transacción, por favor inténtalo de nuevo con un monto válido",
+					arabic: "لا يوجد لديك رصيد كافٍ لإتمام هذه العملية، يرجى المحاولة مرة أخرى بمبلغ صالح",
+					chinese: "您的余额不足以完成此交易，请使用有效金额重试",
+				}[userLanguage],
+			);
+		}
+
 		const receipt = await tx.wait();
 
 		return receipt.transactionHash;
 	} catch (error) {
-		throw new Error(error.code);
+		if (error.code.trim().length > 3) {
+			throw new Error(error.code);
+		} else {
+			throw new Error(error.message);
+		}
 	}
 };

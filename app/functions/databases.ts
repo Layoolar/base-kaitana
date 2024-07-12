@@ -44,7 +44,7 @@ export interface MyUser extends TelegramUserInterface {
 	solWalletAddress: string | null;
 	solPrivateKey: string | null;
 	solMnemonic: string | null;
-	language: string;
+	language: "english" | "french" | "spanish" | "arabic" | "chinese";
 }
 export type Group = {
 	id: number;

@@ -93,8 +93,8 @@ export const getUser = async (userId: number) => {
 
 	try {
 		const data = await docClient.get(params).promise();
-		console.log("User retrieved successfully:", data.Item);
-		return data.Item;
+		//console.log("User retrieved successfully:", data.Item);
+		return data.Item as MyUser;
 	} catch (err) {
 		console.error("Unable to get user. Error JSON:", JSON.stringify(err, null, 2));
 		return null;
@@ -104,7 +104,7 @@ export const getUser = async (userId: number) => {
 export const getUserLanguage = async (userId: number) => {
 	const user = await getUser(userId);
 
-	console.log("User language retrieved successfully:", user?.language);
+	//	console.log("User language retrieved successfully:", user?.language);
 	return user?.language as "english" | "french" | "spanish" | "arabic" | "chinese";
 };
 
@@ -113,14 +113,14 @@ export const isWalletAddressNull = async (userId: number) => {
 
 	if (user) {
 		if (user.walletAddress === null) {
-			console.log("User's wallet address is null.");
+			//console.log("User's wallet address is null.");
 			return true;
 		} else {
-			console.log("User's wallet address is not null:", user.walletAddress);
+			//console.log("User's wallet address is not null:", user.walletAddress);
 			return false;
 		}
 	} else {
-		console.log("User does not exist.");
+		//console.log("User does not exist.");
 		return false;
 	}
 };
@@ -169,7 +169,7 @@ export const updateUser = async (
 
 	try {
 		const data = await docClient.update(params).promise();
-		console.log("User updated successfully:", data);
+		//console.log("User updated successfully:", data);
 		return data.Attributes;
 	} catch (err) {
 		console.error("Unable to update user. Error JSON:", JSON.stringify(err, null, 2));

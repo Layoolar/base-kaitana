@@ -237,7 +237,7 @@ bot.action(/language_(.+)$/, async (ctx) => {
 				solWalletAddress: null,
 				solPrivateKey: null,
 				solMnemonic: null,
-				language: language.toLowerCase(),
+				language: language,
 			});
 
 			 

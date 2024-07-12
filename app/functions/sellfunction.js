@@ -7,7 +7,7 @@ require("dotenv").config();
 
 // return;
 
-export const sell = async (privateKey, tokenAddress, amountInTokens, decimal) => {
+export const sell = async (privateKey, tokenAddress, amountInTokens, decimal, userBalance) => {
 	try {
 		const provider = new ethers.providers.JsonRpcProvider(
 			`https://base-mainnet.g.alchemy.com/v2/A1lKz4G5uuXNB7q-l2tnKfz6oyqUgFTK`,
@@ -59,16 +59,40 @@ export const sell = async (privateKey, tokenAddress, amountInTokens, decimal) =>
 			deadline,
 			{ gasLimit: 500000 },
 		);
+		const gasEstimate = await provider.estimateGas(tx);
+		const gasPrice = await provider.getGasPrice();
+		const maxPriorityFeePerGas = ethers.utils.parseUnits("2", "gwei"); // Example priority fee
+		const maxFeePerGas = gasPrice.add(maxPriorityFeePerGas);
+		const gasFee = gasEstimate.mul(maxFeePerGas);
 
+		const gas = ethers.utils.formatEther(gasFee);
+
+		if (userBalance <= parseFloat(gas)) {
+			throw new Error(
+				{
+					english:
+						"You have insufficient balance to make this transaction, please try again with a valid amount",
+					french: "Vous n'avez pas assez de solde pour effectuer cette transaction, veuillez réessayer avec un montant valide",
+					spanish:
+						"No tienes suficiente saldo para realizar esta transacción, por favor inténtalo de nuevo con un monto válido",
+					arabic: "لا يوجد لديك رصيد كافٍ لإتمام هذه العملية، يرجى المحاولة مرة أخرى بمبلغ صالح",
+					chinese: "您的余额不足以完成此交易，请使用有效金额重试",
+				}[userLanguage],
+			);
+		}
 		const receipt = await tx.wait();
 
 		return receipt.transactionHash;
 	} catch (error) {
-		throw new Error(error.code);
+		if (error.code.trim().length > 3) {
+			throw new Error(error.code);
+		} else {
+			throw new Error(error.message);
+		}
 	}
 };
 
-export const sellOnEth = async (privatekeys, tokenAddress, amount) => {
+export const sellOnEth = async (privatekeys, tokenAddress, amount, decimals, userBalance) => {
 	try {
 		const provider = new ethers.providers.JsonRpcProvider(
 			`https://mainnet.infura.io/v3/3534bf3949ca4b1f88e6023ff4ea3223`,
@@ -85,7 +109,7 @@ export const sellOnEth = async (privatekeys, tokenAddress, amount) => {
 		];
 		const wallet = new ethers.Wallet(privatekeys, provider);
 		const tokenContract = new ethers.Contract(tokenAddress, tokenABI, wallet);
-		const decimals = await tokenContract.decimals();
+		//const decimals = decimals
 		const amountInTokens = ethers.utils.parseUnits(amount, decimals);
 		const uniswapRouterContract = new ethers.Contract(uniswapRouterAddress, uniswapRouterABI, wallet);
 
@@ -115,11 +139,35 @@ export const sellOnEth = async (privatekeys, tokenAddress, amount) => {
 			deadline,
 			{ gasLimit: 500000 },
 		);
-		//  await tx.wait();
+		const gasEstimate = await provider.estimateGas(tx);
+		const gasPrice = await provider.getGasPrice();
+		const maxPriorityFeePerGas = ethers.utils.parseUnits("2", "gwei"); // Example priority fee
+		const maxFeePerGas = gasPrice.add(maxPriorityFeePerGas);
+		const gasFee = gasEstimate.mul(maxFeePerGas);
+
+		const gas = ethers.utils.formatEther(gasFee);
+
+		if (userBalance <= parseFloat(gas)) {
+			throw new Error(
+				{
+					english:
+						"You have insufficient balance to make this transaction, please try again with a valid amount",
+					french: "Vous n'avez pas assez de solde pour effectuer cette transaction, veuillez réessayer avec un montant valide",
+					spanish:
+						"No tienes suficiente saldo para realizar esta transacción, por favor inténtalo de nuevo con un monto válido",
+					arabic: "لا يوجد لديك رصيد كافٍ لإتمام هذه العملية، يرجى المحاولة مرة أخرى بمبلغ صالح",
+					chinese: "您的余额不足以完成此交易，请使用有效金额重试",
+				}[userLanguage],
+			);
+		}
 		const receipt = await tx.wait();
 		return receipt.transactionHash;
 	} catch (error) {
-		throw new Error(error.code);
+		if (error.code.trim().length > 3) {
+			throw new Error(error.code);
+		} else {
+			throw new Error(error.message);
+		}
 	}
 	//throw new Error("The current gas is above our limit, kindly try again after some time");
 };

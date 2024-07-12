@@ -41,8 +41,23 @@ stepHandler.action("sendd", async (ctx) => {
 			recipientAddress,
 			amountinEth.toFixed(15).toString(),
 			ctx.scene.session.sendStore.chain,
+			userWallet?.walletAddress,
 		);
-		ctx.reply(`Transaction sent successfully\nTransaction hash: ${tx?.hash}`);
+		if (tx?.hash) {
+			if (ctx.scene.session.sendStore.chain === "ethereum") {
+				ctx.reply(
+					`You sent ${amountinEth.toFixed(10)} ETH\nTransaction hash:<a href= "https://etherscan.io/tx/${
+						tx?.hash
+					}">${tx?.hash}</a>`,
+				);
+			} else {
+				ctx.reply(
+					`You sent ${amountinEth.toFixed(10)} ETH\nTransaction hash:<a href= "https://basescan.org/tx/${
+						tx?.hash
+					}">${tx?.hash}</a>`,
+				);
+			}
+		} else ctx.reply(`An error occured. Please try again later`);
 		return ctx.scene.leave();
 	} catch (error) {
 		if (tx) ctx.reply(`An error occured.\nTransaction hash: ${tx?.hash} `);
@@ -77,7 +92,7 @@ export const sendWizard = new Scenes.WizardScene<WizardContext>(
 		ctx.scene.session.sendStore.chain = ctx.scene.state.chain;
 
 		const user_id = ctx.from?.id;
-		
+
 		const wallet = await getUserWalletDetails(user_id);
 
 		const userBalance = await getEtherBalance(wallet?.walletAddress);
@@ -88,7 +103,7 @@ export const sendWizard = new Scenes.WizardScene<WizardContext>(
 		}
 		ctx.scene.session.sendStore.userBalance =
 			ctx.scene.session.sendStore.chain === "ethereum" ? userBalance.eth : userBalance.base;
-		ctx.scene.session.sendStore.recipientAddress = wallet?.walletAddress;
+
 		ctx.scene.session.sendStore.userWallet = wallet;
 
 		await ctx.replyWithHTML(
@@ -109,6 +124,7 @@ stepHandler2.on("text", async (ctx) => {
 		const { text } = ctx.message;
 		const currentEthPrice = await getEthPrice();
 		const ca = await queryAi(getCaPrompt(text));
+		console.log(ca);
 		if (ca.toLowerCase() === "null") {
 			// Reply with a warning emoji for invalid input
 			await ctx.replyWithHTML(
@@ -117,6 +133,7 @@ stepHandler2.on("text", async (ctx) => {
 			);
 			return;
 		}
+		ctx.scene.session.sendStore.recipientAddress = ca;
 		await ctx.replyWithHTML(
 			`What amount (in ETH or Usd) of ETH do you want to send, you have ${
 				ctx.scene.session.sendStore.userBalance

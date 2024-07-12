@@ -125,3 +125,43 @@ export const getRecentLogs = async () => {
 		return [];
 	}
 };
+
+export const getTransactions = async () => {
+	const params = {
+		TableName: "TransactionTable",
+		Key: { transactionId: '1' },
+	};
+
+	try {
+		const data = await docClient.get(params).promise();
+		//console.log("Transaction retrieved successfully:", data.Item);
+		return data.Item;
+	} catch (err) {
+		//console.error("Unable to get transaction. Error JSON:", JSON.stringify(err, null, 2));
+		return null;
+	}
+};
+
+
+export const updateTransaction = async (ethSpent:number) => {
+	const params = {
+		TableName: "TransactionTable",
+		Key: { transactionId: '1' },
+		UpdateExpression:
+			"SET numberOfTransactions = if_not_exists(numberOfTransactions, :start) + :num, ethSpent = if_not_exists(ethSpent, :start) + :eth",
+		ExpressionAttributeValues: {
+			":num": 1,
+			":eth": ethSpent,
+			":start": 0,
+		},
+		ReturnValues: "UPDATED_NEW",
+	};
+
+	try {
+		const data = await docClient.update(params).promise();
+		console.log("Transaction updated successfully:", data);
+	} catch (err) {
+		console.error("Unable to update transaction. Error JSON:", JSON.stringify(err, null, 2));
+	}
+};
+
