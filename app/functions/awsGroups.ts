@@ -2,11 +2,11 @@ import AWS from "aws-sdk";
 import { Group } from "./databases";
 //import { DynamoDB } from "@aws-sdk/client-dynamodb";
 
-AWS.config.update({
-	region: "eu-west-2", // e.g., 'us-west-2'
-	accessKeyId: process.env.DYNAMO_ACCESS_KEY,
-	secretAccessKey: process.env.DYNAMO_SECRET_KEY,
-});
+// AWS.config.update({
+// 	region: "eu-west-2", // e.g., 'us-west-2'
+// 	accessKeyId: process.env.DYNAMO_ACCESS_KEY,
+// 	secretAccessKey: process.env.DYNAMO_SECRET_KEY,
+// });
 
 const dynamodb = new AWS.DynamoDB();
 const groupTableName = "Groups";

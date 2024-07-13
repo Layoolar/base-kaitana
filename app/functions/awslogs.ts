@@ -2,11 +2,11 @@ import AWS from "aws-sdk";
 import { TokenData } from "./timePriceData";
 import { Log } from "./commands";
 
-AWS.config.update({
-	region: "eu-west-2", // Your AWS region
-	accessKeyId: process.env.DYNAMO_ACCESS_KEY || "", // Your access key
-	secretAccessKey: process.env.DYNAMO_SECRET_KEY || "", // Your secret key
-});
+// AWS.config.update({
+// 	region: "eu-west-2", // Your AWS region
+// 	accessKeyId: process.env.DYNAMO_ACCESS_KEY || "", // Your access key
+// 	secretAccessKey: process.env.DYNAMO_SECRET_KEY || "", // Your secret key
+// });
 
 const dynamodb = new AWS.DynamoDB();
 const docClient = new AWS.DynamoDB.DocumentClient();
@@ -129,7 +129,7 @@ export const getRecentLogs = async () => {
 export const getTransactions = async () => {
 	const params = {
 		TableName: "TransactionTable",
-		Key: { transactionId: '1' },
+		Key: { transactionId: "1" },
 	};
 
 	try {
@@ -142,11 +142,10 @@ export const getTransactions = async () => {
 	}
 };
 
-
-export const updateTransaction = async (ethSpent:number) => {
+export const updateTransaction = async (ethSpent: number) => {
 	const params = {
 		TableName: "TransactionTable",
-		Key: { transactionId: '1' },
+		Key: { transactionId: "1" },
 		UpdateExpression:
 			"SET numberOfTransactions = if_not_exists(numberOfTransactions, :start) + :num, ethSpent = if_not_exists(ethSpent, :start) + :eth",
 		ExpressionAttributeValues: {
@@ -164,4 +163,3 @@ export const updateTransaction = async (ethSpent:number) => {
 		console.error("Unable to update transaction. Error JSON:", JSON.stringify(err, null, 2));
 	}
 };
-

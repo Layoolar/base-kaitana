@@ -113,11 +113,11 @@ databases.logs.defaults({ logs: [], filteredLogs: [] }).write();
  *
  */
 
-AWS.config.update({
-	region: "eu-west-2", // e.g., 'us-west-2'
-	accessKeyId: process.env.DYNAMO_ACCESS_KEY,
-	secretAccessKey: process.env.DYNAMO_SECRET_KEY,
-});
+// AWS.config.update({
+// 	region: "eu-west-2", // e.g., 'us-west-2'
+// 	accessKeyId: process.env.DYNAMO_ACCESS_KEY,
+// 	secretAccessKey: process.env.DYNAMO_SECRET_KEY,
+// });
 
 // Function to update currentCalled and push it into the callHistory array for a group
 function updateCurrentCalledAndPushToHistory(groupId: number, currentCalled: string) {
