@@ -261,6 +261,9 @@ const commands = {
 		"/wallet": "This command can be used privately to manage your wallet.\nUsage format: /wallet",
 		"/info": "Get information about a token privately.\nUsage format: /info {contract address}",
 		"/analysis": "Analyse a token privately.\nUsage format: /analysis",
+		"/trending": "Check trending tokens on Eth, Bsc and Sol. \nUsage format: /trending",
+		"Voice Commands":
+			"Send a voice note to the bot (max 10 seconds) to request a token or ask further questions about the selected token. You can re-record if the audio isn't what you wanted. The bot will reply with tokens found based on your voice recording. \nUsage: Send a voice note to the bot privately.",
 	},
 	french: {
 		"/start": "Envoyez cette commande en privé au bot pour vous inscrire et commencer",
@@ -280,6 +283,9 @@ const commands = {
 			"Cette commande peut être utilisée en privé pour gérer votre portefeuille.\nFormat d'utilisation : /wallet",
 		"/info": "Obtenez des informations sur un jeton en privé.\nFormat d'utilisation : /info {adresse du contrat}",
 		"/analysis": "Analyser un jeton en privé.\nFormat d'utilisation : /analysis",
+		"/trending": "Vérifiez les tokens tendance sur Eth, Bsc et Sol. \nFormat d'utilisation: /trending",
+		"Commandes Vocales":
+			"Envoyez une note vocale au bot (maximum 10 secondes) pour demander un jeton ou poser d'autres questions sur le jeton sélectionné. Vous pouvez réenregistrer si l'audio n'est pas ce que vous vouliez. Le bot répondra avec les jetons trouvés basés sur votre enregistrement vocal. \nUtilisation: Envoyez une note vocale au bot en privé.",
 	},
 	spanish: {
 		"/start": "Envía este comando en privado al bot para registrarte y empezar",
@@ -297,6 +303,9 @@ const commands = {
 		"/wallet": "Este comando se puede usar en privado para gestionar tu billetera.\nFormato de uso: /wallet",
 		"/info": "Obtén información sobre un token en privado.\nFormato de uso: /info {dirección del contrato}",
 		"/analysis": "Analiza un token en privado.\nFormato de uso: /analysis",
+		"/trending": "Consulta los tokens de tendencia en Eth, Bsc y Sol. \nFormato de uso: /trending",
+		"Comandos de Voz":
+			"Envía una nota de voz al bot (máximo 10 segundos) para solicitar un token o hacer más preguntas sobre el token seleccionado. Puedes volver a grabar si el audio no es lo que querías. El bot responderá con los tokens encontrados basados en tu grabación de voz. \nUso: Envía una nota de voz al bot de forma privada.",
 	},
 	arabic: {
 		"/start": "أرسل هذا الأمر بشكل خاص إلى الروبوت للتسجيل والبدء",
@@ -313,6 +322,9 @@ const commands = {
 		"/wallet": "يمكن استخدام هذا الأمر بشكل خاص لإدارة محفظتك.\nتنسيق الاستخدام: /wallet",
 		"/info": "احصل على معلومات حول رمز مميز بشكل خاص.\nتنسيق الاستخدام: /info {عنوان العقد}",
 		"/analysis": "تحليل رمز مميز بشكل خاص.\nتنسيق الاستخدام: /analysis",
+		"/trending": "تحقق من الرموز الرائجة على Eth و Bsc و Sol. \nصيغة الاستخدام: /trending",
+		"أوامر صوتية":
+			"أرسل ملاحظة صوتية إلى البوت (بحد أقصى 10 ثوانٍ) لطلب رمز مميز أو لطرح المزيد من الأسئلة حول الرمز المحدد. يمكنك إعادة التسجيل إذا لم يكن الصوت كما تريد. سيجيب البوت بالرموز التي تم العثور عليها بناءً على التسجيل الصوتي الخاص بك. \nالاستخدام: أرسل ملاحظة صوتية إلى البوت بشكل خاص.",
 	},
 	chinese: {
 		"/start": "私下向机器人发送此命令以注册并开始",
@@ -327,6 +339,9 @@ const commands = {
 		"/wallet": "此命令可用于私下管理您的钱包。\n使用格式：/wallet",
 		"/info": "私下获取有关代币的信息。\n使用格式：/info {合约地址}",
 		"/analysis": "私下分析代币。\n使用格式：/analysis",
+		"/trending": "查看 Eth、Bsc 和 Sol 上的热门代币。\n使用格式：/trending",
+		语音命令:
+			"向机器人发送语音消息（最长 10 秒）以请求令牌或询问有关所选令牌的更多问题。如果录音不是你想要的，你可以重新录制。机器人会根据你的语音录音回复找到的令牌。\n使用：私下发送语音消息给机器人。",
 	},
 };
 
@@ -1783,19 +1798,29 @@ const quit = async (): Promise<void> => {
 // bot.on("message", (ctx) => {
 // 	console.log(ctx.chat.id);
 // });
+const buttons = {
+	reply_markup: {
+		inline_keyboard: [
+			[
+				{ text: "Ethereum ⚡", callback_data: "ethtrend" },
+				{ text: "BSC 🚀", callback_data: "bsctrend" },
+				{ text: "Solana 🌊", callback_data: "soltrend" },
+			],
+		],
+	},
+};
 
 const menu = async (): Promise<void> => {
-	// bot.command("menu", checkUserExistence, async (ctx) => {
-	// 	chatId = ctx.message.chat.id;
-	// 	ctx.telegram.sendMessage(
-	// 		ctx.message.chat.id,
-	// 		`${getGreeting()} ${ctx.from?.username || ctx.from?.first_name || ctx.from?.last_name}`,
-	// 		{
-	// 			reply_markup: buttons.reply_markup,
-	// 			parse_mode: "HTML",
-	// 		},
-	// 	);
-	// });
+	bot.command("trending", checkUserExistence, async (ctx) => {
+		ctx.telegram.sendMessage(
+			ctx.message.chat.id,
+			`Hey ${ctx.from?.username || ctx.from?.first_name || ctx.from?.last_name}, select a chain`,
+			{
+				reply_markup: buttons.reply_markup,
+				parse_mode: "HTML",
+			},
+		);
+	});
 };
 
 const start = async () => {
