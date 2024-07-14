@@ -78,7 +78,7 @@ bot.action("bsctrend", async (ctx) => {
 				make the numbers easy for humans to read with commas and add a lot of emojis to your summary to make it aesthetically pleasing, for example add 💰 to price, 💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath, 📈 to % increase ,📉 to % decrease`,
 		);
 		ctx.answerCbQuery();
-		return await ctx.reply(message);
+		return await ctx.replyWithHTML(message);
 	});
 
 	// bot.action("cancel", async (ctx) => {
@@ -124,7 +124,7 @@ bot.action("ethtrend", async (ctx) => {
 				make the numbers easy for humans to read with commas and add a lot of emojis to your summary to make it aesthetically pleasing, for example add 💰 to price, 💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath, 📈 to % increase ,📉 to % decrease`,
 		);
 		ctx.answerCbQuery();
-		return await ctx.reply(message);
+		return await ctx.replyWithHTML(message);
 	});
 
 	// bot.action("cancel", async (ctx) => {
@@ -167,7 +167,7 @@ bot.action("soltrend", async (ctx) => {
 		);
 		//ctx.telegram.answer_callback_query;
 		ctx.answerCbQuery();
-		return await ctx.reply(message);
+		return await ctx.replyWithHTML(message);
 	});
 
 	// bot.action("cancel", async (ctx) => {
