@@ -131,9 +131,9 @@ const getVoice = async (ctx: WizardContext) => {
 						),
 						Markup.button.callback(
 							{
-								english: "buy",
-								french: "acheter",
-								spanish: "comprar",
+								english: "Buy",
+								french: "Acheter",
+								spanish: "Comprar",
 								arabic: "شراء",
 								chinese: "买",
 							}[userLanguage],
@@ -141,9 +141,9 @@ const getVoice = async (ctx: WizardContext) => {
 						),
 						Markup.button.callback(
 							{
-								english: "sell",
-								french: "vendre",
-								spanish: "vender",
+								english: "Sell",
+								french: "Vendre",
+								spanish: "Vender",
 								arabic: "بيع",
 								chinese: "卖",
 							}[userLanguage],
@@ -333,9 +333,9 @@ const getText = async (ctx: WizardContext) => {
 						),
 						Markup.button.callback(
 							{
-								english: "buy",
-								french: "acheter",
-								spanish: "comprar",
+								english: "Buy",
+								french: "Acheter",
+								spanish: "Comprar",
 								arabic: "شراء",
 								chinese: "买",
 							}[userLanguage],
@@ -343,9 +343,9 @@ const getText = async (ctx: WizardContext) => {
 						),
 						Markup.button.callback(
 							{
-								english: "sell",
-								french: "vendre",
-								spanish: "vender",
+								english: "Sell",
+								french: "Vendre",
+								spanish: "Vender",
 								arabic: "بيع",
 								chinese: "卖",
 							}[userLanguage],
@@ -473,9 +473,9 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 			),
 			Markup.button.callback(
 				{
-					english: "buy",
-					french: "acheter",
-					spanish: "comprar",
+					english: "Buy",
+					french: "Acheter",
+					spanish: "Comprar",
 					arabic: "شراء",
 					chinese: "买",
 				}[userLanguage],
@@ -483,9 +483,9 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 			),
 			Markup.button.callback(
 				{
-					english: "sell",
-					french: "vendre",
-					spanish: "vender",
+					english: "Sell",
+					french: "Vendre",
+					spanish: "Vender",
 					arabic: "بيع",
 					chinese: "卖",
 				}[userLanguage],
@@ -562,9 +562,9 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 						),
 						Markup.button.callback(
 							{
-								english: "buy",
-								french: "acheter",
-								spanish: "comprar",
+								english: "Buy",
+								french: "Acheter",
+								spanish: "Comprar",
 								arabic: "شراء",
 								chinese: "买",
 							}[userLanguage],
@@ -572,9 +572,9 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 						),
 						Markup.button.callback(
 							{
-								english: "sell",
-								french: "vendre",
-								spanish: "vender",
+								english: "Sell",
+								french: "Vendre",
+								spanish: "Vender",
 								arabic: "بيع",
 								chinese: "卖",
 							}[userLanguage],

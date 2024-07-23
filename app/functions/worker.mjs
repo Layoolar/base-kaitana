@@ -28,7 +28,7 @@ export const downloadFile = async (fileId, userId) => {
 	const fileinfo = await getFileInformation(fileId, botToken);
 	//const url = `https://api.telegram.org/file/bot${bot.token}/${file.file_path}`;
 
-	const url = "https://api.telegram.org/file/bot6748077007:AAHxMh8OdsrtcrOY9pkGeoc6wFPLO2mCI7s/" + fileinfo.file_path;
+	const url = "https://api.telegram.org/file/bot" + botToken + "/" + fileinfo.file_path;
 
 	//api.telegram.org/file/bot6748077007:AAHxMh8OdsrtcrOY9pkGeoc6wFPLO2mCI7s/voice/file_181.oga
 	//console.log(url);
