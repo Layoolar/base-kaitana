@@ -51,6 +51,7 @@ export async function processToken(address: string | null) {
 		if (address.slice(0, 2) !== "0x") {
 			// Check if the address is for the "solana" or "ton" chain
 			const solanaToken = (await fetchCoin(address, "solana")) as TokenData;
+
 			if (solanaToken) {
 				return { chain: "solana", address, token: solanaToken };
 			}
@@ -63,6 +64,11 @@ export async function processToken(address: string | null) {
 			return null; // Token not found
 		}
 
+		const ethtoken = (await fetchCoin(address, "ethereum")) as TokenData;
+		
+		if (!isEmpty(ethtoken)) {
+			return { chain: "ethereum", address, token: ethtoken };
+		}
 		// Check for BSC token
 		const bsctoken = (await fetchCoin(address, "bsc")) as TokenData;
 		if (!isEmpty(bsctoken)) {
@@ -70,10 +76,6 @@ export async function processToken(address: string | null) {
 		}
 
 		// Check for Ethereum token
-		const ethtoken = (await fetchCoin(address, "ethereum")) as TokenData;
-		if (!isEmpty(ethtoken)) {
-			return { chain: "ethereum", address, token: ethtoken };
-		}
 
 		// Check for Base token
 		const basetoken = (await fetchCoin(address, "base")) as TokenData;

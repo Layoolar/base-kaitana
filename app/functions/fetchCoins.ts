@@ -1,6 +1,7 @@
 import { Context } from "telegraf";
 import { CoinDataType } from "./commands";
 import axios, { AxiosResponse } from "axios";
+import { testdata } from "./data";
 
 interface DexScreenerPair {
 	chain: string;
@@ -13,6 +14,57 @@ interface DexScreenerPair {
 	liquidity: number;
 }
 const supportedChains = ["solana", "ton", "bsc", "ethereum", "base"];
+export async function fetchOHLCVData(
+	address: string,
+	currency: string,
+	type: string,
+	timeFrom: number,
+	timeTo: number,
+	chain: string | undefined,
+) {
+	const url = `https://multichain-api.birdeye.so/${chain}/amm/ohlcv`;
+	const params = {
+		address: address,
+		currency: currency,
+		type: type,
+		time_from: timeFrom,
+		time_to: timeTo,
+	};
+
+	const headers = {
+		"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0",
+		Accept: "application/json, text/plain, /",
+		"Accept-Language": "en-US,en;q=0.5",
+		"Accept-Encoding": "gzip, deflate, br",
+		"agent-id": "f28a43fd-ca0e-4dad-a4ea-b28f8f3805b5",
+		"cf-be":
+			"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MDI5OTAzMzAsImV4cCI6MTcwMjk5MDYzMH0.E0-mp3KcBGB2k_CivhRFIoSkecfVL14scWJOXZxVC_g",
+		Origin: "https://birdeye.so",
+		Connection: "keep-alive",
+		Referer: "https://birdeye.so/",
+		"Sec-Fetch-Dest": "empty",
+		"Sec-Fetch-Mode": "cors",
+		"Sec-Fetch-Site": "same-site",
+		TE: "trailers",
+		"Content-Type": "application/json",
+	};
+
+	try {
+		const response = await axios.get(url, {
+			params: params,
+			headers: headers,
+			responseType: "json",
+			timeout: 10000,
+		});
+
+		return response.data.data;
+	} catch (error) {
+		console.error("Error fetching data:", error);
+		return null;
+	}
+}
+
+// Example usage:
 
 const fetchData = async (network: string, bet: "bet" | null): Promise<{ data: CoinDataType[] }> => {
 	const url = `https://multichain-api.birdeye.so/${network}/trending/token?u=da39a3ee5e6b4b0d3255bfef95601890afd80709`;
@@ -41,22 +93,7 @@ const fetchData = async (network: string, bet: "bet" | null): Promise<{ data: Co
 	}
 };
 
-const formatCoinsMessage = (result: { data: CoinDataType[] }, bet: "bet" | null): string => {
-	const coinsMessage: string[] = [];
-	const filteredCoinsRange = bet ? [2, 3, 4, 5, 6] : Array.from({ length: result.data.length }, (_, i) => i);
-
-	for (const index of filteredCoinsRange) {
-		const element = result.data[index];
-		coinsMessage.push(`${index + 1}. ${element.tokenData.name} ( ${element.tokenData.symbol} )`);
-	}
-
-	const messageType = bet ? "available for betting" : "top 10 trending";
-
-	return `These are the coins that are ${messageType} on the ${result.data[0].network} chain:\n${coinsMessage.join(
-		"\n",
-	)}`;
-};
-
+export const fetchCointest = async () => testdata.data;
 const fetchCoin = async (address: string | null | undefined, network: string | undefined) => {
 	try {
 		const response = await axios.get(`https://multichain-api.birdeye.so/${network}/overview/token`, {
@@ -81,13 +118,29 @@ const fetchCoin = async (address: string | null | undefined, network: string | u
 				TE: "trailers",
 			},
 		});
-		//console.log(response.data.data, "here");
+
 		return response.data.data;
 	} catch (error: any) {
 		//console.log("Error fetching coin:", error);
 		throw new Error(error.code);
 		//return null;
 	}
+};
+
+const formatCoinsMessage = (result: { data: CoinDataType[] }, bet: "bet" | null): string => {
+	const coinsMessage: string[] = [];
+	const filteredCoinsRange = bet ? [2, 3, 4, 5, 6] : Array.from({ length: result.data.length }, (_, i) => i);
+
+	for (const index of filteredCoinsRange) {
+		const element = result.data[index];
+		coinsMessage.push(`${index + 1}. ${element.tokenData.name} ( ${element.tokenData.symbol} )`);
+	}
+
+	const messageType = bet ? "available for betting" : "top 10 trending";
+
+	return `These are the coins that are ${messageType} on the ${result.data[0].network} chain:\n${coinsMessage.join(
+		"\n",
+	)}`;
 };
 
 const sendAllChainData = async () => {

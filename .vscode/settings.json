@@ -79,5 +79,6 @@
 	},
 	"files.associations": {
 		"main.h": "c"
-	}
+	},
+	"typescript.tsdk": "node_modules\\typescript\\lib"
 }

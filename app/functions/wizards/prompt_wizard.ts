@@ -1,7 +1,7 @@
 import bot, { WizardContext } from "../telegraf";
 import { Composer, Context, Markup, Scenes } from "telegraf";
 import { queryAi } from "../queryApi";
-import { getBuyPrompt, getCaPrompt, getamountprompt } from "../prompt";
+import { getBuyPrompt, getCaPrompt, getamountprompt,getSellPrompt } from "../prompt";
 import { fetchCoin, getDexPairDataWithAddress, searchDexPairs, sendAllChainData } from "../fetchCoins";
 import { TokenData } from "../timePriceData";
 //import { json } from "express";
@@ -272,9 +272,16 @@ const getText = async (ctx: WizardContext) => {
 		//console.log(text);
 		const userId = ctx.from?.id;
 		if (!userId) return;
+
 		const userLanguage = await getUserLanguage(userId);
 		if (text.toLowerCase() !== "exit") {
+
 			//console.log("here");
+const buyOption=  await queryAi(getBuyPrompt(text))
+const sellOption= await queryAi(getSellPrompt(text))
+const buyAmountOption= await queryAi(getamountprompt(text))
+//const sellAmountOption= await queryAi(getsellAM)
+
 
 			const coinAddress = ctx.scene.session.promptStore.address;
 			// Here you can proceed with handling the selected coin, such as fetching its value or any other relevant information
@@ -598,14 +605,30 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 		}
 		ctx.replyWithHTML(
 			{
-				english: `<b>Audio transcription:</b> ${ctx.scene.session.promptStore.prompt}\nIf this isn't what you wanted, use the audio button to record another audio.`,
-				french: `<b>Transcription audio :</b> ${ctx.scene.session.promptStore.prompt}\nSi ce n'est pas ce que vous vouliez, utilisez le bouton audio pour enregistrer un autre audio.`,
-				spanish: `<b>Transcripción de audio:</b> ${ctx.scene.session.promptStore.prompt}\nSi esto no es lo que querías, usa el botón de audio para grabar otro audio.`,
-				arabic: `<b>نص الصوت:</b> ${ctx.scene.session.promptStore.prompt}\nإذا لم يكن هذا ما تريده، استخدم زر الصوت لتسجيل صوت آخر.`,
-				chinese: `<b>音频转录:</b> ${ctx.scene.session.promptStore.prompt}\n如果这不是您想要的，请使用音频按钮录制另一段音频。`,
+				english: `<b>Audio transcription:</b> ${ctx.scene.session.promptStore.prompt}\nIf this isn't what you wanted, exit the current session and use the audio button to record another audio.`,
+				french: `<b>Transcription audio :</b> ${ctx.scene.session.promptStore.prompt}\nSi ce n'est pas ce que vous vouliez, quittez la session en cours et utilisez le bouton audio pour enregistrer un autre audio.`,
+				spanish: `<b>Transcripción de audio:</b> ${ctx.scene.session.promptStore.prompt}\nSi esto no es lo que querías, sal de la sesión actual y usa el botón de audio para grabar otro audio.`,
+				arabic: `<b>نص الصوت:</b> ${ctx.scene.session.promptStore.prompt}\nإذا لم يكن هذا ما تريده، اخرج من الجلسة الحالية واستخدم زر الصوت لتسجيل صوت آخر.`,
+				chinese: `<b>音频转录:</b> ${ctx.scene.session.promptStore.prompt}\n如果这不是您想要的，请退出当前会话并使用音频按钮录制另一段音频。`,
 			}[userLanguage],
+			Markup.inlineKeyboard([
+				[
+					Markup.button.callback(
+						{
+							english: "Exit Session",
+							french: "Quitter la session",
+							spanish: "Salir de la sesión",
+							arabic: "إنهاء الجلسة",
+							chinese: "退出会话",
+						}[userLanguage],
+						"cancel",
+					),
+				],
+			]),
 		);
-		bot.action("cancel", cancelFn);
+
+		
+		//.action("cancel", cancelFn);
 		//console.log(ctx.scene.session.promptStore.prompt.trim().length === 0);
 		return ctx.wizard.next();
 	},

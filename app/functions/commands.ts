@@ -14,7 +14,7 @@ import * as databases from "./databases";
 import config from "../configs/config";
 import { launchPolling, launchWebhook } from "./launcher";
 import { createSolWallet } from "./solhelper";
-import { getDexPairDataWithAddress } from "./fetchCoins";
+import { fetchCointest, getDexPairDataWithAddress } from "./fetchCoins";
 
 import { queryAi } from "./queryApi";
 import { TokenData, generateTimeAndPriceGraph } from "./timePriceData";
@@ -793,6 +793,8 @@ export const neww = async () => {
 
 		const res = await processToken(ca);
 		const coin = res?.token;
+		console.log(coin);
+		// const coin= await fetchCointest();
 
 		if (!coin) {
 			return await ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
