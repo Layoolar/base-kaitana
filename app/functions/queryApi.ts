@@ -23,9 +23,10 @@ export const queryAi = async (text: string): Promise<string> => {
 	})
 		.then((response) => response.json())
 		.then((data) => {
+			//	console.log(data);
 			aiReply = data.choices[0].message.content as string;
 			// //console.log(aiReply);
-			// console.log(data);
+
 			// //console.log(data);
 		})
 		.catch((error) => {

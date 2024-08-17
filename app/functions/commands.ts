@@ -102,7 +102,7 @@ export type BetData = {
 	status: "open" | "closed";
 	betVerdict: string;
 };
-
+const groups: number[] = [];
 bot.use(async (ctx, next) => {
 	// If the message is from a group and the group ID is not registered, register it
 
@@ -112,9 +112,19 @@ bot.use(async (ctx, next) => {
 			// const res = databases.getCallHistory(ctx.chat.id);
 
 			// if (res) return next();
+			let found = false;
 			//	console.log("hi");
+			console.log(groups);
+			groups.forEach((group) => {
+				if (group === ctx.chat?.id) {
+					found = true;
+				}
+			});
 
-			await addGroup({ id: ctx.chat.id, currentCalled: null, callHistory: [] });
+			if (!found) {
+				await addGroup({ id: ctx.chat.id, currentCalled: null, callHistory: [] });
+				groups.push(ctx.chat.id);
+			}
 			//console.log(ctx.chat.id);
 			//console.log(`Group ${ctx.chat.id} has been automatically registered.`);
 		}
@@ -791,43 +801,41 @@ export const neww = async () => {
 		// 	.then((data) => ctx.reply(data.name))
 		// 	.catch((error) => console.error("Error:", error));
 
-		const res = await processToken(ca);
-		const coin = res?.token;
-		console.log(coin);
-		// const coin= await fetchCointest();
+		// const res = await processToken(ca);
+		// const coin = res?.token;
+		//console.log(coin);
+		const coin = await fetchCointest();
 
 		if (!coin) {
 			return await ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
 		}
 
 		if (coin) {
-			await updateLog(ca, coin);
+			//await updateLog(ca, coin);
 			await updateCurrentCalledAndCallHistory(ctx.chat.id, ca);
 
 			if (isEmpty(coin) || !coin.name) {
 				return await ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
 			}
 
-			const data = await getDexPairDataWithAddress(coin.address);
+			//const data = await getDexPairDataWithAddress(coin.address);
 
-			if (!data) return ctx.reply("An error occurred please try again");
+			//if (!data) return ctx.reply("An error occurred please try again");
 
 			await ctx.replyWithHTML(
 				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${coin.name}</i>\n<b>Token Address: </b> <i>${coin.address}</i>`,
 			);
-			let mcap;
-			if (data[0]) mcap = data[0].mcap;
-			else mcap = "";
-			const response = await queryAi(
-				`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify(
-					{
-						...coin,
-						mcap: mcap,
-					},
-				)}. Don't make mention that you are summarizing a given data in your response. Don't say things like 'According to the data provided'. Send the summary back in few short paragraphs. Only return the summary and nothing else. Also wrap important values with HTML <b> bold tags,
-				make the numbers easy for humans to read with commas and add a lot of emojis to your summary to make it aesthetically pleasing, for example add 💰 to price, 💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath, 📈 to % increase ,📉 to % decrease`,
-			);
+			// let mcap;
+			// if (data[0]) mcap = data[0].mcap;
+			// else mcap = "";
 
+			const response = await queryAi(
+				`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
+					...coin,
+				})}. Don't make mention that you are given data in your response, remove all the percentage changes and Don't say things like 'According to the data provided'. Only return the bullet points and nothing else,
+				make the numbers easy for humans to read with commas and emojis after label title to make it aesthetically pleasing, for example price💰:  .add  💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath`,
+			);
+			//console.log(response);
 			return await ctx.replyWithHTML(response);
 			// console.log(selectedCoin);
 		} else {
