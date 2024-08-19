@@ -11,7 +11,7 @@
 import { bot } from "./actions";
 import { Markup, MiddlewareFn, Context } from "telegraf";
 import * as databases from "./databases";
-import config from "../configs/config";
+import config, { telegram } from "../configs/config";
 import { launchPolling, launchWebhook } from "./launcher";
 import { createSolWallet } from "./solhelper";
 import { fetchCointest, getDexPairDataWithAddress } from "./fetchCoins";
@@ -121,10 +121,10 @@ bot.use(async (ctx, next) => {
 				}
 			});
 
-			if (!found) {
-				await addGroup({ id: ctx.chat.id, currentCalled: null, callHistory: [] });
-				groups.push(ctx.chat.id);
-			}
+			// if (!found) {
+			// 	await addGroup({ id: ctx.chat.id, currentCalled: null, callHistory: [] });
+			// 	groups.push(ctx.chat.id);
+			// }
 			//console.log(ctx.chat.id);
 			//console.log(`Group ${ctx.chat.id} has been automatically registered.`);
 		}
@@ -793,17 +793,7 @@ export const neww = async () => {
 		if (!ca) {
 			return await ctx.reply("You need to send a contract address with your command");
 		}
-		// .ath.usd
-		// market_cap.usd
-		// fetchCoinGeckoData;
-		// const contracAddress = "0x95aD61b0a150d79219dCF64E1E6Cc01f0B64C4cE";
-		// fetchCoinGeckoData(contractAddress)
-		// 	.then((data) => ctx.reply(data.name))
-		// 	.catch((error) => console.error("Error:", error));
 
-		// const res = await processToken(ca);
-		// const coin = res?.token;
-		//console.log(coin);
 		const coin = await fetchCointest();
 
 		if (!coin) {
@@ -818,28 +808,42 @@ export const neww = async () => {
 				return await ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
 			}
 
-			//const data = await getDexPairDataWithAddress(coin.address);
-
-			//if (!data) return ctx.reply("An error occurred please try again");
-
 			await ctx.replyWithHTML(
 				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${coin.name}</i>\n<b>Token Address: </b> <i>${coin.address}</i>`,
 			);
-			// let mcap;
-			// if (data[0]) mcap = data[0].mcap;
-			// else mcap = "";
+
+			const extractedData = {
+				address: coin.address,
+				decimals: coin.decimals,
+				symbol: coin.symbol,
+				name: coin.name,
+				supply: coin.supply,
+				mc: coin.mc,
+				numberOfMarkets: coin.numberMarkets,
+				website: coin.extensions.website ? `<a href ="${coin.extensions.website}">Website</a>` : null,
+				twitter: coin.extensions.twitter ? `<a href ="${coin.extensions.twitter}">Twitter</a>` : null,
+				telegram: coin.extensions.telegram ? `<a href ="${coin.extensions.telegram}">Telegram</a>` : null,
+				discord: coin.extensions.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
+				liquidity: coin.liquidity,
+				price: coin.price.toFixed(7),
+				priceChange30m: coin.priceChange30mPercent.toFixed(2) + "%",
+				priceChange1h: coin.priceChange1hPercent.toFixed(2) + "%",
+				priceChange2h: coin.priceChange2hPercent.toFixed(2) + "%",
+				priceChange4h: coin.priceChange4hPercent.toFixed(2) + "%",
+				priceChange6h: coin.priceChange6hPercent.toFixed(2) + "%",
+				priceChange8h: coin.priceChange8hPercent.toFixed(2) + "%",
+				priceChange12h: coin.priceChange12hPercent.toFixed(2) + "%",
+				priceChange24h: coin.priceChange24hPercent.toFixed(2) + "%",
+			};
 
 			const response = await queryAi(
 				`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
-					...coin,
-				})}. Don't make mention that you are given data in your response, remove all the percentage changes and Don't say things like 'According to the data provided'. Only return the bullet points and nothing else,
-				make the numbers easy for humans to read with commas and emojis after label title to make it aesthetically pleasing, for example price💰:  .add  💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath`,
+					...extractedData,
+				})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
 			);
-			//console.log(response);
+
 			return await ctx.replyWithHTML(response);
-			// console.log(selectedCoin);
 		} else {
-			// console.log(contractAddress);
 			return await ctx.reply("I couldn't find the token, please check the contract address and try again.");
 		}
 	});
