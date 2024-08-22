@@ -61,14 +61,14 @@ export const generateTimeAndPriceGraph = async (address: string, timeframe: stri
 		},
 	});
 
-//	console.log("here");
+	//	console.log("here");
 	const url = await myPriceChart.getUrl();
 	// console.log(url);
 	// console.log("here too");
 	// const buf = await myPriceChart.toBinary();
 	//console.log(await myPriceChart.getUrl());
 	//console.log(buf);
-	return { timeAndPrice,url };
+	return { timeAndPrice, url };
 };
 
 type TimeandPrice = {
@@ -85,7 +85,7 @@ export interface TokenData {
 	name: string;
 	extensions: null | any; // You can replace `any` with a more specific type if necessary
 	logoURI: string;
-	numberMarkers: number;
+	numberMarkers?: number;
 	liquidity: number;
 	price: number;
 	supply: null | any; // You can replace `any` with a more specific type if necessary
@@ -180,6 +180,7 @@ export interface TokenData {
 	vSellHistory1h: number;
 	vSellHistory1hUSD: number;
 	vSell1hChangePercent: number;
+	numberMarkets?: number;
 	// Repeat the pattern for other properties
 	// ...
 	// Add more properties as needed
