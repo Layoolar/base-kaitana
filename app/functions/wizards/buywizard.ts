@@ -317,18 +317,19 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 		//let userBalance;
 
 		if (chain?.toLowerCase() !== "ethereum" && chain?.toLowerCase() !== "base") {
-			return await ctx.reply(
-				{
-					english:
-						"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
-					french: "Nous prenons actuellement uniquement en charge les échanges sur Ethereum, Binance Smart Chain et Solana pour le moment. Veuillez patienter pendant que nous travaillons à prendre en charge d'autres jetons.",
-					spanish:
-						"Actualmente solo admitimos operaciones de trading en Ethereum, Binance Smart Chain y Solana. Por favor, tenga paciencia mientras trabajamos en admitir otros tokens.",
-					arabic: "نحن ندعم حاليًا التداول فقط على Ethereum و Binance Smart Chain و Solana في الوقت الحالي. يرجى التحلي بالصبر بينما نعمل على دعم رموز أخرى.",
-					chinese:
-						"目前我们只支持在以太坊、币安智能链和Solana上交易。请您耐心等待，我们正在努力支持其他代币。",
-				}[userLanguage],
-			);
+			 await ctx.reply(
+					{
+						english:
+							"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
+						french: "Nous prenons actuellement uniquement en charge les échanges sur Ethereum, Binance Smart Chain et Solana pour le moment. Veuillez patienter pendant que nous travaillons à prendre en charge d'autres jetons.",
+						spanish:
+							"Actualmente solo admitimos operaciones de trading en Ethereum, Binance Smart Chain y Solana. Por favor, tenga paciencia mientras trabajamos en admitir otros tokens.",
+						arabic: "نحن ندعم حاليًا التداول فقط على Ethereum و Binance Smart Chain و Solana في الوقت الحالي. يرجى التحلي بالصبر بينما نعمل على دعم رموز أخرى.",
+						chinese:
+							"目前我们只支持在以太坊、币安智能链和Solana上交易。请您耐心等待，我们正在努力支持其他代币。",
+					}[userLanguage],
+				);
+			return ctx.scene.leave();
 		}
 
 		if (chain === "base") {

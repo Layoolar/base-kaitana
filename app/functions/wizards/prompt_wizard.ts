@@ -1,7 +1,7 @@
 import bot, { WizardContext } from "../telegraf";
 import { Composer, Context, Markup, Scenes } from "telegraf";
 import { queryAi } from "../queryApi";
-import { getBuyPrompt, getCaPrompt, getamountprompt,getSellPrompt } from "../prompt";
+import { getBuyPrompt, getCaPrompt, getamountprompt, getSellPrompt } from "../prompt";
 import { fetchCoin, getDexPairDataWithAddress, searchDexPairs, sendAllChainData } from "../fetchCoins";
 import { TokenData } from "../timePriceData";
 //import { json } from "express";
@@ -275,13 +275,36 @@ const getText = async (ctx: WizardContext) => {
 
 		const userLanguage = await getUserLanguage(userId);
 		if (text.toLowerCase() !== "exit") {
-
 			//console.log("here");
-const buyOption=  await queryAi(getBuyPrompt(text))
-const sellOption= await queryAi(getSellPrompt(text))
-const buyAmountOption= await queryAi(getamountprompt(text))
-//const sellAmountOption= await queryAi(getsellAM)
+			const buyOption = await queryAi(getBuyPrompt(text));
+			const sellOption = await queryAi(getSellPrompt(text));
+			const buyAmountOption = await queryAi(getamountprompt(text));
 
+			if (buyOption !== "null") {
+				return ctx.reply(
+					{
+						english: "Use the buy button provided above to buy the token.",
+						french: "Utilisez le bouton d'achat fourni ci-dessus pour acheter le jeton.",
+						spanish: "Utilice el botón de compra proporcionado arriba para comprar el token.",
+						arabic: "استخدم زر الشراء المقدم أعلاه لشراء الرمز.",
+						chinese: "使用上方提供的购买按钮购买代币。",
+					}[userLanguage],
+				);
+			}
+			if (sellOption !== "null") {
+				return ctx.reply(
+					{
+						english: "Use the sell button provided above to buy the token.",
+						french: "Utilisez le bouton de vente fourni ci-dessus pour acheter le jeton.",
+						spanish: "Utilice el botón de venta proporcionado arriba para comprar el token.",
+						arabic: "استخدم زر البيع المقدم أعلاه لشراء الرمز.",
+						chinese: "使用上方提供的卖出按钮购买代币。",
+					}[userLanguage],
+				);
+			}
+			
+
+			//const sellAmountOption= await queryAi(getsellAM)
 
 			const coinAddress = ctx.scene.session.promptStore.address;
 			// Here you can proceed with handling the selected coin, such as fetching its value or any other relevant information
@@ -299,7 +322,7 @@ const buyAmountOption= await queryAi(getamountprompt(text))
 
 				return ctx.scene.leave();
 			}
-			const data = await getDexPairDataWithAddress(selectedToken.address);
+			const data = await getDexPairDataWithAddress(selectedToken?.address);
 
 			if (!data) {
 				ctx.reply(
@@ -319,7 +342,7 @@ const buyAmountOption= await queryAi(getamountprompt(text))
 
 			const prompt4 = `This is data for a token "${JSON.stringify({
 				...selectedToken?.token,
-				...data[0],
+				
 			})}". use the information provided to answer any question in this "${text}. Reply "This information is unavailable" to any question you can't answer, send your reply in ${userLanguage}"`;
 
 			const detailsCompletionMessage = await conversation(prompt4, ctx.scene.session.promptStore.chatHistory);
@@ -432,10 +455,46 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 		}[userLanguage],
 	);
 
-	const data = await getDexPairDataWithAddress(coin.address);
+	let honeyPotRes;
 
-	if (!data) {
-		ctx.reply(
+	const validChains = ["etheruem", "bsc", "base"];
+	if (validChains.includes(res.chain.toLowerCase())) {
+		honeyPotRes = await isHoneypot(coin.address);
+	}
+
+	//console.log(honeyPotRes);
+
+	const extractedData = {
+		address: coin.address,
+		decimals: coin.decimals,
+		symbol: coin.symbol,
+		name: coin.name,
+		supply: coin.supply,
+		mc: coin.mc,
+		numberOfMarkets: coin.numberMarkets,
+		website: coin.extensions.website ? `<a href ="${coin.extensions.website}">Website</a>` : null,
+		twitter: coin.extensions.twitter ? `<a href ="${coin.extensions.twitter}">Twitter</a>` : null,
+		telegram: coin.extensions.telegram ? `<a href ="${coin.extensions.telegram}">Telegram</a>` : null,
+		discord: coin.extensions.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
+		liquidity: coin.liquidity,
+		price: coin.price.toFixed(7),
+		priceChange30m: coin.priceChange30mPercent.toFixed(2) + "%",
+		priceChange1h: coin.priceChange1hPercent.toFixed(2) + "%",
+		priceChange2h: coin.priceChange2hPercent.toFixed(2) + "%",
+		priceChange4h: coin.priceChange4hPercent.toFixed(2) + "%",
+		priceChange6h: coin.priceChange6hPercent.toFixed(2) + "%",
+		priceChange8h: coin.priceChange8hPercent.toFixed(2) + "%",
+		priceChange12h: coin.priceChange12hPercent.toFixed(2) + "%",
+		priceChange24h: coin.priceChange24hPercent.toFixed(2) + "%",
+	};
+	const response = await queryAi(
+		`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
+			...extractedData,
+		})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
+	);
+
+	if (response.trim().length === 0) {
+		return ctx.reply(
 			{
 				english: "An error occurred, please try again later.",
 				french: "Une erreur s'est produite, veuillez réessayer plus tard.",
@@ -444,26 +503,7 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 				chinese: "发生错误，请稍后再试。",
 			}[userLanguage],
 		);
-
-		return ctx.scene.leave();
 	}
-
-	let honeyPotRes;
-
-	const validChains = ["etheruem", "bsc", "base"];
-	if (validChains.includes(data[0].chain.toLowerCase())) {
-		honeyPotRes = await isHoneypot(coin.address);
-	}
-
-	//console.log(honeyPotRes);
-
-	const response = await queryAi(
-		`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify({
-			...coin,
-			...data[0],
-		})}. Don't make mention that you are summarizing a given data in your response. Don't say things like 'According to the data provided'. Send the summary back in few short paragraphs. Only return the summary and nothing else. Also wrap important values with HTML <b> bold tags,
-				make the numbers easy for humans to read with commas and add a lot of emojis to your summary to make it aesthetically pleasing, for example add 💰 to price, 💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath, 📈 to % increase ,📉 to % decrease, reply in ${userLanguage}`,
-	);
 
 	await ctx.replyWithHTML(
 		response,
@@ -627,7 +667,6 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 			]),
 		);
 
-		
 		//.action("cancel", cancelFn);
 		//console.log(ctx.scene.session.promptStore.prompt.trim().length === 0);
 		return ctx.wizard.next();
