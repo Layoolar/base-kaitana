@@ -273,6 +273,7 @@ bot.on("voice", async (ctx) => {
 		);
 	}
 
+
 	try {
 		const res = await pool.exec({ voice, userId });
 

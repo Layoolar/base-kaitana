@@ -914,11 +914,11 @@ export const neww = async () => {
 
 			await ctx.replyWithHTML(
 				{
-					english: `<b>"Getting Token Information...</b>\\n\\n<b>Token Name: </b><i>${coin.name}</i>\\n<b>Token Address: </b> <i>${coin.address}</i>`,
-					french: `<b>"Obtention des informations sur le jeton...</b>\\n\\n<b>Nom du jeton : </b><i>${coin.name}</i>\\n<b>Adresse du jeton : </b> <i>${coin.address}</i>`,
-					spanish: `<b>"Obteniendo información del token...</b>\\n\\n<b>Nombre del token: </b><i>${coin.name}</i>\\n<b>Dirección del token: </b> <i>${coin.address}</i>`,
-					arabic: `<b>"الحصول على معلومات الرمز...</b>\\n\\n<b>اسم الرمز: </b><i>${coin.name}</i>\\n<b>عنوان الرمز: </b> <i>${coin.address}</i>`,
-					chinese: `<b>"获取代币信息...</b>\\n\\n<b>代币名称: </b><i>${coin.name}</i>\\n<b>代币地址: </b> <i>${coin.address}</i>`,
+					english: `<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${coin.name}</i>\n<b>Token Address: </b> <i>${coin.address}</i>`,
+					french: `<b>Obtention des informations sur le jeton...</b>\n\n<b>Nom du jeton : </b><i>${coin.name}</i>\n<b>Adresse du jeton : </b> <i>${coin.address}</i>`,
+					spanish: `<b>Obteniendo información del token...</b>\n\n<b>Nombre del token: </b><i>${coin.name}</i>\n<b>Dirección del token: </b> <i>${coin.address}</i>`,
+					arabic: `<b>الحصول على معلومات الرمز...</b>\n\n<b>اسم الرمز: </b><i>${coin.name}</i>\n<b>عنوان الرمز: </b> <i>${coin.address}</i>`,
+					chinese: `<b>获取代币信息...</b>\n\n<b>代币名称: </b><i>${coin.name}</i>\n<b>代币地址: </b> <i>${coin.address}</i>`,
 				}[userLanguage],
 			);
 
@@ -951,14 +951,25 @@ export const neww = async () => {
 				})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
 			);
 
+			if (response.trim().length === 0) {
+				return ctx.reply(
+					{
+						english: "An error occurred, please try again later.",
+						french: "Une erreur s'est produite, veuillez réessayer plus tard.",
+						spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
+						arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
+						chinese: "发生错误，请稍后再试。",
+					}[userLanguage],
+				);
+			}
 			return await ctx.replyWithHTML(
 				response,
 				Markup.inlineKeyboard([
 					Markup.button.callback(
 						{
-							english: "buy",
-							french: "acheter",
-							spanish: "comprar",
+							english: "Buy",
+							french: "Acheter",
+							spanish: "Comprar",
 							arabic: "شراء",
 							chinese: "买",
 						}[userLanguage],
@@ -966,9 +977,9 @@ export const neww = async () => {
 					),
 					Markup.button.callback(
 						{
-							english: "sell",
-							french: "vendre",
-							spanish: "vender",
+							english: "Sell",
+							french: "Vendre",
+							spanish: "Vender",
 							arabic: "بيع",
 							chinese: "卖",
 						}[userLanguage],
