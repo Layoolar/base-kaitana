@@ -921,7 +921,7 @@ export const neww = async () => {
 					chinese: `<b>获取代币信息...</b>\n\n<b>代币名称: </b><i>${coin.name}</i>\n<b>代币地址: </b> <i>${coin.address}</i>`,
 				}[userLanguage],
 			);
-			console.log(coin);
+			//console.log(coin);
 			const extractedData = {
 				address: coin.address,
 				decimals: coin.decimals,
@@ -930,20 +930,20 @@ export const neww = async () => {
 				supply: coin.supply,
 				mc: coin.mc,
 				numberOfMarkets: coin.numberMarkets,
-				//website: coin.extensions?.website ? `<a href ="${coin.extensions.website}">Website</a>` : null,
+				website: coin.extensions?.website ? `<a href ="${coin.extensions.website}">Website</a>` : null,
 				twitter: coin.extensions?.twitter ? `<a href ="${coin.extensions.twitter}">Twitter</a>` : null,
 				telegram: coin.extensions?.telegram ? `<a href ="${coin.extensions.telegram}">Telegram</a>` : null,
 				discord: coin.extensions?.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
 				liquidity: coin.liquidity,
 				price: coin.price.toFixed(7),
-				priceChange30m: coin.priceChange30mPercent?.toFixed(2) + "%",
-				priceChange1h: coin.priceChange1hPercent?.toFixed(2) + "%",
-				priceChange2h: coin.priceChange2hPercent?.toFixed(2) + "%",
-				priceChange4h: coin.priceChange4hPercent?.toFixed(2) + "%",
-				priceChange6h: coin.priceChange6hPercent?.toFixed(2) + "%",
-				priceChange8h: coin.priceChange8hPercent?.toFixed(2) + "%",
-				priceChange12h: coin.priceChange12hPercent?.toFixed(2) + "%",
-				priceChange24h: coin.priceChange24hPercent?.toFixed(2) + "%",
+				priceChange30m: coin.priceChange30mPercent ? coin.priceChange30mPercent?.toFixed(2) + "%" : "N/A",
+				priceChange1h: coin.priceChange1hPercent ? coin.priceChange1hPercent?.toFixed(2) + "%" : "N/A",
+				priceChange2h: coin.priceChange2hPercent ? coin.priceChange2hPercent?.toFixed(2) + "%" : "N/A",
+				priceChange4h: coin.priceChange4hPercent ? coin.priceChange4hPercent?.toFixed(2) + "%" : "N/A",
+				priceChange6h: coin.priceChange6hPercent ? coin.priceChange6hPercent?.toFixed(2) + "%" : "N/A",
+				priceChange8h: coin.priceChange8hPercent ? coin.priceChange8hPercent?.toFixed(2) + "%" : "N/A",
+				priceChange12h: coin.priceChange8hPercent ? coin.priceChange8hPercent?.toFixed(2) + "%" : "N/A",
+				priceChange24h: coin.priceChange8hPercent ? coin.priceChange8hPercent?.toFixed(2) + "%" : "N/A",
 			};
 			const response = await queryAi(
 				`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
