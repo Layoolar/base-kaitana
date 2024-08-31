@@ -302,7 +302,6 @@ const getText = async (ctx: WizardContext) => {
 					}[userLanguage],
 				);
 			}
-			
 
 			//const sellAmountOption= await queryAi(getsellAM)
 
@@ -342,7 +341,6 @@ const getText = async (ctx: WizardContext) => {
 
 			const prompt4 = `This is data for a token "${JSON.stringify({
 				...selectedToken?.token,
-				
 			})}". use the information provided to answer any question in this "${text}. Reply "This information is unavailable" to any question you can't answer, send your reply in ${userLanguage}"`;
 
 			const detailsCompletionMessage = await conversation(prompt4, ctx.scene.session.promptStore.chatHistory);
@@ -447,11 +445,11 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 	await updateLog(coinAddress, coin);
 	await ctx.replyWithHTML(
 		{
-			english: `<b>"Getting Token Information...</b>\\n\\n<b>Token Name: </b><i>${coin.name}</i>\\n<b>Token Address: </b> <i>${coin.address}</i>`,
-			french: `<b>"Obtention des informations sur le jeton...</b>\\n\\n<b>Nom du jeton : </b><i>${coin.name}</i>\\n<b>Adresse du jeton : </b> <i>${coin.address}</i>`,
-			spanish: `<b>"Obteniendo información del token...</b>\\n\\n<b>Nombre del token: </b><i>${coin.name}</i>\\n<b>Dirección del token: </b> <i>${coin.address}</i>`,
-			arabic: `<b>"الحصول على معلومات الرمز...</b>\\n\\n<b>اسم الرمز: </b><i>${coin.name}</i>\\n<b>عنوان الرمز: </b> <i>${coin.address}</i>`,
-			chinese: `<b>"获取代币信息...</b>\\n\\n<b>代币名称: </b><i>${coin.name}</i>\\n<b>代币地址: </b> <i>${coin.address}</i>`,
+			english: `<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${coin.name}</i>\n<b>Token Address: </b> <i>${coin.address}</i>`,
+			french: `<b>Obtention des informations sur le jeton...</b>\n\n<b>Nom du jeton : </b><i>${coin.name}</i>\n<b>Adresse du jeton : </b> <i>${coin.address}</i>`,
+			spanish: `<b>Obteniendo información del token...</b>\n\n<b>Nombre del token: </b><i>${coin.name}</i>\n<b>Dirección del token: </b> <i>${coin.address}</i>`,
+			arabic: `<b>الحصول على معلومات الرمز...</b>\n\n<b>اسم الرمز: </b><i>${coin.name}</i>\n<b>عنوان الرمز: </b> <i>${coin.address}</i>`,
+			chinese: `<b>获取代币信息...</b>\n\n<b>代币名称: </b><i>${coin.name}</i>\n<b>代币地址: </b> <i>${coin.address}</i>`,
 		}[userLanguage],
 	);
 
