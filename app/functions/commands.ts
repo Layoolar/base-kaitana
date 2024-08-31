@@ -936,14 +936,14 @@ export const neww = async () => {
 				discord: coin.extensions?.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
 				liquidity: coin.liquidity,
 				price: coin.price.toFixed(7),
-				priceChange30m: coin.priceChange30mPercent.toFixed(2) + "%",
-				priceChange1h: coin.priceChange1hPercent.toFixed(2) + "%",
-				priceChange2h: coin.priceChange2hPercent.toFixed(2) + "%",
-				priceChange4h: coin.priceChange4hPercent.toFixed(2) + "%",
-				priceChange6h: coin.priceChange6hPercent.toFixed(2) + "%",
-				priceChange8h: coin.priceChange8hPercent.toFixed(2) + "%",
-				priceChange12h: coin.priceChange12hPercent.toFixed(2) + "%",
-				priceChange24h: coin.priceChange24hPercent.toFixed(2) + "%",
+				priceChange30m: coin.priceChange30mPercent?.toFixed(2) + "%",
+				priceChange1h: coin.priceChange1hPercent?.toFixed(2) + "%",
+				priceChange2h: coin.priceChange2hPercent?.toFixed(2) + "%",
+				priceChange4h: coin.priceChange4hPercent?.toFixed(2) + "%",
+				priceChange6h: coin.priceChange6hPercent?.toFixed(2) + "%",
+				priceChange8h: coin.priceChange8hPercent?.toFixed(2) + "%",
+				priceChange12h: coin.priceChange12hPercent?.toFixed(2) + "%",
+				priceChange24h: coin.priceChange24hPercent?.toFixed(2) + "%",
 			};
 			const response = await queryAi(
 				`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
