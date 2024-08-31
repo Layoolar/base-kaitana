@@ -22,7 +22,7 @@ import type { TelegramUserInterface } from "@app/types/databases.type";
 import configs from "../configs/config";
 import lowdb from "lowdb";
 import lowdbFileSync from "lowdb/adapters/FileSync";
-import { BetData, CoinDataType, Log } from "./commands";
+import { BetData, CoinDataType, Log, Token } from "./commands";
 import fetchData from "./fetchCoins";
 // onst ChartJsImage = require("chartjs-to-image");
 import ChartJsImage from "chartjs-to-image";
@@ -361,12 +361,12 @@ function extractTimeAndPrice(data: { price: number; marketCap: number }[]) {
 }
 
 const getHistoricalDataAndGraph = async (tokenName: string, chain: string) => {
-	const tokens: { data: CoinDataType[] } = await fetchData(chain, null);
+	const tokens: Token[] = (await fetchData(chain)).tokens;
 	let db: string;
 
 	const priceHistoricalData: { time: number; price: number; name: string; marketCap: number }[] = [];
 	// console.log(tokens);
-	const token = tokens.data.filter((item) => item.tokenData.name === tokenName);
+	const token = tokens.filter((item) => item.name === tokenName);
 
 	if (chain === "ethereum") {
 		db = "ethCoinsData";

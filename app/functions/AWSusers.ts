@@ -78,7 +78,6 @@ export const createUser = async (user: MyUser) => {
 				Item: user,
 			};
 			await docClient.put(createParams).promise();
-			console.log("User created successfully:", user);
 		}
 	} catch (err) {
 		console.error("Error checking or creating user. Error JSON:", JSON.stringify(err, null, 2));

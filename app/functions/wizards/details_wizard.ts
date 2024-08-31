@@ -25,11 +25,7 @@ stepHandler.action(/tokendet_(.+)/, async (ctx) => {
 	const coinAddress = ctx.scene.session.detailsStore.address;
 	// Here you can proceed with handling the selected coin, such as fetching its value or any other relevant information
 	let selectedCoin = await fetchCoin(coinAddress, ctx.scene.session.detailsStore.chain);
-	for (let key in selectedCoin) {
-		if (selectedCoin[key] === null) {
-			delete selectedCoin[key];
-		}
-	}
+
 	//console.log(selectedCoin);
 	const message = await queryAi(`send me this data "${JSON.stringify(selectedCoin)}" in a paragraph`);
 
@@ -89,11 +85,7 @@ export const detailstWizard = new Scenes.WizardScene<WizardContext>(
 				const coinAddress = ctx.scene.session.detailsStore.address;
 				// Here you can proceed with handling the selected coin, such as fetching its value or any other relevant information
 				let selectedCoin = await fetchCoin(coinAddress, ctx.scene.session.detailsStore.chain);
-				for (let key in selectedCoin) {
-					if (selectedCoin[key] === null) {
-						delete selectedCoin[key];
-					}
-				}
+
 				//console.log(selectedCoin);
 				const message = await queryAi(`send me this data "${JSON.stringify(selectedCoin)}" in a paragraph`);
 

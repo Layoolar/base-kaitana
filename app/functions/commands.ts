@@ -14,7 +14,7 @@ import * as databases from "./databases";
 import config, { telegram } from "../configs/config";
 import { launchPolling, launchWebhook } from "./launcher";
 import { createSolWallet } from "./solhelper";
-import { fetchCointest, getDexPairDataWithAddress } from "./fetchCoins";
+import { fetchCoin } from "./fetchCoins";
 
 import { queryAi } from "./queryApi";
 import { TokenData, generateTimeAndPriceGraph } from "./timePriceData";
@@ -86,6 +86,24 @@ export interface CoinDataType {
 	};
 }
 
+export type Token = {
+	address: string;
+	decimals: number;
+	liquidity: number;
+	logoURI: string;
+	name: string;
+	symbol: string;
+	volume24hUSD: number;
+	rank: number;
+};
+
+export type Data = {
+	updateUnixTime: number;
+	updateTime: string;
+	tokens: Token[];
+	total: number;
+};
+
 //let selectedCoin: any = null;
 // interface BettingCoinData extends CoinDataType {
 // 	position: number;
@@ -114,7 +132,7 @@ bot.use(async (ctx, next) => {
 			// if (res) return next();
 			let found = false;
 			//	console.log("hi");
-			
+
 			groups.forEach((group) => {
 				if (group === ctx.chat?.id) {
 					found = true;
@@ -125,7 +143,6 @@ bot.use(async (ctx, next) => {
 				await addGroup({ id: ctx.chat.id, currentCalled: null, callHistory: [] });
 				groups.push(ctx.chat.id);
 			}
-			
 		}
 	}
 
@@ -793,7 +810,8 @@ export const neww = async () => {
 			return await ctx.reply("You need to send a contract address with your command");
 		}
 
-		const coin = await fetchCointest();
+		//const coin = await fetchCointest();
+		const coin = (await processToken(ca))?.token;
 
 		if (!coin) {
 			return await ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
@@ -893,9 +911,6 @@ export const neww = async () => {
 				);
 			}
 			await updateLog(ca, coin);
-			
-
-		
 
 			await ctx.replyWithHTML(
 				{
@@ -907,7 +922,6 @@ export const neww = async () => {
 				}[userLanguage],
 			);
 
-			
 			const extractedData = {
 				address: coin.address,
 				decimals: coin.decimals,

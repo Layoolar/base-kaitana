@@ -61,13 +61,13 @@ stepHandler.action(/timeframe_(.+)/, async (ctx) => {
 	const timeframe = ctx.match[1];
 	const data = await fetchOHLCVData(
 		ctx.scene.session.analysisStore.address,
-		"usd",
+
 		timeframe,
 		startTime,
 		endTime,
 		ctx.scene.session.analysisStore.chain,
 	);
-	const analysisPromptCandle = `Below are the candlestick data of a token's prices in diffrent intervals... Identify market trends or indicators and use that data to predict maybe the token will go up or down...
+	const analysisPromptCandle = `Below are the candlestick(OHLCV) data of a token's prices in diffrent intervals... Identify market trends or indicators and use that data to predict maybe the token will go up or down...
 
 
 You must choose out of up or down and give reason, make it conversational

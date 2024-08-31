@@ -1,12 +1,5 @@
 import AWS from "aws-sdk";
 import { Group } from "./databases";
-//import { DynamoDB } from "@aws-sdk/client-dynamodb";
-
-// AWS.config.update({
-// 	region: "eu-west-2", // e.g., 'us-west-2'
-// 	accessKeyId: process.env.DYNAMO_ACCESS_KEY,
-// 	secretAccessKey: process.env.DYNAMO_SECRET_KEY,
-// });
 
 const dynamodb = new AWS.DynamoDB();
 const groupTableName = "Groups";
@@ -26,10 +19,8 @@ export const createGroupTable = async (): Promise<void> => {
 
 	try {
 		const data = await dynamodb.createTable(params).promise();
-		console.log("Table created successfully:", data);
 	} catch (err: any) {
 		if (err.code === "ResourceInUseException") {
-			console.log("Table already exists.");
 		} else {
 			console.error("Unable to create table. Error JSON:", JSON.stringify(err, null, 2));
 		}
@@ -47,12 +38,10 @@ export const addGroup = async (group: Group) => {
 
 	try {
 		await docClient.put(params).promise();
-		console.log("Group added successfully");
 	} catch (err: any) {
 		if (err.code === "ConditionalCheckFailedException") {
-			console.log("Group already exists");
 		} else {
-			console.error("Unable to add group. Error JSON:", JSON.stringify(err, null, 2));
+			console.log("failed to add group");
 		}
 	}
 };
@@ -86,7 +75,7 @@ export const getGroup = async (groupId: number): Promise<Group | null> => {
 
 	try {
 		const data = await docClient.get(params).promise();
-		console.log("Group retrieved successfully:", data.Item);
+
 		return data.Item as Group;
 	} catch (err) {
 		console.error("Unable to get group. Error JSON:", JSON.stringify(err, null, 2));

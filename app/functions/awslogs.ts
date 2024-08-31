@@ -87,7 +87,6 @@ export const updateLog = async (ca: string, cryptoToken: TokenData): Promise<voi
 
 	try {
 		await docClient.update(params).promise();
-		console.log("Log updated successfully");
 	} catch (err) {
 		console.error("Unable to update log. Error JSON:", JSON.stringify(err, null, 2));
 	}
@@ -118,7 +117,7 @@ export const getRecentLogs = async () => {
 			date: item.postedDate,
 			queries: item.queries,
 		}));
-		console.log("Recent logs retrieved successfully:", logs);
+
 		return logs;
 	} catch (err) {
 		console.error("Unable to retrieve recent logs. Error JSON:", JSON.stringify(err, null, 2));
@@ -158,7 +157,6 @@ export const updateTransaction = async (ethSpent: number) => {
 
 	try {
 		const data = await docClient.update(params).promise();
-		console.log("Transaction updated successfully:", data);
 	} catch (err) {
 		console.error("Unable to update transaction. Error JSON:", JSON.stringify(err, null, 2));
 	}

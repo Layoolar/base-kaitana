@@ -7,6 +7,7 @@ import { StaticPool } from "node-worker-threads-pool";
 
 import path from "path";
 import { createUser, getUserLanguage } from "./AWSusers";
+import { processToken } from "./helper";
 
 const filePath = path.join(__dirname, "worker.mjs");
 //onsole.log(pathh);
@@ -50,10 +51,10 @@ bot.action("details", async (ctx) => {
 
 bot.action("bsctrend", async (ctx) => {
 	const chain = "bsc";
-	const coins = (await fetchData(chain, null)).data;
+	const coins = (await fetchData(chain)).tokens;
 	//const cancelButton = Markup.button.callback(`Cancel`, `cancel`);
 	const buttons = coins.map((coin) => [
-		Markup.button.callback(`${coin.tokenData.name} (${coin.tokenData.symbol})`, `coinbsc_${coin.token}`),
+		Markup.button.callback(`${coin.name} (${coin.symbol})`, `coinbsc_${coin.address}`),
 	]);
 	const keyboard = Markup.inlineKeyboard([...buttons]);
 
@@ -61,13 +62,10 @@ bot.action("bsctrend", async (ctx) => {
 
 	bot.action(/coinbsc_(.+)/, async (ctx) => {
 		const coinAddress = ctx.match[1];
-		let selectedCoin = await fetchCoin(coinAddress, coins[0].network);
+		//let selectedCoin = await fetchCoin(coinAddress, coins[0].);
+		let selectedCoin = (await processToken(coinAddress))?.token;
 		if (!selectedCoin) return;
-		for (let key in selectedCoin) {
-			if (selectedCoin[key] === null) {
-				delete selectedCoin[key];
-			}
-		}
+
 		//console.log(selectedCoin);
 		const message = await queryAi(
 			`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify(
@@ -94,10 +92,10 @@ bot.action("bsctrend", async (ctx) => {
 
 bot.action("ethtrend", async (ctx) => {
 	const chain = "ethereum";
-	const coins = (await fetchData(chain, null)).data;
+	const coins = (await fetchData(chain)).tokens;
 	//	const cancelButton = Markup.button.callback(`Cancel`, `cancel`);
 	const buttons = coins.map((coin) => [
-		Markup.button.callback(`${coin.tokenData.name} (${coin.tokenData.symbol})`, `coineth_${coin.token}`),
+		Markup.button.callback(`${coin.name} (${coin.symbol})`, `coineth_${coin.address}`),
 	]);
 	const keyboard = Markup.inlineKeyboard([...buttons]);
 
@@ -108,12 +106,8 @@ bot.action("ethtrend", async (ctx) => {
 
 	bot.action(/coineth_(.+)/, async (ctx) => {
 		const coinAddress = ctx.match[1];
-		let selectedCoin = await fetchCoin(coinAddress, coins[0].network);
-		for (let key in selectedCoin) {
-			if (selectedCoin[key] === null) {
-				delete selectedCoin[key];
-			}
-		}
+		let selectedCoin = (await processToken(coinAddress))?.token;
+		if (!selectedCoin) return;
 		//	console.log(selectedCoin);
 		const message = await queryAi(
 			`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify(
@@ -134,10 +128,10 @@ bot.action("ethtrend", async (ctx) => {
 
 bot.action("soltrend", async (ctx) => {
 	const chain = "solana";
-	const coins = (await fetchData(chain, null)).data;
+	const coins = (await fetchData(chain)).tokens;
 	//	const cancelButton = Markup.button.callback(`Cancel`, `cancel`);
 	const buttons = coins.map((coin) => [
-		Markup.button.callback(`${coin.tokenData.name} (${coin.tokenData.symbol})`, `coinsol_${coin.token}`),
+		Markup.button.callback(`${coin.name} (${coin.symbol})`, `coinsol_${coin.address}`),
 	]);
 	const keyboard = Markup.inlineKeyboard([...buttons]);
 
@@ -148,14 +142,10 @@ bot.action("soltrend", async (ctx) => {
 
 	bot.action(/coinsol_(.+)/, async (ctx) => {
 		const coinAddress = ctx.match[1];
-		//let selectedCoin2 = await fetchCoin(coinAddress, coins[0].network);
-		const selectedCoin = coins.filter((coin) => coin.token === coinAddress);
 
-		for (let key in selectedCoin) {
-			if (selectedCoin[key] === null) {
-				delete selectedCoin[key];
-			}
-		}
+		let selectedCoin = (await processToken(coinAddress))?.token;
+		if (!selectedCoin) return;
+
 		//console.log(selectedCoin);
 		const message = await queryAi(
 			`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify(

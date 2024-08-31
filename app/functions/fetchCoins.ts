@@ -1,7 +1,8 @@
 import { Context } from "telegraf";
-import { CoinDataType } from "./commands";
+import { CoinDataType, Data } from "./commands";
 import axios, { AxiosResponse } from "axios";
 import { testdata } from "./data";
+import { TokenData } from "./timePriceData";
 
 interface DexScreenerPair {
 	chain: string;
@@ -66,66 +67,115 @@ export async function fetchOHLCVData(
 
 // Example usage:
 
-const fetchData = async (network: string, bet: "bet" | null): Promise<{ data: CoinDataType[] }> => {
-	const url = `https://multichain-api.birdeye.so/${network}/trending/token?u=da39a3ee5e6b4b0d3255bfef95601890afd80709`;
+// const fetchData = async (network: string): Promise<{ data: CoinDataType[] }> => {
+// 	const url = `https://multichain-api.birdeye.so/${network}/trending/token?u=da39a3ee5e6b4b0d3255bfef95601890afd80709`;
 
-	const headers = {
-		"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0",
-		//Accept: "application/json, text/plain, /",
-		"Accept-Language": "en-US,en;q=0.5",
-		token: "undefined",
-		"agent-id": "f28a43fd-cb0e-4dad-a4eb-b28e8f3805b5",
-		Origin: "https://birdeye.so",
-		Referer: "https://birdeye.so/",
-		"Sec-Fetch-Dest": "empty",
-		"Sec-Fetch-Mode": "cors",
-	};
+// 	const headers = {
+// 		"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0",
+// 		//Accept: "application/json, text/plain, /",
+// 		"Accept-Language": "en-US,en;q=0.5",
+// 		token: "undefined",
+// 		"agent-id": "f28a43fd-cb0e-4dad-a4eb-b28e8f3805b5",
+// 		Origin: "https://birdeye.so",
+// 		Referer: "https://birdeye.so/",
+// 		"Sec-Fetch-Dest": "empty",
+// 		"Sec-Fetch-Mode": "cors",
+// 	};
 
+// 	try {
+// 		const response: AxiosResponse<{ data: CoinDataType[] }> = await axios.get(url, { headers });
+// 		//console.log(response);
+// 		let result = response.data;
+
+// 		return result;
+// 	} catch (error) {
+// 		console.error("Error:", error);
+// 		throw error; // Rethrow the error for the caller to handle
+// 	}
+// };
+
+const fetchData = async (chain: string) => {
 	try {
-		const response: AxiosResponse<{ data: CoinDataType[] }> = await axios.get(url, { headers });
-		//console.log(response);
-		let result = response.data;
-
-		return result;
+		const response = await axios.get("https://public-api.birdeye.so/defi/token_trending", {
+			params: {
+				limit: 10,
+			},
+			headers: {
+				"X-API-KEY": process.env.BIRDEYE_KEY,
+				"x-chain": chain,
+			},
+		});
+		return response.data.data as Data;
 	} catch (error) {
-		console.error("Error:", error);
-		throw error; // Rethrow the error for the caller to handle
+		console.error("Error fetching trending tokens:", error);
+		throw error;
 	}
 };
 
-export const fetchCointest = async () => testdata.data;
+// Usage example
+// const apiKey = "YOUR_API_KEY";
+// const chain = "solana";
+
+// getTrendingTokens("solana")
+// 	.then((data) => console.log(data))
+// 	.catch((error) => console.error(error));
+
+//export const fetchCointest = async () => testdata.data;
+
 const fetchCoin = async (address: string | null | undefined, network: string | undefined) => {
 	try {
-		const response = await axios.get(`https://multichain-api.birdeye.so/${network}/overview/token`, {
+		const response = await axios.get("https://public-api.birdeye.so/defi/token_overview", {
 			params: {
 				address: address,
 			},
 			headers: {
-				"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0",
-				Accept: "application/json, text/plain, /",
-				"Accept-Language": "en-US,en;q=0.5",
-				"Accept-Encoding": "gzip, deflate, br",
-				"agent-id": "f28a43fd-ca0e-4dad-a4ea-b28f8f3805b5",
-				"cf-be":
-					"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MDI5ODk5MTgsImV4cCI6MTcwMjk5MDIxOH0.jowdRorsn5TuuYt0B_SwG36jwlmzKLtsJnav5MZ-iAY",
-				Origin: "https://birdeye.so",
-				Connection: "keep-alive",
-				Referer: "https://birdeye.so/",
-				"Sec-Fetch-Dest": "empty",
-				"Sec-Fetch-Mode": "cors",
-				"Sec-Fetch-Site": "same-site",
-				"If-None-Match": 'W/"22c8-TcNjeQoXG+lDekngUVup8/479dc"',
-				TE: "trailers",
+				accept: "application/json",
+				"x-chain": network,
+				"X-API-KEY": process.env.BIRDEYE_KEY,
 			},
 		});
-
-		return response.data.data;
-	} catch (error: any) {
-		//console.log("Error fetching coin:", error);
-		throw new Error(error.code);
-		//return null;
+		//console.log(response.data.data);
+		return response.data.data as TokenData;
+	} catch (error) {
+		console.error("Error:", error);
 	}
 };
+
+// Example usage:
+//getTokenOverview("So11111111111111111111111111111111111111112", "solana");
+
+// const fetchCoin = async (address: string | null | undefined, network: string | undefined) => {
+// 	try {
+// 		const response = await axios.get(`https://multichain-api.birdeye.so/${network}/overview/token`, {
+// 			params: {
+// 				address: address,
+// 			},
+// 			headers: {
+// 				"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/111.0",
+// 				Accept: "application/json, text/plain, /",
+// 				"Accept-Language": "en-US,en;q=0.5",
+// 				"Accept-Encoding": "gzip, deflate, br",
+// 				"agent-id": "f28a43fd-ca0e-4dad-a4ea-b28f8f3805b5",
+// 				"cf-be":
+// 					"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpYXQiOjE3MDI5ODk5MTgsImV4cCI6MTcwMjk5MDIxOH0.jowdRorsn5TuuYt0B_SwG36jwlmzKLtsJnav5MZ-iAY",
+// 				Origin: "https://birdeye.so",
+// 				Connection: "keep-alive",
+// 				Referer: "https://birdeye.so/",
+// 				"Sec-Fetch-Dest": "empty",
+// 				"Sec-Fetch-Mode": "cors",
+// 				"Sec-Fetch-Site": "same-site",
+// 				"If-None-Match": 'W/"22c8-TcNjeQoXG+lDekngUVup8/479dc"',
+// 				TE: "trailers",
+// 			},
+// 		});
+
+// 		return response.data.data as TokenData;
+// 	} catch (error: any) {
+// 		//console.log("Error fetching coin:", error);
+// 		throw new Error(error.code);
+// 		//return null;
+// 	}
+// };
 
 const formatCoinsMessage = (result: { data: CoinDataType[] }, bet: "bet" | null): string => {
 	const coinsMessage: string[] = [];
@@ -144,14 +194,14 @@ const formatCoinsMessage = (result: { data: CoinDataType[] }, bet: "bet" | null)
 };
 
 const sendAllChainData = async () => {
-	const ethdata = await fetchData("solana", null);
+	const ethdata = await fetchData("solana");
 	//JSON.stringify(ethdata);
 	//ctx.reply(formatCoinsMessage(ethdata, null));
 
-	const soldata = await fetchData("ethereum", null);
+	const soldata = await fetchData("ethereum");
 	//ctx.reply(formatCoinsMessage(soldata, null));
 
-	const bnbdata = await fetchData("bsc", null);
+	const bnbdata = await fetchData("bsc");
 	//ctx.reply(formatCoinsMessage(bnbdata, null));
 	return { ethdata, soldata, bnbdata };
 };
