@@ -921,7 +921,7 @@ export const neww = async () => {
 					chinese: `<b>获取代币信息...</b>\n\n<b>代币名称: </b><i>${coin.name}</i>\n<b>代币地址: </b> <i>${coin.address}</i>`,
 				}[userLanguage],
 			);
-
+			console.log(coin);
 			const extractedData = {
 				address: coin.address,
 				decimals: coin.decimals,
