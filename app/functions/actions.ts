@@ -62,21 +62,43 @@ bot.action("bsctrend", async (ctx) => {
 
 	bot.action(/coinbsc_(.+)/, async (ctx) => {
 		const coinAddress = ctx.match[1];
-		//let selectedCoin = await fetchCoin(coinAddress, coins[0].);
-		let selectedCoin = (await processToken(coinAddress))?.token;
-		if (!selectedCoin) return;
 
-		//console.log(selectedCoin);
-		const message = await queryAi(
-			`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify(
-				{
-					...selectedCoin,
-				},
-			)}. Don't make mention that you are summarizing a given data in your response. Don't say things like 'According to the data provided'. Send the summary back in few short paragraphs. Only return the summary and nothing else. Also wrap important values with HTML <b> bold tags,
-				make the numbers easy for humans to read with commas and add a lot of emojis to your summary to make it aesthetically pleasing, for example add 💰 to price, 💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath, 📈 to % increase ,📉 to % decrease`,
+		let coin = (await processToken(coinAddress))?.token;
+		if (!coin) return;
+
+		const extractedData = {
+			address: coin.address,
+			decimals: coin.decimals,
+			symbol: coin.symbol,
+			name: coin.name,
+			supply: coin.supply,
+			mc: coin.mc,
+			numberOfMarkets: coin.numberMarkets,
+			website: coin.extensions.website ? `<a href ="${coin.extensions.website}">Website</a>` : null,
+			twitter: coin.extensions.twitter ? `<a href ="${coin.extensions.twitter}">Twitter</a>` : null,
+			telegram: coin.extensions.telegram ? `<a href ="${coin.extensions.telegram}">Telegram</a>` : null,
+			discord: coin.extensions.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
+			liquidity: coin.liquidity,
+			price: coin.price.toFixed(7),
+			priceChange30m: coin.priceChange30mPercent.toFixed(2) + "%",
+			priceChange1h: coin.priceChange1hPercent.toFixed(2) + "%",
+			priceChange2h: coin.priceChange2hPercent.toFixed(2) + "%",
+			priceChange4h: coin.priceChange4hPercent.toFixed(2) + "%",
+			priceChange6h: coin.priceChange6hPercent.toFixed(2) + "%",
+			priceChange8h: coin.priceChange8hPercent.toFixed(2) + "%",
+			priceChange12h: coin.priceChange12hPercent.toFixed(2) + "%",
+			priceChange24h: coin.priceChange24hPercent.toFixed(2) + "%",
+		};
+
+		const response = await queryAi(
+			`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
+				...extractedData,
+			})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
 		);
+
+		//ctx.telegram.answer_callback_query;
 		ctx.answerCbQuery();
-		return await ctx.replyWithHTML(message);
+		return await ctx.replyWithHTML(response);
 	});
 
 	// bot.action("cancel", async (ctx) => {
@@ -106,19 +128,42 @@ bot.action("ethtrend", async (ctx) => {
 
 	bot.action(/coineth_(.+)/, async (ctx) => {
 		const coinAddress = ctx.match[1];
-		let selectedCoin = (await processToken(coinAddress))?.token;
-		if (!selectedCoin) return;
-		//	console.log(selectedCoin);
-		const message = await queryAi(
-			`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify(
-				{
-					...selectedCoin,
-				},
-			)}. Don't make mention that you are summarizing a given data in your response. Don't say things like 'According to the data provided'. Send the summary back in few short paragraphs. Only return the summary and nothing else. Also wrap important values with HTML <b> bold tags,
-				make the numbers easy for humans to read with commas and add a lot of emojis to your summary to make it aesthetically pleasing, for example add 💰 to price, 💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath, 📈 to % increase ,📉 to % decrease`,
+		let coin = (await processToken(coinAddress))?.token;
+		if (!coin) return;
+
+		const extractedData = {
+			address: coin.address,
+			decimals: coin.decimals,
+			symbol: coin.symbol,
+			name: coin.name,
+			supply: coin.supply,
+			mc: coin.mc,
+			numberOfMarkets: coin.numberMarkets,
+			website: coin.extensions.website ? `<a href ="${coin.extensions.website}">Website</a>` : null,
+			twitter: coin.extensions.twitter ? `<a href ="${coin.extensions.twitter}">Twitter</a>` : null,
+			telegram: coin.extensions.telegram ? `<a href ="${coin.extensions.telegram}">Telegram</a>` : null,
+			discord: coin.extensions.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
+			liquidity: coin.liquidity,
+			price: coin.price.toFixed(7),
+			priceChange30m: coin.priceChange30mPercent.toFixed(2) + "%",
+			priceChange1h: coin.priceChange1hPercent.toFixed(2) + "%",
+			priceChange2h: coin.priceChange2hPercent.toFixed(2) + "%",
+			priceChange4h: coin.priceChange4hPercent.toFixed(2) + "%",
+			priceChange6h: coin.priceChange6hPercent.toFixed(2) + "%",
+			priceChange8h: coin.priceChange8hPercent.toFixed(2) + "%",
+			priceChange12h: coin.priceChange12hPercent.toFixed(2) + "%",
+			priceChange24h: coin.priceChange24hPercent.toFixed(2) + "%",
+		};
+
+		const response = await queryAi(
+			`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
+				...extractedData,
+			})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
 		);
+
+		//ctx.telegram.answer_callback_query;
 		ctx.answerCbQuery();
-		return await ctx.replyWithHTML(message);
+		return await ctx.replyWithHTML(response);
 	});
 
 	// bot.action("cancel", async (ctx) => {
@@ -143,21 +188,42 @@ bot.action("soltrend", async (ctx) => {
 	bot.action(/coinsol_(.+)/, async (ctx) => {
 		const coinAddress = ctx.match[1];
 
-		let selectedCoin = (await processToken(coinAddress))?.token;
-		if (!selectedCoin) return;
+		let coin = (await processToken(coinAddress))?.token;
+		if (!coin) return;
 
-		//console.log(selectedCoin);
-		const message = await queryAi(
-			`This is a data response a token. Give a summary of the important information provided here ${JSON.stringify(
-				{
-					...selectedCoin,
-				},
-			)}. Don't make mention that you are summarizing a given data in your response. Don't say things like 'According to the data provided'. Send the summary back in few short paragraphs. Only return the summary and nothing else. Also wrap important values with HTML <b> bold tags,
-				make the numbers easy for humans to read with commas and add a lot of emojis to your summary to make it aesthetically pleasing, for example add 💰 to price, 💎 to mcap,💦 to liquidity,📊 to volume,⛰to Ath, 📈 to % increase ,📉 to % decrease`,
+		const extractedData = {
+			address: coin.address,
+			decimals: coin.decimals,
+			symbol: coin.symbol,
+			name: coin.name,
+			supply: coin.supply,
+			mc: coin.mc,
+			numberOfMarkets: coin.numberMarkets,
+			website: coin.extensions.website ? `<a href ="${coin.extensions.website}">Website</a>` : null,
+			twitter: coin.extensions.twitter ? `<a href ="${coin.extensions.twitter}">Twitter</a>` : null,
+			telegram: coin.extensions.telegram ? `<a href ="${coin.extensions.telegram}">Telegram</a>` : null,
+			discord: coin.extensions.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
+			liquidity: coin.liquidity,
+			price: coin.price.toFixed(7),
+			priceChange30m: coin.priceChange30mPercent.toFixed(2) + "%",
+			priceChange1h: coin.priceChange1hPercent.toFixed(2) + "%",
+			priceChange2h: coin.priceChange2hPercent.toFixed(2) + "%",
+			priceChange4h: coin.priceChange4hPercent.toFixed(2) + "%",
+			priceChange6h: coin.priceChange6hPercent.toFixed(2) + "%",
+			priceChange8h: coin.priceChange8hPercent.toFixed(2) + "%",
+			priceChange12h: coin.priceChange12hPercent.toFixed(2) + "%",
+			priceChange24h: coin.priceChange24hPercent.toFixed(2) + "%",
+		};
+
+		const response = await queryAi(
+			`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
+				...extractedData,
+			})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
 		);
+
 		//ctx.telegram.answer_callback_query;
 		ctx.answerCbQuery();
-		return await ctx.replyWithHTML(message);
+		return await ctx.replyWithHTML(response);
 	});
 
 	// bot.action("cancel", async (ctx) => {
