@@ -274,26 +274,21 @@ bot.catch((error: any) => {
 		console.error("Global error handler:", error);
 	}
 });
+
+// caption: `Welcome to <b>Parrot AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>🌐 Website: </b>https://parrotbot.lol/\n<b>📖Manual: </b>https://docs.parrotbot.io\n<b>📣 Announcements: </b>https://t.me/parrotannouncements\n<b>💬 Telegram: </b> https://t.me/Parrotbot_Portal`,
+
 const commands = {
 	english: {
-		"/start": "Send this command privately to the bot to register and get started",
-		"/call":
-			"<b>(CAN ONLY BE USED IN GROUPS)</b> This command is used to query a token and put it in focus for getting the details or trading.\nUsage Format: /call {contract address}",
-		"/ask": "<b>(CAN ONLY BE USED IN GROUPS)</b> This command is used to ask questions about the called token and <b>trade</b> the called token, when you indicate buy or sell in your prompt.\nUsage Format: /ask {your question}",
-		"/schedule":
-			"This command is used to schedule trading.\nUsage format: /schedule i want to buy/sell {contract address} in one hour",
-		"/import":
-			"This command is used privately to import tokens into your wallet.\nUsage format: /import {contract address}",
-		"/delete":
-			"This command is used privately to delete tokens from your wallet.\nUsage format: /delete {contract address}",
-		"/buy": "This command can be used to buy tokens.\nUsage format: /buy {your prompt to buy}",
-		"/sell": "This command can be used to sell tokens.\nUsage format: /sell {your prompt to sell}",
-		"/wallet": "This command can be used privately to manage your wallet.\nUsage format: /wallet",
-		"/info": "Get information about a token privately.\nUsage format: /info {contract address}",
-		"/analysis": "Analyse a token privately.\nUsage format: /analysis",
-		"/trending": "Check trending tokens on Eth, Bsc and Sol. \nUsage format: /trending",
-		"Voice Commands":
-			"Send a voice note to the bot (max 10 seconds) to request a token or ask further questions about the selected token. You can re-record if the audio isn't what you wanted. The bot will reply with tokens found based on your voice recording. \nUsage: Send a voice note to the bot privately.",
+		"🟢 /buy": "Buy tokens",
+		"🔴 /sell": "Sell tokens",
+		"👝 /wallet": "Manage your wallet",
+		"ℹ️ /info": "Get information about a token",
+		"📊 /ta": "Analyse a token",
+		"🕥 /schedule": "Schedule trade.",
+		"🛳 /import": "Import tokens into your wallet",
+		"❌ /delete": "Delete tokens from your wallet",
+		"📈 /trending": "Check trending tokens",
+		"💬 Voice": "Send a voice note to the bot (max 10 seconds), spelling out the token name or ticker",
 	},
 	french: {
 		"/start": "Envoyez cette commande en privé au bot pour vous inscrire et commencer",
@@ -1959,7 +1954,7 @@ const start = async () => {
 				await ctx.replyWithPhoto(
 					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
 					{
-						caption: `Welcome to <b>Parrot AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /analysis</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>🌐 Website: </b>https://parrotbot.lol/\n<b>📖Manual: </b>https://docs.parrotbot.io\n<b>📣 Announcements: </b>https://t.me/parrotannouncements\n<b>💬 Telegram: </b> https://t.me/Parrotbot_Portal`,
+						caption: `Welcome to <b>Parrot AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>🌐 Website: </b>https://parrotbot.lol/\n<b>📖Manual: </b>https://docs.parrotbot.io\n<b>📣 Announcements: </b>https://t.me/parrotannouncements\n<b>💬 Telegram: </b> https://t.me/Parrotbot_Portal`,
 						parse_mode: "HTML",
 					},
 				);
