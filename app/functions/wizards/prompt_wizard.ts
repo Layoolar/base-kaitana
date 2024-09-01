@@ -4,7 +4,7 @@ import { queryAi } from "../queryApi";
 import { getBuyPrompt, getCaPrompt, getamountprompt, getSellPrompt } from "../prompt";
 import { fetchCoin, getDexPairDataWithAddress, searchDexPairs, sendAllChainData } from "../fetchCoins";
 import { TokenData } from "../timePriceData";
-//import { json } from "express";
+// import { json } from "express";
 import { conversation } from "../queryApi";
 import { isEmpty, processToken, translate } from "../helper";
 
@@ -28,11 +28,13 @@ const stepHandler1 = new Composer<WizardContext>();
 const stepHandler2 = new Composer<WizardContext>();
 
 const getVoice = async (ctx: WizardContext) => {
-	//@ts-ignore
+	// @ts-ignore
 	const voice = ctx.message.voice;
 	const userId = ctx.from?.id;
 
-	if (!userId) return;
+	if (!userId) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(userId);
 	if (voice.duration > 10) {
 		return ctx.reply(
@@ -69,14 +71,14 @@ const getVoice = async (ctx: WizardContext) => {
 			}[userLanguage],
 		);
 
-		//console.log(text);
+		// console.log(text);
 
 		if (output.toLowerCase() !== "exit") {
-			//console.log("here");
+			// console.log("here");
 
 			const coinAddress = ctx.scene.session.promptStore.address;
 			// Here you can proceed with handling the selected coin, such as fetching its value or any other relevant information
-			let selectedToken = await processToken(coinAddress);
+			const selectedToken = await processToken(coinAddress);
 			if (!selectedToken) {
 				ctx.reply(
 					{
@@ -152,7 +154,7 @@ const getVoice = async (ctx: WizardContext) => {
 					]),
 				);
 
-				//console.log(completionMessage);
+				// console.log(completionMessage);
 
 				ctx.scene.session.promptStore.chatHistory.push(["user", prompt4]);
 				ctx.scene.session.promptStore.chatHistory.push(["assistant", detailsCompletionMessage]);
@@ -161,16 +163,17 @@ const getVoice = async (ctx: WizardContext) => {
 			}
 		}
 		const exitMessage = await conversation("exit", ctx.scene.session.promptStore.chatHistory);
-		if (exitMessage)
+		if (exitMessage) {
 			await ctx.replyWithHTML(
 				userLanguage === "english" ? exitMessage : await translate(exitMessage, userLanguage),
 			);
+		}
 
 		await ctx.scene.leave();
 
 		//	return await ctx.scene.enter("prompt-wizard", { prompt: output });
 	} catch (error) {
-		//console.log(error);
+		// console.log(error);
 		ctx.reply(
 			{
 				english: "An error occurred, please try again later.",
@@ -184,11 +187,11 @@ const getVoice = async (ctx: WizardContext) => {
 		await ctx.scene.leave();
 		return;
 	}
-	//ctx.wizard.selectStep(1);
+	// ctx.wizard.selectStep(1);
 };
-//start pn group will break bot
-//sending auido without selecting language;
-//add regx for leavinf only worhs
+// start pn group will break bot
+// sending auido without selecting language;
+// add regx for leavinf only worhs
 
 const cancelFn = async (ctx: WizardContext) => {
 	const userLanguage = ctx.scene.session.promptStore.language;
@@ -196,17 +199,20 @@ const cancelFn = async (ctx: WizardContext) => {
 		return;
 	}
 	const exitMessage = await conversation("exit", ctx.scene.session.promptStore.chatHistory);
-	if (exitMessage)
+	if (exitMessage) {
 		await ctx.replyWithHTML(userLanguage === "english" ? exitMessage : await translate(exitMessage, userLanguage));
+	}
 
 	return await ctx.scene.leave();
 };
 const audiobuyFn = async (ctx: WizardContext) => {
-	//@ts-ignore
+	// @ts-ignore
 	const coinAddress = ctx.match[1];
 	const token = await processToken(coinAddress);
 	const userId = ctx.from?.id;
-	if (!userId) return;
+	if (!userId) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(userId);
 	if (!token) {
 		ctx.reply(
@@ -227,20 +233,22 @@ const audiobuyFn = async (ctx: WizardContext) => {
 		token: token,
 		time: null,
 	};
-	//console.log(coinAddress);
+	// console.log(coinAddress);
 	ctx.scene.leave();
-	//return ctx.scene.enter("buy-wizard", initial);
+	// return ctx.scene.enter("buy-wizard", initial);
 	return await ctx.scene.enter("buy-wizard", initial);
-	//return;
+	// return;
 };
 
 const audiosellFn = async (ctx: WizardContext) => {
-	//@ts-ignore
+	// @ts-ignore
 	const coinAddress = ctx.match[1];
 	const token = await processToken(coinAddress);
 	const userId = ctx.from?.id;
 
-	if (!userId) return;
+	if (!userId) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(userId);
 	if (!token) {
 		await ctx.reply(
@@ -267,15 +275,17 @@ const audiosellFn = async (ctx: WizardContext) => {
 };
 const getText = async (ctx: WizardContext) => {
 	if (ctx.message && "text" in ctx.message) {
-		//console.log(ctx.scene.session.promptStore.address);
+		// console.log(ctx.scene.session.promptStore.address);
 		const { text } = ctx.message;
-		//console.log(text);
+		// console.log(text);
 		const userId = ctx.from?.id;
-		if (!userId) return;
+		if (!userId) {
+			return;
+		}
 
 		const userLanguage = await getUserLanguage(userId);
 		if (text.toLowerCase() !== "exit") {
-			//console.log("here");
+			// console.log("here");
 			const buyOption = await queryAi(getBuyPrompt(text));
 			const sellOption = await queryAi(getSellPrompt(text));
 			const buyAmountOption = await queryAi(getamountprompt(text));
@@ -303,11 +313,11 @@ const getText = async (ctx: WizardContext) => {
 				);
 			}
 
-			//const sellAmountOption= await queryAi(getsellAM)
+			// const sellAmountOption= await queryAi(getsellAM)
 
 			const coinAddress = ctx.scene.session.promptStore.address;
 			// Here you can proceed with handling the selected coin, such as fetching its value or any other relevant information
-			let selectedToken = await processToken(coinAddress);
+			const selectedToken = await processToken(coinAddress);
 			if (!selectedToken) {
 				await ctx.reply(
 					{
@@ -382,7 +392,7 @@ const getText = async (ctx: WizardContext) => {
 					]),
 				);
 
-				//console.log(completionMessage);
+				// console.log(completionMessage);
 
 				ctx.scene.session.promptStore.chatHistory.push(["user", prompt4]);
 				ctx.scene.session.promptStore.chatHistory.push(["assistant", detailsCompletionMessage]);
@@ -391,7 +401,9 @@ const getText = async (ctx: WizardContext) => {
 			}
 		}
 		const exitMessage = await conversation("exit", ctx.scene.session.promptStore.chatHistory);
-		if (exitMessage) await ctx.replyWithHTML(exitMessage);
+		if (exitMessage) {
+			await ctx.replyWithHTML(exitMessage);
+		}
 		await ctx.scene.leave();
 	}
 };
@@ -410,12 +422,14 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 	ctx.scene.session.promptStore.address = coinAddress;
 
 	const res = await processToken(coinAddress);
-	//console.log(coinAddress);
+	// console.log(coinAddress);
 	const coin = res?.token;
 
 	const userId = ctx.from?.id;
 
-	if (!userId) return;
+	if (!userId) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(userId);
 	if (!coin) {
 		await ctx.reply(
@@ -445,7 +459,7 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 	await updateLog(coinAddress, coin);
 	await ctx.replyWithHTML(
 		{
-			english: `<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${coin.name}</i>\n<b>Token Address: </b> <i>${coin.address}</i>`,
+			english: `<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin.name}</i></b>\n<b>Token Address: </b> <code><i>${coin.address}</i></code>`,
 			french: `<b>Obtention des informations sur le jeton...</b>\n\n<b>Nom du jeton : </b><i>${coin.name}</i>\n<b>Adresse du jeton : </b> <i>${coin.address}</i>`,
 			spanish: `<b>Obteniendo información del token...</b>\n\n<b>Nombre del token: </b><i>${coin.name}</i>\n<b>Dirección del token: </b> <i>${coin.address}</i>`,
 			arabic: `<b>الحصول على معلومات الرمز...</b>\n\n<b>اسم الرمز: </b><i>${coin.name}</i>\n<b>عنوان الرمز: </b> <i>${coin.address}</i>`,
@@ -460,7 +474,7 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 		honeyPotRes = await isHoneypot(coin.address);
 	}
 
-	//console.log(honeyPotRes);
+	// console.log(honeyPotRes);
 
 	const extractedData = {
 		address: coin.address,
@@ -476,14 +490,14 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 		discord: coin.extensions.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
 		liquidity: coin.liquidity,
 		price: coin.price.toFixed(7),
-		priceChange30m: coin.priceChange30mPercent.toFixed(2) + "%",
-		priceChange1h: coin.priceChange1hPercent.toFixed(2) + "%",
-		priceChange2h: coin.priceChange2hPercent.toFixed(2) + "%",
-		priceChange4h: coin.priceChange4hPercent.toFixed(2) + "%",
-		priceChange6h: coin.priceChange6hPercent.toFixed(2) + "%",
-		priceChange8h: coin.priceChange8hPercent.toFixed(2) + "%",
-		priceChange12h: coin.priceChange12hPercent.toFixed(2) + "%",
-		priceChange24h: coin.priceChange24hPercent.toFixed(2) + "%",
+		priceChange30m: `${coin.priceChange30mPercent.toFixed(2)}%`,
+		priceChange1h: `${coin.priceChange1hPercent.toFixed(2)}%`,
+		priceChange2h: `${coin.priceChange2hPercent.toFixed(2)}%`,
+		priceChange4h: `${coin.priceChange4hPercent.toFixed(2)}%`,
+		priceChange6h: `${coin.priceChange6hPercent.toFixed(2)}%`,
+		priceChange8h: `${coin.priceChange8hPercent.toFixed(2)}%`,
+		priceChange12h: `${coin.priceChange12hPercent.toFixed(2)}%`,
+		priceChange24h: `${coin.priceChange24hPercent.toFixed(2)}%`,
 	};
 	const response = await queryAi(
 		`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
@@ -538,13 +552,14 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 			),
 		]),
 	);
-	//console.log(honeyPotRes);
-	if (honeyPotRes)
+	// console.log(honeyPotRes);
+	if (honeyPotRes) {
 		await ctx.replyWithHTML(
 			`<b>🛡Rug Check</b>\n\n<b>Risk Level:</b> ${honeyPotRes.summary.risk}\n<b>isHoneyPot:</b> ${
 				honeyPotRes.honeypot.isHoneypot ? "Yes ❌" : "No ✅"
 			}\n<b>Flags:</b> ${honeyPotRes.flags.length === 0 ? "None" : honeyPotRes.flags.join(", ")}`,
 		);
+	}
 
 	ctx.wizard.next();
 });
@@ -554,16 +569,18 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 	"prompt-wizard",
 	async (ctx) => {
 		ctx.scene.session.promptStore = JSON.parse(JSON.stringify(initialData));
-		//console.log("heretoo");
+		// console.log("heretoo");
 		const userId = ctx.from?.id;
-		if (!userId) return;
-		//@ts-ignore
+		if (!userId) {
+			return;
+		}
+		// @ts-ignore
 		ctx.scene.session.promptStore.prompt = ctx.scene.state.prompt.trim();
 
 		ctx.scene.session.promptStore.language = await getUserLanguage(userId);
 		const userLanguage = await getUserLanguage(userId);
-		//console.log(ctx.scene.session.promptStore.prompt);
-		//const userLanguage = ctx.scene.session.promptStore.language;
+		// console.log(ctx.scene.session.promptStore.prompt);
+		// const userLanguage = ctx.scene.session.promptStore.language;
 		if (ctx.scene.session.promptStore.prompt.length === 0) {
 			ctx.reply(
 				{
@@ -580,10 +597,10 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 
 		const results = await searchDexPairs(ctx.scene.session.promptStore.prompt);
 		if (!results || results?.length === 0) {
-			//ctx.reply("An error occurred, Please try again");
+			// ctx.reply("An error occurred, Please try again");
 			return ctx.scene.leave();
 		}
-		//console.log("here", results);
+		// console.log("here", results);
 		//	ctx.replyWithHTML(`<b>Your Query:</b> ${ctx.scene.session.promptStore.prompt}`);
 		for (let index = 0; index < (results.length > 4 ? 4 : results.length); index++) {
 			const result = results[index];
@@ -665,8 +682,8 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 			]),
 		);
 
-		//.action("cancel", cancelFn);
-		//console.log(ctx.scene.session.promptStore.prompt.trim().length === 0);
+		// .action("cancel", cancelFn);
+		// console.log(ctx.scene.session.promptStore.prompt.trim().length === 0);
 		return ctx.wizard.next();
 	},
 	stepHandler1,

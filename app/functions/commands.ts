@@ -842,7 +842,7 @@ export const neww = async () => {
 			}
 
 			await ctx.replyWithHTML(
-				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${coin.name}</i>\n<b>Token Address: </b> <i>${coin.address}</i>`,
+				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin.name}</i></b>\n<b>Token Address: </b> <code><i>${coin.address}</i></code>`,
 			);
 
 			const extractedData = {
@@ -880,6 +880,19 @@ export const neww = async () => {
 			return await ctx.reply("I couldn't find the token, please check the contract address and try again.");
 		}
 	});
+
+	function formatNumber(num: number) {
+		if (num < 1000) {
+			return num.toString();
+		}
+
+		const suffixes = ["", "k", "m", "b", "t"];
+		const suffixIndex = Math.floor(Math.log10(num) / 3);
+
+		const formattedNum = (num / Math.pow(1000, suffixIndex)).toFixed(1).replace(/\.0$/, "");
+
+		return `${formattedNum}${suffixes[suffixIndex]}`;
+	}
 
 	bot.command("info", checkUserExistence, checkGroup, async (ctx) => {
 		const commandArgs = ctx.message.text.split(" ").slice(1);
@@ -930,14 +943,31 @@ export const neww = async () => {
 
 			await ctx.replyWithHTML(
 				{
-					english: `<b>Getting Token Information...</b>\n\n<b>Token Name: </b><i>${coin.name}</i>\n<b>Token Address: </b> <i>${coin.address}</i>`,
+					english: `<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin.name}</i></b>\n<b>Token Address: </b> <code><i>${coin.address}</i></code>`,
 					french: `<b>Obtention des informations sur le jeton...</b>\n\n<b>Nom du jeton : </b><i>${coin.name}</i>\n<b>Adresse du jeton : </b> <i>${coin.address}</i>`,
 					spanish: `<b>Obteniendo información del token...</b>\n\n<b>Nombre del token: </b><i>${coin.name}</i>\n<b>Dirección del token: </b> <i>${coin.address}</i>`,
 					arabic: `<b>الحصول على معلومات الرمز...</b>\n\n<b>اسم الرمز: </b><i>${coin.name}</i>\n<b>عنوان الرمز: </b> <i>${coin.address}</i>`,
 					chinese: `<b>获取代币信息...</b>\n\n<b>代币名称: </b><i>${coin.name}</i>\n<b>代币地址: </b> <i>${coin.address}</i>`,
 				}[userLanguage],
 			);
-			// console.log(coin);
+			//   const response2 = `🟢 <a href="https://birdeye.so/token/${coin.address}?chain=${res.chain}"><b>${coin.name.toUpperCase()}</b></a> [${formatNumber(coin.mc)}] $${coin.symbol}\n🌐${res.chain.charAt(0).toUpperCase() + res.chain.slice(1)}\n💰 Price: <code>$${coin.price.toFixed(7)}</code>\nFDV:<code>${formatNumber(coin.mc)}\n<code>💦Liq:</code>${coin.liquidity}</code>\n📊Vol: Vol</code>\n📈1h: ${coin.priceChange1hPercent ? coin.priceChange1hPercent.toFixed(2)+'%' : "NA"}\n📉24h: ${coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}+'%' : "N/A"}`
+
+			// }
+
+			const response2 = `🟢<a href="https://birdeye.so/token/${coin.address}?chain=${
+				res.chain
+			}"><b>${coin.name.toUpperCase()}</b></a> [${formatNumber(coin.mc)}] $${coin.symbol.toUpperCase()}
+🌐${res.chain.charAt(0).toUpperCase() + res.chain.slice(1)}
+💰 USD: <code>$${coin.price.toFixed(7)}</code>
+💎FDV: <code>${formatNumber(coin.mc)}</code>
+💦 Liq: <code>${coin.liquidity}</code>
+📊 Vol: <code>Vol</code>
+📈 1hr: ${coin.priceChange1hPercent ? `${coin.priceChange1hPercent.toFixed(2)}%` : "N/A"}
+📉 24h: ${coin.priceChange8hPercent ? `${coin.priceChange8hPercent.toFixed(2)}%` : "N/A"}
+
+<code>${ca}</code>
+`;
+
 			const extractedData = {
 				address: coin.address,
 				decimals: coin.decimals,
@@ -979,7 +1009,7 @@ export const neww = async () => {
 				);
 			}
 			return await ctx.replyWithHTML(
-				response,
+				response2,
 				Markup.inlineKeyboard([
 					Markup.button.callback(
 						{
