@@ -10,7 +10,7 @@ import { createUser, getUserLanguage } from "./AWSusers";
 import { processToken } from "./helper";
 
 const filePath = path.join(__dirname, "worker.mjs");
-//onsole.log(pathh);
+// onsole.log(pathh);
 export const pool = new StaticPool({
 	size: 2,
 	task: filePath,
@@ -52,7 +52,7 @@ bot.action("details", async (ctx) => {
 bot.action("bsctrend", async (ctx) => {
 	const chain = "bsc";
 	const coins = (await fetchData(chain)).tokens;
-	//const cancelButton = Markup.button.callback(`Cancel`, `cancel`);
+	// const cancelButton = Markup.button.callback(`Cancel`, `cancel`);
 	const buttons = coins.map((coin) => [
 		Markup.button.callback(`${coin.name} (${coin.symbol})`, `coinbsc_${coin.address}`),
 	]);
@@ -63,8 +63,10 @@ bot.action("bsctrend", async (ctx) => {
 	bot.action(/coinbsc_(.+)/, async (ctx) => {
 		const coinAddress = ctx.match[1];
 
-		let coin = (await processToken(coinAddress))?.token;
-		if (!coin) return;
+		const coin = (await processToken(coinAddress))?.token;
+		if (!coin) {
+			return;
+		}
 
 		const extractedData = {
 			address: coin.address,
@@ -80,14 +82,14 @@ bot.action("bsctrend", async (ctx) => {
 			discord: coin.extensions.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
 			liquidity: coin.liquidity,
 			price: coin.price.toFixed(7),
-			priceChange30m: coin.priceChange30mPercent.toFixed(2) + "%",
-			priceChange1h: coin.priceChange1hPercent.toFixed(2) + "%",
-			priceChange2h: coin.priceChange2hPercent.toFixed(2) + "%",
-			priceChange4h: coin.priceChange4hPercent.toFixed(2) + "%",
-			priceChange6h: coin.priceChange6hPercent.toFixed(2) + "%",
-			priceChange8h: coin.priceChange8hPercent.toFixed(2) + "%",
-			priceChange12h: coin.priceChange12hPercent.toFixed(2) + "%",
-			priceChange24h: coin.priceChange24hPercent.toFixed(2) + "%",
+			priceChange30m: `${coin.priceChange30mPercent.toFixed(2)}%`,
+			priceChange1h: `${coin.priceChange1hPercent.toFixed(2)}%`,
+			priceChange2h: `${coin.priceChange2hPercent.toFixed(2)}%`,
+			priceChange4h: `${coin.priceChange4hPercent.toFixed(2)}%`,
+			priceChange6h: `${coin.priceChange6hPercent.toFixed(2)}%`,
+			priceChange8h: `${coin.priceChange8hPercent.toFixed(2)}%`,
+			priceChange12h: `${coin.priceChange12hPercent.toFixed(2)}%`,
+			priceChange24h: `${coin.priceChange24hPercent.toFixed(2)}%`,
 		};
 
 		const response = await queryAi(
@@ -96,7 +98,7 @@ bot.action("bsctrend", async (ctx) => {
 			})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
 		);
 
-		//ctx.telegram.answer_callback_query;
+		// ctx.telegram.answer_callback_query;
 		ctx.answerCbQuery();
 		return await ctx.replyWithHTML(response);
 	});
@@ -106,11 +108,11 @@ bot.action("bsctrend", async (ctx) => {
 	// });
 });
 
-//uploading to worker node on express migrate to dynamo;
-//start from from group
-//sending vn before choosing lang
-//regex to leave words
-//language checking
+// uploading to worker node on express migrate to dynamo;
+// start from from group
+// sending vn before choosing lang
+// regex to leave words
+// language checking
 
 bot.action("ethtrend", async (ctx) => {
 	const chain = "ethereum";
@@ -128,8 +130,10 @@ bot.action("ethtrend", async (ctx) => {
 
 	bot.action(/coineth_(.+)/, async (ctx) => {
 		const coinAddress = ctx.match[1];
-		let coin = (await processToken(coinAddress))?.token;
-		if (!coin) return;
+		const coin = (await processToken(coinAddress))?.token;
+		if (!coin) {
+			return;
+		}
 
 		const extractedData = {
 			address: coin.address,
@@ -145,14 +149,14 @@ bot.action("ethtrend", async (ctx) => {
 			discord: coin.extensions.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
 			liquidity: coin.liquidity,
 			price: coin.price.toFixed(7),
-			priceChange30m: coin.priceChange30mPercent.toFixed(2) + "%",
-			priceChange1h: coin.priceChange1hPercent.toFixed(2) + "%",
-			priceChange2h: coin.priceChange2hPercent.toFixed(2) + "%",
-			priceChange4h: coin.priceChange4hPercent.toFixed(2) + "%",
-			priceChange6h: coin.priceChange6hPercent.toFixed(2) + "%",
-			priceChange8h: coin.priceChange8hPercent.toFixed(2) + "%",
-			priceChange12h: coin.priceChange12hPercent.toFixed(2) + "%",
-			priceChange24h: coin.priceChange24hPercent.toFixed(2) + "%",
+			priceChange30m: `${coin.priceChange30mPercent.toFixed(2)}%`,
+			priceChange1h: `${coin.priceChange1hPercent.toFixed(2)}%`,
+			priceChange2h: `${coin.priceChange2hPercent.toFixed(2)}%`,
+			priceChange4h: `${coin.priceChange4hPercent.toFixed(2)}%`,
+			priceChange6h: `${coin.priceChange6hPercent.toFixed(2)}%`,
+			priceChange8h: `${coin.priceChange8hPercent.toFixed(2)}%`,
+			priceChange12h: `${coin.priceChange12hPercent.toFixed(2)}%`,
+			priceChange24h: `${coin.priceChange24hPercent.toFixed(2)}%`,
 		};
 
 		const response = await queryAi(
@@ -161,7 +165,7 @@ bot.action("ethtrend", async (ctx) => {
 			})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
 		);
 
-		//ctx.telegram.answer_callback_query;
+		// ctx.telegram.answer_callback_query;
 		ctx.answerCbQuery();
 		return await ctx.replyWithHTML(response);
 	});
@@ -188,8 +192,10 @@ bot.action("soltrend", async (ctx) => {
 	bot.action(/coinsol_(.+)/, async (ctx) => {
 		const coinAddress = ctx.match[1];
 
-		let coin = (await processToken(coinAddress))?.token;
-		if (!coin) return;
+		const coin = (await processToken(coinAddress))?.token;
+		if (!coin) {
+			return;
+		}
 
 		const extractedData = {
 			address: coin.address,
@@ -205,14 +211,14 @@ bot.action("soltrend", async (ctx) => {
 			discord: coin.extensions.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
 			liquidity: coin.liquidity,
 			price: coin.price.toFixed(7),
-			priceChange30m: coin.priceChange30mPercent.toFixed(2) + "%",
-			priceChange1h: coin.priceChange1hPercent.toFixed(2) + "%",
-			priceChange2h: coin.priceChange2hPercent.toFixed(2) + "%",
-			priceChange4h: coin.priceChange4hPercent.toFixed(2) + "%",
-			priceChange6h: coin.priceChange6hPercent.toFixed(2) + "%",
-			priceChange8h: coin.priceChange8hPercent.toFixed(2) + "%",
-			priceChange12h: coin.priceChange12hPercent.toFixed(2) + "%",
-			priceChange24h: coin.priceChange24hPercent.toFixed(2) + "%",
+			priceChange30m: `${coin.priceChange30mPercent.toFixed(2)}%`,
+			priceChange1h: `${coin.priceChange1hPercent.toFixed(2)}%`,
+			priceChange2h: `${coin.priceChange2hPercent.toFixed(2)}%`,
+			priceChange4h: `${coin.priceChange4hPercent.toFixed(2)}%`,
+			priceChange6h: `${coin.priceChange6hPercent.toFixed(2)}%`,
+			priceChange8h: `${coin.priceChange8hPercent.toFixed(2)}%`,
+			priceChange12h: `${coin.priceChange12hPercent.toFixed(2)}%`,
+			priceChange24h: `${coin.priceChange24hPercent.toFixed(2)}%`,
 		};
 
 		const response = await queryAi(
@@ -221,7 +227,7 @@ bot.action("soltrend", async (ctx) => {
 			})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
 		);
 
-		//ctx.telegram.answer_callback_query;
+		// ctx.telegram.answer_callback_query;
 		ctx.answerCbQuery();
 		return await ctx.replyWithHTML(response);
 	});
@@ -273,7 +279,6 @@ bot.on("voice", async (ctx) => {
 		);
 	}
 
-
 	try {
 		const res = await pool.exec({ voice, userId });
 
@@ -287,7 +292,9 @@ bot.on("voice", async (ctx) => {
 bot.action(/language_(.+)$/, async (ctx) => {
 	const language = ctx.match[1].toLowerCase() as "english" | "french" | "spanish" | "arabic" | "chinese"; // This extracts the language part from the callback data
 	await ctx.reply(`You selected ${language}.`);
-	if (!ctx.from?.id) return ctx.reply("Forbidden");
+	if (!ctx.from?.id) {
+		return ctx.reply("Forbidden");
+	}
 	try {
 		await createUser({
 			...ctx.from,
@@ -302,11 +309,10 @@ bot.action(/language_(.+)$/, async (ctx) => {
 			solMnemonic: null,
 			language: language,
 		});
-
 		// Reply to the user
-		await ctx.reply(
+		await ctx.replyWithPhoto(
 			{
-				english: "Welcome! You have been successfully registered. Use /help to get started.",
+				english: `Welcome to Parrot Ai🦜\n\nThe best sniper and purchasing bot on ETH.\n\nCommands:\n/help\n/buy\n/sell\n/info\n/analysis`,
 				french: "Bienvenue ! Vous avez été enregistré avec succès. Utilisez /help pour commencer.",
 				spanish: "¡Bienvenido! Te has registrado exitosamente. Usa /help para empezar.",
 				arabic: "مرحبًا! لقد تم تسجيلك بنجاح. استخدم /help للبدء.",

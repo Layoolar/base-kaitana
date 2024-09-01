@@ -15,7 +15,7 @@ import config, { telegram } from "../configs/config";
 import { launchPolling, launchWebhook } from "./launcher";
 import { createSolWallet } from "./solhelper";
 import { fetchCoin } from "./fetchCoins";
-
+import path from "path";
 import { queryAi } from "./queryApi";
 import { TokenData, generateTimeAndPriceGraph } from "./timePriceData";
 
@@ -104,7 +104,7 @@ export type Data = {
 	total: number;
 };
 
-//let selectedCoin: any = null;
+// let selectedCoin: any = null;
 // interface BettingCoinData extends CoinDataType {
 // 	position: number;
 // }
@@ -126,7 +126,7 @@ bot.use(async (ctx, next) => {
 
 	if (ctx.chat) {
 		if (ctx.chat.type === "group" || ctx.chat.type === "supergroup") {
-			//console.log("here");
+			// console.log("here");
 			// const res = databases.getCallHistory(ctx.chat.id);
 
 			// if (res) return next();
@@ -156,7 +156,7 @@ export async function getJoke() {
 		return joke;
 	} catch (error) {
 		// Handle errors if any
-		//console.log("Error fetching joke:", error);
+		// console.log("Error fetching joke:", error);
 		return null; // Return null or handle the error as needed
 	}
 }
@@ -179,11 +179,13 @@ export function getGreeting() {
 }
 
 export const checkWallet: MiddlewareFn<Context> = async (ctx: Context, next: () => Promise<void>) => {
-	if (!ctx.from) return;
+	if (!ctx.from) {
+		return;
+	}
 
 	const userLanguage = await getUserLanguage(ctx.from?.id);
 
-	let translations = {
+	const translations = {
 		english: "You already have a wallet",
 		french: "Vous avez déjà un portefeuille",
 		spanish: "Ya tienes una cartera",
@@ -202,7 +204,7 @@ export const checkWallet: MiddlewareFn<Context> = async (ctx: Context, next: () 
 	return await ctx.reply(translations[userLanguage]);
 };
 export const checkUserExistence: MiddlewareFn<Context> = async (ctx: Context, next: () => Promise<void>) => {
-	let translations = {
+	const translations = {
 		english: 'You are not yet registered send "/start" to the bot privately to get started.',
 		french: 'Vous n\'êtes pas encore enregistré, envoyez "/start" au bot en privé pour commencer.',
 		spanish: 'Todavía no estás registrado, envía "/start" al bot en privado para empezar.',
@@ -213,7 +215,9 @@ export const checkUserExistence: MiddlewareFn<Context> = async (ctx: Context, ne
 	if (!ctx.from) {
 		return;
 	}
-	if (!ctx.from) return;
+	if (!ctx.from) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(ctx.from.id);
 
 	const user = await getUser(ctx.from?.id);
@@ -229,7 +233,7 @@ const checkGroup: MiddlewareFn<Context> = async (ctx, next) => {
 	}
 
 	const userLanguage = await getUserLanguage(ctx.from.id);
-	let translations = {
+	const translations = {
 		english: "This command can only be sent as a direct message",
 		french: "Cette commande ne peut être envoyée que sous forme de message direct",
 		spanish: "Este comando solo se puede enviar como mensaje directo",
@@ -372,9 +376,11 @@ const commands = {
 };
 
 bot.help(async (ctx) => {
-	if (!ctx.from) return;
+	if (!ctx.from) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(ctx.from.id);
-	let translations = {
+	const translations = {
 		english: "Here are some available commands:",
 		french: "Voici quelques commandes disponibles :",
 		spanish: "Aquí tienes algunos comandos disponibles:",
@@ -392,7 +398,7 @@ bot.help(async (ctx) => {
 });
 
 bot.action("genwallet", async (ctx) => {
-	let translations = {
+	const translations = {
 		english: "You have already generated a wallet. Use /wallet to view your wallet details.",
 		french: "Vous avez déjà généré un portefeuille. Utilisez /wallet pour afficher les détails de votre portefeuille.",
 		spanish: "Ya has generado un monedero. Usa /wallet para ver los detalles de tu monedero.",
@@ -400,7 +406,9 @@ bot.action("genwallet", async (ctx) => {
 		chinese: "您已经生成了一个钱包。使用 /wallet 查看您的钱包详情。",
 	};
 
-	if (!ctx.from) return;
+	if (!ctx.from) {
+		return;
+	}
 
 	const userLanguage = await getUserLanguage(ctx.from.id);
 
@@ -425,7 +433,7 @@ bot.action("genwallet", async (ctx) => {
 		await updateSolWallet(ctx.from?.id, solWallet.publicKey, solWallet.privateKeyBase58);
 	}
 
-	let translations2 = {
+	const translations2 = {
 		english: `Wallet generated successfully, your ETH wallet address is: <b><code>${wallet.walletAddress}</code></b>\nPrivate key: <code>${wallet.privateKey}</code>.\n\nWallet Address and private keys are above, click on them to copy. This message will be deleted in one minute. You can use /wallet to re-check your wallet details.`,
 		french: `Portefeuille généré avec succès, votre adresse de portefeuille ETH est : <b><code>${wallet.walletAddress}</code></b>\nClé privée : <code>${wallet.privateKey}</code>.\n\nLes adresses de portefeuille et les clés privées se trouvent ci-dessus, cliquez dessus pour les copier. Ce message sera supprimé dans une minute. Vous pouvez utiliser /wallet pour vérifier à nouveau les détails de votre portefeuille.`,
 		spanish: `Monedero generado exitosamente, tu dirección de monedero ETH es: <b><code>${wallet.walletAddress}</code></b>\nClave privada: <code>${wallet.privateKey}</code>.\n\nLas direcciones de monedero y las claves privadas están arriba, haz clic en ellas para copiarlas. Este mensaje será eliminado en un minuto. Puedes usar /wallet para volver a verificar los detalles de tu monedero.`,
@@ -441,12 +449,12 @@ bot.action("genwallet", async (ctx) => {
 				try {
 					await ctx.deleteMessage(messageId);
 				} catch (error) {
-					//console.error(`Failed to delete message ${messageId}:`);
+					// console.error(`Failed to delete message ${messageId}:`);
 				}
 			}, 60000);
 		})
 		.catch((error) => {
-			//console.log(error);
+			// console.log(error);
 		});
 });
 
@@ -454,11 +462,13 @@ bot.action("exportkey", async (ctx) => {
 	if (!ctx.from) {
 		return;
 	}
-	if (!ctx.from) return;
+	if (!ctx.from) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(ctx.from.id);
 
 	const walletDetails = await getUserWalletDetails(ctx.from.id);
-	let translations = {
+	const translations = {
 		english: `The private key for your ETH wallet is <b><code>${walletDetails?.privateKey}</code></b>\n\nThis message will be deleted in one minute.`,
 		french: `La clé privée de votre portefeuille ETH est <b><code>${walletDetails?.privateKey}</code></b>\n\nCe message sera supprimé dans une minute.`,
 		spanish: `La clave privada de tu monedero ETH es <b><code>${walletDetails?.privateKey}</code></b>\n\nEste mensaje será eliminado en un minuto.`,
@@ -490,14 +500,14 @@ bot.action("walletaddress", async (ctx) => {
 
 	const userLanguage = await getUserLanguage(ctx.from.id);
 	const walletDetails = await getUserWalletDetails(ctx.from.id);
-	let translations = {
+	const translations = {
 		english: `Your ETH wallet address is <b><code>${walletDetails?.walletAddress}</code></b>`,
 		french: `Votre adresse de portefeuille ETH est <b><code>${walletDetails?.walletAddress}</code></b>`,
 		spanish: `Tu dirección de monedero ETH es <b><code>${walletDetails?.walletAddress}</code></b>`,
 		arabic: `عنوان محفظتك ETH هو <b><code>${walletDetails?.walletAddress}</code></b>`,
 		chinese: `您的ETH钱包地址为 <b><code>${walletDetails?.walletAddress}</code></b>`,
 	};
-	/// console.log(walletDetails);
+	// / console.log(walletDetails);
 	await ctx.replyWithHTML(translations[userLanguage]);
 });
 
@@ -507,7 +517,7 @@ bot.action("checkbalance", checkUserExistence, async (ctx) => {
 	}
 
 	const userLanguage = await getUserLanguage(ctx.from.id);
-	let translations = {
+	const translations = {
 		english: "What balance do you want to check?",
 		french: "Quel solde voulez-vous vérifier?",
 		spanish: "¿Qué saldo quieres verificar?",
@@ -526,9 +536,11 @@ bot.action("checkbalance", checkUserExistence, async (ctx) => {
 });
 
 bot.action("basebalance", async (ctx) => {
-	if (!ctx.from) return;
+	if (!ctx.from) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(ctx.from.id);
-	let translations = {
+	const translations = {
 		english: "Fetching balances...",
 		french: "Récupération des soldes...",
 		spanish: "Obteniendo saldos...",
@@ -536,14 +548,14 @@ bot.action("basebalance", async (ctx) => {
 		chinese: "正在获取余额...",
 	};
 
-	let translations2 = {
+	const translations2 = {
 		english: "An error occurred, please try again later.",
 		french: "Une erreur s'est produite, veuillez réessayer plus tard.",
 		spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
 		arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
 		chinese: "发生错误，请稍后再试。",
 	};
-	let translations3 = {
+	const translations3 = {
 		english: "You have no other tokens",
 		french: "Vous n'avez pas d'autres jetons",
 		spanish: "No tienes otros tokens",
@@ -588,9 +600,11 @@ bot.action("basebalance", async (ctx) => {
 });
 
 bot.action("solbalance", async (ctx) => {
-	if (!ctx.from) return;
+	if (!ctx.from) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(ctx.from.id);
-	let translations = {
+	const translations = {
 		english: "Fetching balances...",
 		french: "Récupération des soldes...",
 		spanish: "Obteniendo saldos...",
@@ -598,14 +612,14 @@ bot.action("solbalance", async (ctx) => {
 		chinese: "正在获取余额...",
 	};
 
-	let translations2 = {
+	const translations2 = {
 		english: "An error occurred, please try again later.",
 		french: "Une erreur s'est produite, veuillez réessayer plus tard.",
 		spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
 		arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
 		chinese: "发生错误，请稍后再试。",
 	};
-	let translations3 = {
+	const translations3 = {
 		english: "You have no other tokens",
 		french: "Vous n'avez pas d'autres jetons",
 		spanish: "No tienes otros tokens",
@@ -626,7 +640,7 @@ bot.action("solbalance", async (ctx) => {
 	const tokens = await getSolTokenAccounts(wallet.solWalletAddress);
 	if (tokens.length === 0) {
 		const balance = await getSolBalance(wallet.solWalletAddress);
-		//getSolBalance
+		// getSolBalance
 		const currentSolPrice = await getSolPrice();
 
 		if (!balance || !currentSolPrice) {
@@ -651,23 +665,25 @@ bot.action("solbalance", async (ctx) => {
 	}
 });
 bot.action("ethbalance", async (ctx) => {
-	if (!ctx.from) return;
+	if (!ctx.from) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(ctx.from.id);
-	let translations = {
+	const translations = {
 		english: "Fetching balances...",
 		french: "Récupération des soldes...",
 		spanish: "Obteniendo saldos...",
 		arabic: "جلب الأرصدة...",
 		chinese: "正在获取余额...",
 	};
-	let translations2 = {
+	const translations2 = {
 		english: "An error occurred, please try again later.",
 		french: "Une erreur s'est produite, veuillez réessayer plus tard.",
 		spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
 		arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
 		chinese: "发生错误，请稍后再试。",
 	};
-	let translations3 = {
+	const translations3 = {
 		english: "You have no other tokens",
 		french: "Vous n'avez pas d'autres jetons",
 		spanish: "No tienes otros tokens",
@@ -714,14 +730,14 @@ bot.command("wallet", checkUserExistence, checkGroup, async (ctx) => {
 	const user_id = ctx.from?.id;
 
 	const userLanguage = await getUserLanguage(user_id);
-	let translations = {
+	const translations = {
 		english: "You don't have a wallet yet",
 		french: "Vous n'avez pas encore de portefeuille",
 		spanish: "Aún no tienes un monedero",
 		arabic: "ليس لديك محفظة بعد",
 		chinese: "您还没有钱包",
 	};
-	let translations2 = {
+	const translations2 = {
 		english: "Generate wallet",
 		french: "Générer un portefeuille",
 		spanish: "Generar monedero",
@@ -810,7 +826,7 @@ export const neww = async () => {
 			return await ctx.reply("You need to send a contract address with your command");
 		}
 
-		//const coin = await fetchCointest();
+		// const coin = await fetchCointest();
 		const coin = (await processToken(ca))?.token;
 
 		if (!coin) {
@@ -843,14 +859,14 @@ export const neww = async () => {
 				discord: coin.extensions.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
 				liquidity: coin.liquidity,
 				price: coin.price.toFixed(7),
-				priceChange30m: coin.priceChange30mPercent.toFixed(2) + "%",
-				priceChange1h: coin.priceChange1hPercent.toFixed(2) + "%",
-				priceChange2h: coin.priceChange2hPercent.toFixed(2) + "%",
-				priceChange4h: coin.priceChange4hPercent.toFixed(2) + "%",
-				priceChange6h: coin.priceChange6hPercent.toFixed(2) + "%",
-				priceChange8h: coin.priceChange8hPercent.toFixed(2) + "%",
-				priceChange12h: coin.priceChange12hPercent.toFixed(2) + "%",
-				priceChange24h: coin.priceChange24hPercent.toFixed(2) + "%",
+				priceChange30m: `${coin.priceChange30mPercent.toFixed(2)}%`,
+				priceChange1h: `${coin.priceChange1hPercent.toFixed(2)}%`,
+				priceChange2h: `${coin.priceChange2hPercent.toFixed(2)}%`,
+				priceChange4h: `${coin.priceChange4hPercent.toFixed(2)}%`,
+				priceChange6h: `${coin.priceChange6hPercent.toFixed(2)}%`,
+				priceChange8h: `${coin.priceChange8hPercent.toFixed(2)}%`,
+				priceChange12h: `${coin.priceChange12hPercent.toFixed(2)}%`,
+				priceChange24h: `${coin.priceChange24hPercent.toFixed(2)}%`,
 			};
 
 			const response = await queryAi(
@@ -921,7 +937,7 @@ export const neww = async () => {
 					chinese: `<b>获取代币信息...</b>\n\n<b>代币名称: </b><i>${coin.name}</i>\n<b>代币地址: </b> <i>${coin.address}</i>`,
 				}[userLanguage],
 			);
-			//console.log(coin);
+			// console.log(coin);
 			const extractedData = {
 				address: coin.address,
 				decimals: coin.decimals,
@@ -936,14 +952,14 @@ export const neww = async () => {
 				discord: coin.extensions?.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
 				liquidity: coin.liquidity,
 				price: coin.price.toFixed(7),
-				priceChange30m: coin.priceChange30mPercent ? coin.priceChange30mPercent?.toFixed(2) + "%" : "N/A",
-				priceChange1h: coin.priceChange1hPercent ? coin.priceChange1hPercent?.toFixed(2) + "%" : "N/A",
-				priceChange2h: coin.priceChange2hPercent ? coin.priceChange2hPercent?.toFixed(2) + "%" : "N/A",
-				priceChange4h: coin.priceChange4hPercent ? coin.priceChange4hPercent?.toFixed(2) + "%" : "N/A",
-				priceChange6h: coin.priceChange6hPercent ? coin.priceChange6hPercent?.toFixed(2) + "%" : "N/A",
-				priceChange8h: coin.priceChange8hPercent ? coin.priceChange8hPercent?.toFixed(2) + "%" : "N/A",
-				priceChange12h: coin.priceChange8hPercent ? coin.priceChange8hPercent?.toFixed(2) + "%" : "N/A",
-				priceChange24h: coin.priceChange8hPercent ? coin.priceChange8hPercent?.toFixed(2) + "%" : "N/A",
+				priceChange30m: coin.priceChange30mPercent ? `${coin.priceChange30mPercent?.toFixed(2)}%` : "N/A",
+				priceChange1h: coin.priceChange1hPercent ? `${coin.priceChange1hPercent?.toFixed(2)}%` : "N/A",
+				priceChange2h: coin.priceChange2hPercent ? `${coin.priceChange2hPercent?.toFixed(2)}%` : "N/A",
+				priceChange4h: coin.priceChange4hPercent ? `${coin.priceChange4hPercent?.toFixed(2)}%` : "N/A",
+				priceChange6h: coin.priceChange6hPercent ? `${coin.priceChange6hPercent?.toFixed(2)}%` : "N/A",
+				priceChange8h: coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}%` : "N/A",
+				priceChange12h: coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}%` : "N/A",
+				priceChange24h: coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}%` : "N/A",
 			};
 			const response = await queryAi(
 				`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
@@ -1021,10 +1037,12 @@ export const neww = async () => {
 			return await ctx.reply("Kindly use /call ${token_address} to start conversation about a token");
 		}
 		const processedToken = await processToken(selectedCa);
-		//console.log(selectedCa);
+		// console.log(selectedCa);
 		const coin = processedToken?.token;
 
-		if (!coin) return await ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
+		if (!coin) {
+			return await ctx.reply("I couldn't find the token, unsupported chain or wrong contract address.");
+		}
 
 		const userid = ctx.from.id;
 		const userLanguage = await getUserLanguage(userid);
@@ -1067,7 +1085,7 @@ export const neww = async () => {
 				}[userLanguage],
 			);
 			const amountRes = await queryAi(getamountprompt(prompt));
-			//console.log(`proceedbuy_${selectedCoin?.address}_${amountRes}`);
+			// console.log(`proceedbuy_${selectedCoin?.address}_${amountRes}`);
 
 			const message = await ctx.telegram.sendMessage(
 				ctx.from?.id,
@@ -1221,7 +1239,9 @@ export const neww = async () => {
 bot.action(/proceedbuy_(.+)/, async (ctx) => {
 	const userid = ctx.from?.id;
 
-	if (!userid) return;
+	if (!userid) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(userid);
 	const match = ctx.match;
 
@@ -1259,13 +1279,15 @@ bot.action(/proceedbuy_(.+)/, async (ctx) => {
 		);
 	}
 
-	//console.log(ca, token.chain, time, amount);
+	// console.log(ca, token.chain, time, amount);
 	return await ctx.scene.enter("buy-wizard", { address: ca, token: token, time: time, amount: amount });
 });
 bot.action(/proceedsell_(.+)/, async (ctx) => {
 	const userid = ctx.from?.id;
 
-	if (!userid) return;
+	if (!userid) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(userid);
 	const match = ctx.match;
 
@@ -1308,7 +1330,9 @@ bot.command("import", async (ctx) => {
 	const ca = commandArgs.join(" ");
 	const userid = ctx.from?.id;
 
-	if (!userid) return;
+	if (!userid) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(userid);
 	if (!ca) {
 		return await ctx.reply(
@@ -1352,7 +1376,9 @@ bot.command("import", async (ctx) => {
 bot.command("delete", checkGroup, async (ctx) => {
 	const userid = ctx.from?.id;
 
-	if (!userid) return;
+	if (!userid) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(userid);
 	const commandArgs = ctx.message.text.split(" ").slice(1);
 	const ca = commandArgs.join(" ");
@@ -1402,7 +1428,9 @@ bot.command("buy", async (ctx) => {
 	const prompt = commandArgs.join(" ");
 	const userid = ctx.from?.id;
 
-	if (!userid) return;
+	if (!userid) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(userid);
 	const ca = await queryAi(getCaPrompt(prompt));
 	const amount = await queryAi(getamountprompt(prompt));
@@ -1514,7 +1542,9 @@ bot.command("sell", async (ctx) => {
 	const prompt = commandArgs.join(" ");
 	const userid = ctx.from?.id;
 
-	if (!userid) return;
+	if (!userid) {
+		return;
+	}
 	const userLanguage = await getUserLanguage(userid);
 	const ca = await queryAi(getCaPrompt(prompt));
 	const amount = await queryAi(getsellamountprompt(prompt));
@@ -1896,14 +1926,12 @@ const start = async () => {
 					arabic: "أنت مسجل بالفعل. استخدم /help للبدء.";
 					chinese: "您已经注册了。使用 /help 开始。";
 				};
-				await ctx.reply(
+				await ctx.replyWithPhoto(
+					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
 					{
-						english: "You are already registered. Use /help to get started.",
-						french: "Vous êtes déjà inscrit. Utilisez /help pour commencer.",
-						spanish: "Ya estás registrado. Usa /help para empezar.",
-						arabic: "أنت مسجل بالفعل. استخدم /help للبدء.",
-						chinese: "您已经注册了。使用 /help 开始。",
-					}[language],
+						caption: `Welcome to <b>Parrot AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /analysis</b>\n\n<b>🌐 Website: </b>https://bananagun.io\n<b>📖Manual: </b>https://docs.bananagun.io\n<b>📣 Announcements: </b>https://t.me/bananagunannouncements\n<b>💬 Telegram: </b> https://t.me/Banana_Gun_Portal`,
+						parse_mode: "HTML",
+					},
 				);
 			} else {
 				await ctx.replyWithHTML(
@@ -1964,11 +1992,11 @@ const start = async () => {
  *
  */
 bot.command("stats1997", async (ctx) => {
-	//await updateTransaction(1, 0.1);
+	// await updateTransaction(1, 0.1);
 
 	const transaction = await getTransactions();
 	console.log(transaction);
-	//ctx.reply(transaction)
+	// ctx.reply(transaction)
 });
 const launch = async (): Promise<void> => {
 	const mode = config.mode;
