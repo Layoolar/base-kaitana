@@ -62,6 +62,7 @@ interface MyWizardSession extends Scenes.WizardSessionData {
 			token: TokenData;
 		} | null;
 		time: undefined | string;
+		operation: string;
 	};
 	sendStore: {
 		recipientAddress: string;

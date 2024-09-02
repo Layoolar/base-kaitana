@@ -4,7 +4,7 @@ import { fetchCoin } from "../fetchCoins";
 import { processToken } from "../helper";
 import { formatNumber } from "../commands";
 import { queryAi } from "../queryApi";
-import { getBuyPrompt, getCaPrompt } from "../prompt";
+import { getBuyPrompt, getCaPrompt, getTimePrompt, getSellPrompt } from "../prompt";
 
 const stepHandler = new Composer<WizardContext>();
 
@@ -55,6 +55,33 @@ export const prebuyWizard = new Scenes.WizardScene<WizardContext>(
 		}
 	},
 	stepHandler,
+	async (ctx: WizardContext) => {
+		if (ctx.message && "text" in ctx.message) {
+			const { text } = ctx.message;
+
+			const res = await queryAi(getTimePrompt(text));
+			if (res.toLowerCase() === "null") {
+				await ctx.replyWithHTML("Invalid response\n Exiting session...");
+				return ctx.scene.leave();
+			}
+
+			const token = ctx.scene.session.scStore.res;
+			ctx.scene.leave();
+			return ctx.scene.session.scStore.operation.toLowerCase() === "buy"
+				? await ctx.scene.enter("buy-wizard", {
+						address: token?.address,
+						token: token,
+						time: res,
+						amount: null,
+				  })
+				: await ctx.scene.enter("sell-wizard", {
+						address: token?.address,
+						token: token,
+						time: res,
+						amount: null,
+				  });
+		}
+	},
 );
 const cancelFn = async (ctx: WizardContext) => {
 	const exitMessage = await queryAi("send me a goodbye message");
@@ -68,13 +95,18 @@ const getText = async (ctx: WizardContext) => {
 	if (ctx.message && "text" in ctx.message) {
 		const { text } = ctx.message;
 
-		const res = await queryAi(getBuyPrompt(text));
-		if (res.toLowerCase() === "null") {
+		const buyres = await queryAi(getBuyPrompt(text));
+		const sellres = await queryAi(getSellPrompt(text));
+		if (buyres.toLowerCase() === "null" && sellres.toLowerCase() === "null") {
 			await ctx.replyWithHTML("Invalid response\n Exiting session...");
 			return ctx.scene.leave();
 		}
+		buyres.toLowerCase() !== "null"
+			? (ctx.scene.session.scStore.operation = buyres.toLowerCase())
+			: (ctx.scene.session.scStore.operation = sellres.toLowerCase());
 
-		await ctx.reply("What time interval do you want your trade to be executed (maximum of 24 hours)");
+		await ctx.reply("In what time interval do you want your trade to be executed (maximum of 24 hours)");
+		ctx.wizard.next();
 	}
 };
 
