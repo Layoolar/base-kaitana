@@ -10,6 +10,11 @@ import { buyWizard } from "./buywizard";
 import { sellWizard } from "./sellwizard";
 import { analysisWizard } from "./analysis_wizard";
 import { sendWizard } from "./send_wizard";
+import { infoWizard } from "./info_wizard";
+import { prebuyWizard } from "./prebuy_wizard";
+import { presellWizard } from "./presell_wizard";
+import { deleteWizard } from "./deleteWizard";
+import { importWizard } from "./importWizard";
 
 const stage = new Scenes.Stage<WizardContext>([
 	transactionWizard,
@@ -20,6 +25,11 @@ const stage = new Scenes.Stage<WizardContext>([
 	buyWizard,
 	sellWizard,
 	sendWizard,
+	infoWizard,
+	prebuyWizard,
+	presellWizard,
+	importWizard,
+	deleteWizard,
 ]);
 
 bot.use(session());

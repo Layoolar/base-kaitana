@@ -14,6 +14,7 @@ import { getUserLanguage } from "../AWSusers";
 import { databases } from "@configs/config";
 import { pool } from "../actions";
 import { updateLog } from "../awslogs";
+import { formatNumber } from "../commands";
 
 const initialData = {
 	prompt: "",
@@ -194,15 +195,10 @@ const getVoice = async (ctx: WizardContext) => {
 // add regx for leavinf only worhs
 
 const cancelFn = async (ctx: WizardContext) => {
-	const userLanguage = ctx.scene.session.promptStore.language;
-	if (!userLanguage) {
-		return;
-	}
 	const exitMessage = await conversation("exit", ctx.scene.session.promptStore.chatHistory);
 	if (exitMessage) {
-		await ctx.replyWithHTML(userLanguage === "english" ? exitMessage : await translate(exitMessage, userLanguage));
+		await ctx.replyWithHTML(exitMessage);
 	}
-
 	return await ctx.scene.leave();
 };
 const audiobuyFn = async (ctx: WizardContext) => {
@@ -456,69 +452,28 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 			}[userLanguage],
 		);
 	}
+	
 	await updateLog(coinAddress, coin);
 	await ctx.replyWithHTML(
-		{
-			english: `<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin.name}</i></b>\n<b>Token Address: </b> <code><i>${coin.address}</i></code>`,
-			french: `<b>Obtention des informations sur le jeton...</b>\n\n<b>Nom du jeton : </b><i>${coin.name}</i>\n<b>Adresse du jeton : </b> <i>${coin.address}</i>`,
-			spanish: `<b>Obteniendo información del token...</b>\n\n<b>Nombre del token: </b><i>${coin.name}</i>\n<b>Dirección del token: </b> <i>${coin.address}</i>`,
-			arabic: `<b>الحصول على معلومات الرمز...</b>\n\n<b>اسم الرمز: </b><i>${coin.name}</i>\n<b>عنوان الرمز: </b> <i>${coin.address}</i>`,
-			chinese: `<b>获取代币信息...</b>\n\n<b>代币名称: </b><i>${coin.name}</i>\n<b>代币地址: </b> <i>${coin.address}</i>`,
-		}[userLanguage],
+		`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin.name}</i></b>\n<b>Token Address: </b> <code><i>${coin.address}</i></code>`,
 	);
 
-	let honeyPotRes;
+	const response2 = `🟢<a href="https://birdeye.so/token/${coin.address}?chain=${
+		res.chain
+	}"><b>${coin.name.toUpperCase()}</b></a> [${formatNumber(coin.mc)}] $${coin.symbol.toUpperCase()}
+🌐${res.chain.charAt(0).toUpperCase() + res.chain.slice(1)}
+💰 USD: <code>$${coin.price.toFixed(7)}</code>
+💎FDV: <code>${formatNumber(coin.mc)}</code>
+💦 Liq: <code>${coin.liquidity}</code>
+📊 Vol: <code>Vol</code>
+📈 1hr: ${coin.priceChange1hPercent ? `${coin.priceChange1hPercent.toFixed(2)}%` : "N/A"}
+📉 24h: ${coin.priceChange8hPercent ? `${coin.priceChange8hPercent.toFixed(2)}%` : "N/A"}
 
-	const validChains = ["etheruem", "bsc", "base"];
-	if (validChains.includes(res.chain.toLowerCase())) {
-		honeyPotRes = await isHoneypot(coin.address);
-	}
-
-	// console.log(honeyPotRes);
-
-	const extractedData = {
-		address: coin.address,
-		decimals: coin.decimals,
-		symbol: coin.symbol,
-		name: coin.name,
-		supply: coin.supply,
-		mc: coin.mc,
-		numberOfMarkets: coin.numberMarkets,
-		website: coin.extensions.website ? `<a href ="${coin.extensions.website}">Website</a>` : null,
-		twitter: coin.extensions.twitter ? `<a href ="${coin.extensions.twitter}">Twitter</a>` : null,
-		telegram: coin.extensions.telegram ? `<a href ="${coin.extensions.telegram}">Telegram</a>` : null,
-		discord: coin.extensions.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
-		liquidity: coin.liquidity,
-		price: coin.price.toFixed(7),
-		priceChange30m: `${coin.priceChange30mPercent.toFixed(2)}%`,
-		priceChange1h: `${coin.priceChange1hPercent.toFixed(2)}%`,
-		priceChange2h: `${coin.priceChange2hPercent.toFixed(2)}%`,
-		priceChange4h: `${coin.priceChange4hPercent.toFixed(2)}%`,
-		priceChange6h: `${coin.priceChange6hPercent.toFixed(2)}%`,
-		priceChange8h: `${coin.priceChange8hPercent.toFixed(2)}%`,
-		priceChange12h: `${coin.priceChange12hPercent.toFixed(2)}%`,
-		priceChange24h: `${coin.priceChange24hPercent.toFixed(2)}%`,
-	};
-	const response = await queryAi(
-		`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
-			...extractedData,
-		})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
-	);
-
-	if (response.trim().length === 0) {
-		return ctx.reply(
-			{
-				english: "An error occurred, please try again later.",
-				french: "Une erreur s'est produite, veuillez réessayer plus tard.",
-				spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
-				arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
-				chinese: "发生错误，请稍后再试。",
-			}[userLanguage],
-		);
-	}
+<code>${coin.address}</code>
+`;
 
 	await ctx.replyWithHTML(
-		response,
+		response2,
 		Markup.inlineKeyboard([
 			Markup.button.callback(
 				{
@@ -553,13 +508,7 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 		]),
 	);
 	// console.log(honeyPotRes);
-	if (honeyPotRes) {
-		await ctx.replyWithHTML(
-			`<b>🛡Rug Check</b>\n\n<b>Risk Level:</b> ${honeyPotRes.summary.risk}\n<b>isHoneyPot:</b> ${
-				honeyPotRes.honeypot.isHoneypot ? "Yes ❌" : "No ✅"
-			}\n<b>Flags:</b> ${honeyPotRes.flags.length === 0 ? "None" : honeyPotRes.flags.join(", ")}`,
-		);
-	}
+
 
 	ctx.wizard.next();
 });

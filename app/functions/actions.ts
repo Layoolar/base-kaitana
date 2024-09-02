@@ -323,5 +323,9 @@ bot.action(/language_(.+)$/, async (ctx) => {
 
 	// Add logic to set the user's language based on the extracted language
 });
+bot.command("exit", (ctx) => {
+	ctx.reply("This session has been cancelled");
+	ctx.scene.leave(); // This forces the bot to exit any active wizard or scene
+});
 
 export { bot };

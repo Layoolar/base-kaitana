@@ -14,10 +14,10 @@ import * as databases from "./databases";
 import config, { telegram } from "../configs/config";
 import { launchPolling, launchWebhook } from "./launcher";
 import { createSolWallet } from "./solhelper";
-import { fetchCoin } from "./fetchCoins";
+
 import path from "path";
 import { queryAi } from "./queryApi";
-import { TokenData, generateTimeAndPriceGraph } from "./timePriceData";
+import { TokenData } from "./timePriceData";
 
 import {
 	getBuyPrompt,
@@ -42,6 +42,7 @@ import { getEtherBalance } from "./checkBalance";
 import { getSolBalance, getSolTokenAccounts } from "./checksolbalance";
 import {
 	addUserHolding,
+	createUser,
 	getUser,
 	getUserLanguage,
 	getUserWalletDetails,
@@ -52,11 +53,19 @@ import {
 } from "./AWSusers";
 import { addGroup, getCurrentCalled, updateCurrentCalledAndCallHistory } from "./awsGroups";
 import { getTransactions, updateLog, updateTransaction } from "./awslogs";
-// import { getEthPrice, getTokenInfo } from "./test";
 
-// interface coins extends CoinDataType{
+export const formatNumber = (num: number) => {
+	if (num < 1000) {
+		return num.toString();
+	}
 
-// }
+	const suffixes = ["", "k", "m", "b", "t"];
+	const suffixIndex = Math.floor(Math.log10(num) / 3);
+
+	const formattedNum = (num / Math.pow(1000, suffixIndex)).toFixed(1).replace(/\.0$/, "");
+
+	return `${formattedNum}${suffixes[suffixIndex]}`;
+};
 export interface Log {
 	ca: string;
 	token: TokenData;
@@ -249,7 +258,7 @@ const checkGroup: MiddlewareFn<Context> = async (ctx, next) => {
 	}
 };
 // const checkGroupIdMiddleware: MiddlewareFn<Context> = (ctx, next) => {
-// 	// Replace 'YOUR_GROUP_ID' with the actual group ID
+// 	/c/ Replace 'YOUR_GROUP_ID' with the actual group ID
 // 	//const allowedGroupId = -1002064195192;
 // 	const allowedGroupId = -4005329091;
 // 	if (!ctx.chat) {
@@ -807,7 +816,7 @@ bot.command("wallet", checkUserExistence, checkGroup, async (ctx) => {
 });
 
 export const neww = async () => {
-	bot.command("call", async (ctx) => {
+	bot.command("cahfhfhsgdll", async (ctx) => {
 		if (ctx.update.message.chat.type === "private") {
 			if (ctx.update.message.from.is_bot) {
 				return;
@@ -876,20 +885,7 @@ export const neww = async () => {
 		}
 	});
 
-	function formatNumber(num: number) {
-		if (num < 1000) {
-			return num.toString();
-		}
-
-		const suffixes = ["", "k", "m", "b", "t"];
-		const suffixIndex = Math.floor(Math.log10(num) / 3);
-
-		const formattedNum = (num / Math.pow(1000, suffixIndex)).toFixed(1).replace(/\.0$/, "");
-
-		return `${formattedNum}${suffixes[suffixIndex]}`;
-	}
-
-	bot.command("info", checkUserExistence, checkGroup, async (ctx) => {
+	bot.command("infoolddd", checkUserExistence, checkGroup, async (ctx) => {
 		const commandArgs = ctx.message.text.split(" ").slice(1);
 		const ca = commandArgs.join(" ");
 		const userId = ctx.from.id;
@@ -937,17 +933,8 @@ export const neww = async () => {
 			await updateLog(ca, coin);
 
 			await ctx.replyWithHTML(
-				{
-					english: `<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin.name}</i></b>\n<b>Token Address: </b> <code><i>${coin.address}</i></code>`,
-					french: `<b>Obtention des informations sur le jeton...</b>\n\n<b>Nom du jeton : </b><i>${coin.name}</i>\n<b>Adresse du jeton : </b> <i>${coin.address}</i>`,
-					spanish: `<b>Obteniendo información del token...</b>\n\n<b>Nombre del token: </b><i>${coin.name}</i>\n<b>Dirección del token: </b> <i>${coin.address}</i>`,
-					arabic: `<b>الحصول على معلومات الرمز...</b>\n\n<b>اسم الرمز: </b><i>${coin.name}</i>\n<b>عنوان الرمز: </b> <i>${coin.address}</i>`,
-					chinese: `<b>获取代币信息...</b>\n\n<b>代币名称: </b><i>${coin.name}</i>\n<b>代币地址: </b> <i>${coin.address}</i>`,
-				}[userLanguage],
+				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin.name}</i></b>\n<b>Token Address: </b> <code><i>${coin.address}</i></code>`,
 			);
-			//   const response2 = `🟢 <a href="https://birdeye.so/token/${coin.address}?chain=${res.chain}"><b>${coin.name.toUpperCase()}</b></a> [${formatNumber(coin.mc)}] $${coin.symbol}\n🌐${res.chain.charAt(0).toUpperCase() + res.chain.slice(1)}\n💰 Price: <code>$${coin.price.toFixed(7)}</code>\nFDV:<code>${formatNumber(coin.mc)}\n<code>💦Liq:</code>${coin.liquidity}</code>\n📊Vol: Vol</code>\n📈1h: ${coin.priceChange1hPercent ? coin.priceChange1hPercent.toFixed(2)+'%' : "NA"}\n📉24h: ${coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}+'%' : "N/A"}`
-
-			// }
 
 			const response2 = `🟢<a href="https://birdeye.so/token/${coin.address}?chain=${
 				res.chain
@@ -963,46 +950,46 @@ export const neww = async () => {
 <code>${ca}</code>
 `;
 
-			const extractedData = {
-				address: coin.address,
-				decimals: coin.decimals,
-				symbol: coin.symbol,
-				name: coin.name,
-				supply: coin.supply,
-				mc: coin.mc,
-				numberOfMarkets: coin.numberMarkets,
-				website: coin.extensions?.website ? `<a href ="${coin.extensions.website}">Website</a>` : null,
-				twitter: coin.extensions?.twitter ? `<a href ="${coin.extensions.twitter}">Twitter</a>` : null,
-				telegram: coin.extensions?.telegram ? `<a href ="${coin.extensions.telegram}">Telegram</a>` : null,
-				discord: coin.extensions?.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
-				liquidity: coin.liquidity,
-				price: coin.price.toFixed(7),
-				priceChange30m: coin.priceChange30mPercent ? `${coin.priceChange30mPercent?.toFixed(2)}%` : "N/A",
-				priceChange1h: coin.priceChange1hPercent ? `${coin.priceChange1hPercent?.toFixed(2)}%` : "N/A",
-				priceChange2h: coin.priceChange2hPercent ? `${coin.priceChange2hPercent?.toFixed(2)}%` : "N/A",
-				priceChange4h: coin.priceChange4hPercent ? `${coin.priceChange4hPercent?.toFixed(2)}%` : "N/A",
-				priceChange6h: coin.priceChange6hPercent ? `${coin.priceChange6hPercent?.toFixed(2)}%` : "N/A",
-				priceChange8h: coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}%` : "N/A",
-				priceChange12h: coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}%` : "N/A",
-				priceChange24h: coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}%` : "N/A",
-			};
-			const response = await queryAi(
-				`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
-					...extractedData,
-				})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
-			);
+			// const extractedData = {
+			// 	address: coin.address,
+			// 	decimals: coin.decimals,
+			// 	symbol: coin.symbol,
+			// 	name: coin.name,
+			// 	supply: coin.supply,
+			// 	mc: coin.mc,
+			// 	numberOfMarkets: coin.numberMarkets,
+			// 	website: coin.extensions?.website ? `<a href ="${coin.extensions.website}">Website</a>` : null,
+			// 	twitter: coin.extensions?.twitter ? `<a href ="${coin.extensions.twitter}">Twitter</a>` : null,
+			// 	telegram: coin.extensions?.telegram ? `<a href ="${coin.extensions.telegram}">Telegram</a>` : null,
+			// 	discord: coin.extensions?.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
+			// 	liquidity: coin.liquidity,
+			// 	price: coin.price.toFixed(7),
+			// 	priceChange30m: coin.priceChange30mPercent ? `${coin.priceChange30mPercent?.toFixed(2)}%` : "N/A",
+			// 	priceChange1h: coin.priceChange1hPercent ? `${coin.priceChange1hPercent?.toFixed(2)}%` : "N/A",
+			// 	priceChange2h: coin.priceChange2hPercent ? `${coin.priceChange2hPercent?.toFixed(2)}%` : "N/A",
+			// 	priceChange4h: coin.priceChange4hPercent ? `${coin.priceChange4hPercent?.toFixed(2)}%` : "N/A",
+			// 	priceChange6h: coin.priceChange6hPercent ? `${coin.priceChange6hPercent?.toFixed(2)}%` : "N/A",
+			// 	priceChange8h: coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}%` : "N/A",
+			// 	priceChange12h: coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}%` : "N/A",
+			// 	priceChange24h: coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}%` : "N/A",
+			// };
+			// const response = await queryAi(
+			// 	`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
+			// 		...extractedData,
+			// 	})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
+			// );
 
-			if (response.trim().length === 0) {
-				return ctx.reply(
-					{
-						english: "An error occurred, please try again later.",
-						french: "Une erreur s'est produite, veuillez réessayer plus tard.",
-						spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
-						arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
-						chinese: "发生错误，请稍后再试。",
-					}[userLanguage],
-				);
-			}
+			// if (response.trim().length === 0) {
+			// 	return ctx.reply(
+			// 		{
+			// 			english: "An error occurred, please try again later.",
+			// 			french: "Une erreur s'est produite, veuillez réessayer plus tard.",
+			// 			spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
+			// 			arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
+			// 			chinese: "发生错误，请稍后再试。",
+			// 		}[userLanguage],
+			// 	);
+			// }
 			return await ctx.replyWithHTML(
 				response2,
 				Markup.inlineKeyboard([
@@ -1043,7 +1030,7 @@ export const neww = async () => {
 		}
 	});
 
-	bot.command("ask", checkUserExistence, async (ctx) => {
+	bot.command("ajcjschdhsk", checkUserExistence, async (ctx) => {
 		if (ctx.update.message.chat.type === "private") {
 			if (ctx.update.message.from.is_bot) {
 				return;
@@ -1244,10 +1231,7 @@ export const neww = async () => {
 
 				// return ctx.scene.enter("sell-wizard", { address: selectedCoin.address, token: selectedCoin });
 			}
-			// const newData = {
-			// 	...data,
-			// 	mcap: data.fdv,
-			// };
+
 			const answer = await queryAi(
 				`Answer this question "${prompt}" using information provided here ${JSON.stringify({
 					...coin,
@@ -1304,7 +1288,6 @@ bot.action(/proceedbuy_(.+)/, async (ctx) => {
 		);
 	}
 
-	// console.log(ca, token.chain, time, amount);
 	return await ctx.scene.enter("buy-wizard", { address: ca, token: token, time: time, amount: amount });
 });
 bot.action(/proceedsell_(.+)/, async (ctx) => {
@@ -1447,215 +1430,214 @@ bot.command("delete", checkGroup, async (ctx) => {
 	}
 });
 
-const coinActions = () => {};
-bot.command("buy", async (ctx) => {
-	const commandArgs = ctx.message.text.split(" ").slice(1);
-	const prompt = commandArgs.join(" ");
-	const userid = ctx.from?.id;
+// bot.command("buy", async (ctx) => {
+// 	const commandArgs = ctx.message.text.split(" ").slice(1);
+// 	const prompt = commandArgs.join(" ");
+// 	const userid = ctx.from?.id;
 
-	if (!userid) {
-		return;
-	}
-	const userLanguage = await getUserLanguage(userid);
-	const ca = await queryAi(getCaPrompt(prompt));
-	const amount = await queryAi(getamountprompt(prompt));
-	if (ca.toLowerCase() === "null") {
-		return await ctx.reply(
-			{
-				english: "You need to send a contract address with your command.",
-				french: "Vous devez envoyer une adresse de contrat avec votre commande.",
-				spanish: "Debes enviar una dirección de contrato con tu comando.",
-				arabic: "يجب عليك إرسال عنوان العقد مع الأمر الخاص بك.",
-				chinese: "您需要在命令中发送合约地址。",
-			}[userLanguage],
-		);
-	}
+// 	if (!userid) {
+// 		return;
+// 	}
+// 	const userLanguage = await getUserLanguage(userid);
+// 	const ca = await queryAi(getCaPrompt(prompt));
+// 	const amount = await queryAi(getamountprompt(prompt));
+// 	if (ca.toLowerCase() === "null") {
+// 		return await ctx.reply(
+// 			{
+// 				english: "You need to send a contract address with your command.",
+// 				french: "Vous devez envoyer une adresse de contrat avec votre commande.",
+// 				spanish: "Debes enviar una dirección de contrato con tu comando.",
+// 				arabic: "يجب عليك إرسال عنوان العقد مع الأمر الخاص بك.",
+// 				chinese: "您需要在命令中发送合约地址。",
+// 			}[userLanguage],
+// 		);
+// 	}
 
-	const token = await processToken(ca);
-	if (!token) {
-		return await ctx.reply(
-			{
-				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
-				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
-				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
-				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
-				chinese: "我找不到代币，不支持的链或错误的合约地址。",
-			}[userLanguage],
-		);
-	}
+// 	const token = await processToken(ca);
+// 	if (!token) {
+// 		return await ctx.reply(
+// 			{
+// 				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+// 				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+// 				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+// 				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+// 				chinese: "我找不到代币，不支持的链或错误的合约地址。",
+// 			}[userLanguage],
+// 		);
+// 	}
 
-	if (!(await getUserWalletDetails(ctx.from.id))?.walletAddress) {
-		return await ctx.reply(
-			{
-				english: `${
-					ctx.from.username || ctx.from.first_name
-				}, You do not have an attached wallet, send a direct message with /wallet to initialise it`,
-				french: `${
-					ctx.from.username || ctx.from.first_name
-				}, Vous n'avez pas de portefeuille attaché, envoyez un message direct avec /wallet pour l'initialiser`,
-				spanish: `${
-					ctx.from.username || ctx.from.first_name
-				}, No tienes un monedero adjunto, envía un mensaje directo con /wallet para iniciarlo`,
-				arabic: `${
-					ctx.from.username || ctx.from.first_name
-				}، ليس لديك محفظة مرفقة، أرسل رسالة مباشرة مع /wallet لتهيئتها`,
-				chinese: `${
-					ctx.from.username || ctx.from.first_name
-				}, 您没有附加的钱包，请发送私信并使用 /wallet 来初始化它`,
-			}[userLanguage],
-		);
-	}
-	if (ctx.chat.type !== "private") {
-		await ctx.reply(
-			{
-				english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
-				french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
-				spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
-				arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
-				chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
-			}[userLanguage],
-		);
-	}
+// 	if (!(await getUserWalletDetails(ctx.from.id))?.walletAddress) {
+// 		return await ctx.reply(
+// 			{
+// 				english: `${
+// 					ctx.from.username || ctx.from.first_name
+// 				}, You do not have an attached wallet, send a direct message with /wallet to initialise it`,
+// 				french: `${
+// 					ctx.from.username || ctx.from.first_name
+// 				}, Vous n'avez pas de portefeuille attaché, envoyez un message direct avec /wallet pour l'initialiser`,
+// 				spanish: `${
+// 					ctx.from.username || ctx.from.first_name
+// 				}, No tienes un monedero adjunto, envía un mensaje directo con /wallet para iniciarlo`,
+// 				arabic: `${
+// 					ctx.from.username || ctx.from.first_name
+// 				}، ليس لديك محفظة مرفقة، أرسل رسالة مباشرة مع /wallet لتهيئتها`,
+// 				chinese: `${
+// 					ctx.from.username || ctx.from.first_name
+// 				}, 您没有附加的钱包，请发送私信并使用 /wallet 来初始化它`,
+// 			}[userLanguage],
+// 		);
+// 	}
+// 	if (ctx.chat.type !== "private") {
+// 		await ctx.reply(
+// 			{
+// 				english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
+// 				french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
+// 				spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
+// 				arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
+// 				chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
+// 			}[userLanguage],
+// 		);
+// 	}
 
-	const message = await ctx.telegram.sendMessage(
-		ctx.from?.id,
-		{
-			english: `You are about to buy ${token.token.name} with contract address ${token.token.address}`,
-			french: `Vous êtes sur le point d'acheter ${token.token.name} avec l'adresse du contrat ${token.token.address}`,
-			spanish: `Estás a punto de comprar ${token.token.name} con la dirección del contrato ${token.token.address}`,
-			arabic: `أنت على وشك شراء ${token.token.name} بعنوان العقد ${token.token.address}`,
-			chinese: `您即将用合约地址 ${token.token.address} 购买 ${token.token.name}`,
-		}[userLanguage],
-		Markup.inlineKeyboard([
-			Markup.button.callback(
-				{
-					english: "Proceed",
-					french: "Procéder",
-					spanish: "Proceder",
-					arabic: "المتابعة",
-					chinese: "继续",
-				}[userLanguage],
-				`proceedbuy_${token?.address} ${amount}`,
-			),
-			Markup.button.callback(
-				{
-					english: "Cancel",
-					french: "Annuler",
-					spanish: "Cancelar",
-					arabic: "إلغاء",
-					chinese: "取消",
-				}[userLanguage],
-				"cancel",
-			),
-		]),
-	);
-	bot.action("cancel", async (ctx) => {
-		await ctx.deleteMessage(message.message_id);
-		return await ctx.reply(
-			{
-				english: "This operation has been cancelled",
-				french: "Cette opération a été annulée",
-				spanish: "Esta operación ha sido cancelada",
-				arabic: "تم إلغاء هذه العملية",
-				chinese: "此操作已取消",
-			}[userLanguage],
-		);
-	});
-});
-bot.command("sell", async (ctx) => {
-	const commandArgs = ctx.message.text.split(" ").slice(1);
-	const prompt = commandArgs.join(" ");
-	const userid = ctx.from?.id;
+// 	const message = await ctx.telegram.sendMessage(
+// 		ctx.from?.id,
+// 		{
+// 			english: `You are about to buy ${token.token.name} with contract address ${token.token.address}`,
+// 			french: `Vous êtes sur le point d'acheter ${token.token.name} avec l'adresse du contrat ${token.token.address}`,
+// 			spanish: `Estás a punto de comprar ${token.token.name} con la dirección del contrato ${token.token.address}`,
+// 			arabic: `أنت على وشك شراء ${token.token.name} بعنوان العقد ${token.token.address}`,
+// 			chinese: `您即将用合约地址 ${token.token.address} 购买 ${token.token.name}`,
+// 		}[userLanguage],
+// 		Markup.inlineKeyboard([
+// 			Markup.button.callback(
+// 				{
+// 					english: "Proceed",
+// 					french: "Procéder",
+// 					spanish: "Proceder",
+// 					arabic: "المتابعة",
+// 					chinese: "继续",
+// 				}[userLanguage],
+// 				`proceedbuy_${token?.address} ${amount}`,
+// 			),
+// 			Markup.button.callback(
+// 				{
+// 					english: "Cancel",
+// 					french: "Annuler",
+// 					spanish: "Cancelar",
+// 					arabic: "إلغاء",
+// 					chinese: "取消",
+// 				}[userLanguage],
+// 				"cancel",
+// 			),
+// 		]),
+// 	);
+// 	bot.action("cancel", async (ctx) => {
+// 		await ctx.deleteMessage(message.message_id);
+// 		return await ctx.reply(
+// 			{
+// 				english: "This operation has been cancelled",
+// 				french: "Cette opération a été annulée",
+// 				spanish: "Esta operación ha sido cancelada",
+// 				arabic: "تم إلغاء هذه العملية",
+// 				chinese: "此操作已取消",
+// 			}[userLanguage],
+// 		);
+// 	});
+// });
+// bot.command("sell", async (ctx) => {
+// 	const commandArgs = ctx.message.text.split(" ").slice(1);
+// 	const prompt = commandArgs.join(" ");
+// 	const userid = ctx.from?.id;
 
-	if (!userid) {
-		return;
-	}
-	const userLanguage = await getUserLanguage(userid);
-	const ca = await queryAi(getCaPrompt(prompt));
-	const amount = await queryAi(getsellamountprompt(prompt));
-	if (ca.toLowerCase() === "null") {
-		return await ctx.reply(
-			{
-				english: "You need to send a contract address with your command.",
-				french: "Vous devez envoyer une adresse de contrat avec votre commande.",
-				spanish: "Debes enviar una dirección de contrato con tu comando.",
-				arabic: "يجب عليك إرسال عنوان العقد مع الأمر الخاص بك.",
-				chinese: "您需要在命令中发送合约地址。",
-			}[userLanguage],
-		);
-	}
-	const token = await processToken(ca);
-	if (!token) {
-		return await ctx.reply(
-			{
-				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
-				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
-				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
-				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
-				chinese: "我找不到代币，不支持的链或错误的合约地址。",
-			}[userLanguage],
-		);
-	}
-	if (!(await getUserWalletDetails(ctx.from.id))?.walletAddress) {
-		return await ctx.reply("You have not generated a wallet yet, kindly send /wallet command privately");
-	}
-	if (ctx.chat.type !== "private") {
-		await ctx.reply(
-			{
-				english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
-				french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
-				spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
-				arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
-				chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
-			}[userLanguage],
-		);
-	}
+// 	if (!userid) {
+// 		return;
+// 	}
+// 	const userLanguage = await getUserLanguage(userid);
+// 	const ca = await queryAi(getCaPrompt(prompt));
+// 	const amount = await queryAi(getsellamountprompt(prompt));
+// 	if (ca.toLowerCase() === "null") {
+// 		return await ctx.reply(
+// 			{
+// 				english: "You need to send a contract address with your command.",
+// 				french: "Vous devez envoyer une adresse de contrat avec votre commande.",
+// 				spanish: "Debes enviar una dirección de contrato con tu comando.",
+// 				arabic: "يجب عليك إرسال عنوان العقد مع الأمر الخاص بك.",
+// 				chinese: "您需要在命令中发送合约地址。",
+// 			}[userLanguage],
+// 		);
+// 	}
+// 	const token = await processToken(ca);
+// 	if (!token) {
+// 		return await ctx.reply(
+// 			{
+// 				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+// 				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
+// 				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
+// 				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
+// 				chinese: "我找不到代币，不支持的链或错误的合约地址。",
+// 			}[userLanguage],
+// 		);
+// 	}
+// 	if (!(await getUserWalletDetails(ctx.from.id))?.walletAddress) {
+// 		return await ctx.reply("You have not generated a wallet yet, kindly send /wallet command privately");
+// 	}
+// 	if (ctx.chat.type !== "private") {
+// 		await ctx.reply(
+// 			{
+// 				english: `@${ctx.from.username} You have been sent a confirmation message privately. Kindly confirm in your inbox.`,
+// 				french: `@${ctx.from.username} Un message de confirmation vous a été envoyé en privé. Veuillez confirmer dans votre boîte de réception.`,
+// 				spanish: `@${ctx.from.username} Se te ha enviado un mensaje de confirmación en privado. Por favor, confirma en tu bandeja de entrada.`,
+// 				arabic: `@${ctx.from.username} تم إرسال رسالة تأكيد لك بشكل خاص. يرجى التأكيد في بريدك الوارد.`,
+// 				chinese: `@${ctx.from.username} 已私下向您发送确认消息。请在收件箱中确认。`,
+// 			}[userLanguage],
+// 		);
+// 	}
 
-	const message = await ctx.telegram.sendMessage(
-		ctx.from?.id,
-		{
-			english: `You are about to sell ${token.token.name}`,
-			french: `Vous êtes sur le point de vendre ${token.token.name}`,
-			spanish: `Estás a punto de vender ${token.token.name}`,
-			arabic: `أنت على وشك بيع ${token.token.name}`,
-			chinese: `您即将出售 ${token.token.name}`,
-		}[userLanguage],
-		Markup.inlineKeyboard([
-			Markup.button.callback(
-				{
-					english: "Proceed",
-					french: "Procéder",
-					spanish: "Proceder",
-					arabic: "المتابعة",
-					chinese: "继续",
-				}[userLanguage],
-				`proceedsell_${token?.address} ${amount}`,
-			),
-			Markup.button.callback(
-				{
-					english: "Cancel",
-					french: "Annuler",
-					spanish: "Cancelar",
-					arabic: "إلغاء",
-					chinese: "取消",
-				}[userLanguage],
-				"cancel",
-			),
-		]),
-	);
-	bot.action("cancel", async (ctx) => {
-		await ctx.deleteMessage(message.message_id);
-		return await ctx.reply(
-			{
-				english: "This operation has been cancelled",
-				french: "Cette opération a été annulée",
-				spanish: "Esta operación ha sido cancelada",
-				arabic: "تم إلغاء هذه العملية",
-				chinese: "此操作已取消",
-			}[userLanguage],
-		);
-	});
-});
+// 	const message = await ctx.telegram.sendMessage(
+// 		ctx.from?.id,
+// 		{
+// 			english: `You are about to sell ${token.token.name}`,
+// 			french: `Vous êtes sur le point de vendre ${token.token.name}`,
+// 			spanish: `Estás a punto de vender ${token.token.name}`,
+// 			arabic: `أنت على وشك بيع ${token.token.name}`,
+// 			chinese: `您即将出售 ${token.token.name}`,
+// 		}[userLanguage],
+// 		Markup.inlineKeyboard([
+// 			Markup.button.callback(
+// 				{
+// 					english: "Proceed",
+// 					french: "Procéder",
+// 					spanish: "Proceder",
+// 					arabic: "المتابعة",
+// 					chinese: "继续",
+// 				}[userLanguage],
+// 				`proceedsell_${token?.address} ${amount}`,
+// 			),
+// 			Markup.button.callback(
+// 				{
+// 					english: "Cancel",
+// 					french: "Annuler",
+// 					spanish: "Cancelar",
+// 					arabic: "إلغاء",
+// 					chinese: "取消",
+// 				}[userLanguage],
+// 				"cancel",
+// 			),
+// 		]),
+// 	);
+// 	bot.action("cancel", async (ctx) => {
+// 		await ctx.deleteMessage(message.message_id);
+// 		return await ctx.reply(
+// 			{
+// 				english: "This operation has been cancelled",
+// 				french: "Cette opération a été annulée",
+// 				spanish: "Esta operación ha sido cancelada",
+// 				arabic: "تم إلغاء هذه العملية",
+// 				chinese: "此操作已取消",
+// 			}[userLanguage],
+// 		);
+// 	});
+// });
 bot.command("schedule", async (ctx) => {
 	const currentUnixTime = Math.floor(Date.now() / 1000);
 	const commandArgs = ctx.message.text.split(" ").slice(1);
@@ -1876,8 +1858,31 @@ bot.command("schedule", async (ctx) => {
  *
  */
 
-bot.command("analysis", checkGroup, async (ctx) => {
+bot.command("ta", checkGroup, async (ctx) => {
 	await ctx.scene.enter("analysis-wizard");
+	return;
+});
+bot.command("buy", checkGroup, async (ctx) => {
+	if (!(await getUserWalletDetails(ctx.from.id))?.walletAddress) {
+		return await ctx.reply("You have not generated a wallet yet, send /wallet command to initialise your wallet");
+	}
+	await ctx.scene.enter("prebuy-wizard");
+	return;
+});
+bot.command("sell", checkGroup, async (ctx) => {
+	if (!(await getUserWalletDetails(ctx.from.id))?.walletAddress) {
+		return await ctx.reply("You have not generated a wallet yet, send /wallet command to initialise your wallet");
+	}
+	await ctx.scene.enter("presell-wizard");
+	return;
+});
+bot.command("info", checkGroup, async (ctx) => {
+	await ctx.scene.enter("info-wizard");
+	return;
+});
+
+bot.command("i", checkGroup, async (ctx) => {
+	await ctx.scene.enter("info-wizard");
 	return;
 });
 
@@ -1944,13 +1949,6 @@ const start = async () => {
 			const existingUser = await getUser(userId); // Replace with your method to get user by ID
 
 			if (existingUser) {
-				const language = (await existingUser.language) as keyof {
-					english: "You are already registered. Use /help to get started.";
-					french: "Vous êtes déjà inscrit. Utilisez /help pour commencer.";
-					spanish: "Ya estás registrado. Usa /help para empezar.";
-					arabic: "أنت مسجل بالفعل. استخدم /help للبدء.";
-					chinese: "您已经注册了。使用 /help 开始。";
-				};
 				await ctx.replyWithPhoto(
 					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
 					{
@@ -1959,30 +1957,32 @@ const start = async () => {
 					},
 				);
 			} else {
-				await ctx.replyWithHTML(
-					"Please select a language",
-					Markup.inlineKeyboard([
-						[Markup.button.callback("English", "language_english")],
-						[Markup.button.callback("Français", "language_french")],
-						[Markup.button.callback("Español", "language_spanish")],
-						[Markup.button.callback("中文", "language_chinese")],
-						[Markup.button.callback("العربية", "language_arabic")],
-					]),
-				);
+				await createUser({
+					...ctx.from,
+					walletAddress: null,
+					bets: [],
+					privateKey: null,
+					mnemonic: null,
+					ethholding: [],
+					baseholding: [],
+					solWalletAddress: null,
+					solPrivateKey: null,
+					solMnemonic: null,
+					language: "english",
+				});
 
-				// Store user data in the database
+				await ctx.replyWithPhoto(
+					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
+					{
+						caption: `Welcome to <b>Parrot AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>🌐 Website: </b>https://parrotbot.lol/\n<b>📖Manual: </b>https://docs.parrotbot.io\n<b>📣 Announcements: </b>https://t.me/parrotannouncements\n<b>💬 Telegram: </b> https://t.me/Parrotbot_Portal`,
+						parse_mode: "HTML",
+					},
+				);
 			}
 		} else {
 			// Handle group chats
 			const usernameOrLastName = ctx.message.from.username || ctx.message.from.last_name || "user";
 			await ctx.reply(`@${usernameOrLastName}, send a private message to the bot to get started.`);
-			// {
-			// 		english: `@${usernameOrLastName}, send a private message to the bot to get started.`,
-			// 		french: `@${usernameOrLastName}, envoyez un message privé au bot pour commencer.`,
-			// 		spanish: `@${usernameOrLastName}, envía un mensaje privado al bot para empezar.`,
-			// 		arabic: `@${usernameOrLastName}، أرسل رسالة خاصة إلى الروبوت للبدء.`,
-			// 		chinese: `@${usernameOrLastName}，发送私信给机器人开始。`,
-			// 	}[language],
 		}
 	});
 };
@@ -2032,5 +2032,5 @@ const launch = async (): Promise<void> => {
 	}
 };
 
-export { launch, quit, start, coinActions, menu };
+export { launch, quit, start, menu };
 export default launch;
