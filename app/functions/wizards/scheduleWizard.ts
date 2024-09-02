@@ -4,7 +4,7 @@ import { fetchCoin } from "../fetchCoins";
 import { processToken } from "../helper";
 import { formatNumber } from "../commands";
 import { queryAi } from "../queryApi";
-import { getCaPrompt } from "../prompt";
+import { getBuyPrompt, getCaPrompt } from "../prompt";
 
 const stepHandler = new Composer<WizardContext>();
 
@@ -43,14 +43,12 @@ export const prebuyWizard = new Scenes.WizardScene<WizardContext>(
 					);
 					ctx.scene.leave();
 				}
-				
-			 await ctx.reply("What time interval do you want your trade to be executed (maximum of 24 hours)")
-             return ctx.wizard.next();
+
+				await ctx.reply("What operation do you want to schedule, buy or sell");
+				return ctx.wizard.next();
 			} else {
-				return await ctx.replyWithHTML(
-					"You need to provide a valid  contract address.\nPlease submit contract address:",
-					Markup.inlineKeyboard([Markup.button.callback("Exit Session", "cancel")]),
-				);
+				await ctx.replyWithHTML("Invalid contract address\n Exiting session...");
+				return ctx.scene.leave();
 			}
 		}
 	},
@@ -66,31 +64,12 @@ const cancelFn = async (ctx: WizardContext) => {
 stepHandler.action("cancel", cancelFn);
 const getText = async (ctx: WizardContext) => {
 	if (ctx.message && "text" in ctx.message) {
-		// console.log(ctx.scene.session.promptStore.address);
 		const { text } = ctx.message;
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    }}
+
+		const res = await queryAi(getBuyPrompt(text));
+		if (res.toLowerCase() === "null") {
+		}
+	}
+};
+
+stepHandler.on("text", getText);

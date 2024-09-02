@@ -26,7 +26,7 @@ export const prebuyWizard = new Scenes.WizardScene<WizardContext>(
 			const { text: address } = ctx.message;
 
 			const resp = await queryAi(getCaPrompt(address));
-			if (address.length && resp !== "null") {
+			if (address.length && resp.toLowerCase() !== "null") {
 				const res = await processToken(address);
 				const token = res?.token;
 
@@ -46,10 +46,7 @@ export const prebuyWizard = new Scenes.WizardScene<WizardContext>(
 				ctx.scene.leave();
 				return await ctx.scene.enter("buy-wizard", { address: ca, token: res, time: null, amount: null });
 			} else {
-				await ctx.replyWithHTML(
-					"Invalid contract address\n Exiting session...",
-					Markup.inlineKeyboard([Markup.button.callback("Exit Session", "cancel")]),
-				);
+				await ctx.replyWithHTML("Invalid contract address\n Exiting session...");
 				return ctx.scene.leave();
 			}
 		}

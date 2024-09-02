@@ -26,7 +26,7 @@ export const infoWizard = new Scenes.WizardScene<WizardContext>(
 			const { text: address } = ctx.message;
 
 			const resp = await queryAi(getCaPrompt(address));
-			if (address.length && resp !== "null") {
+			if (address.length && resp.toLowerCase() !== "null") {
 				const res = await processToken(address);
 				const coin = res?.token;
 
@@ -66,10 +66,7 @@ export const infoWizard = new Scenes.WizardScene<WizardContext>(
 
 				return ctx.wizard.next();
 			} else {
-				await ctx.replyWithHTML(
-					"Invalid contract address\n Exiting session...",
-					Markup.inlineKeyboard([Markup.button.callback("Exit Session", "cancel")]),
-				);
+				await ctx.replyWithHTML("Invalid contract address\n Exiting session...");
 				return ctx.scene.leave();
 			}
 		}
