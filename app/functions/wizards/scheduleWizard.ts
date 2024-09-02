@@ -35,6 +35,8 @@ export const prebuyWizard = new Scenes.WizardScene<WizardContext>(
 					return ctx.scene.leave();
 				}
 
+				ctx.scene.session.scStore.res = res;
+
 				const ca = address.trim();
 
 				if (res.chain.toLowerCase() !== "ethereum" && res.chain.toLowerCase() !== "base") {
@@ -68,7 +70,11 @@ const getText = async (ctx: WizardContext) => {
 
 		const res = await queryAi(getBuyPrompt(text));
 		if (res.toLowerCase() === "null") {
+			await ctx.replyWithHTML("Invalid response\n Exiting session...");
+			return ctx.scene.leave();
 		}
+
+		await ctx.reply("What time interval do you want your trade to be executed (maximum of 24 hours)");
 	}
 };
 

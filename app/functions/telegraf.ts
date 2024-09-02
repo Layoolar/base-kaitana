@@ -55,6 +55,14 @@ interface MyWizardSession extends Scenes.WizardSessionData {
 		userBalance: null | number;
 		language: "english" | "french" | "spanish" | "arabic" | "chinese";
 	};
+	scStore: {
+		res: {
+			chain: string;
+			address: string;
+			token: TokenData;
+		} | null;
+		time: undefined | string;
+	};
 	sendStore: {
 		recipientAddress: string;
 		amount: string;

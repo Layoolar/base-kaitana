@@ -44,8 +44,7 @@ export const infoWizard = new Scenes.WizardScene<WizardContext>(
 🌐${res.chain.charAt(0).toUpperCase() + res.chain.slice(1)}
 💰 USD: <code>$${coin.price.toFixed(7)}</code>
 💎FDV: <code>${formatNumber(coin.mc)}</code>
-💦 Liq: <code>${coin.liquidity}</code>
-📊 Vol: <code>Vol</code>
+💦 Liq: <code>${formatNumber(coin.liquidity)}</code>
 📈 1hr: ${coin.priceChange1hPercent ? `${coin.priceChange1hPercent.toFixed(2)}%` : "N/A"}
 📉 24h: ${coin.priceChange8hPercent ? `${coin.priceChange8hPercent.toFixed(2)}%` : "N/A"}
 
