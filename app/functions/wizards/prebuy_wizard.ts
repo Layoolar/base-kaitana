@@ -46,10 +46,11 @@ export const prebuyWizard = new Scenes.WizardScene<WizardContext>(
 				ctx.scene.leave();
 				return await ctx.scene.enter("buy-wizard", { address: ca, token: res, time: null, amount: null });
 			} else {
-				return await ctx.replyWithHTML(
-					"You need to provide a valid  contract address.\nPlease submit contract address:",
+				await ctx.replyWithHTML(
+					"Invalid contract address\n Exiting session...",
 					Markup.inlineKeyboard([Markup.button.callback("Exit Session", "cancel")]),
 				);
+				return ctx.scene.leave();
 			}
 		}
 	},

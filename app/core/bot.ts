@@ -30,7 +30,6 @@ const startt = async () => {
 
 	await command.menu();
 
-	await command.coinActions();
 	await hears.text();
 };
 

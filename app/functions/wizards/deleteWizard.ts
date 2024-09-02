@@ -43,10 +43,11 @@ export const deleteWizard = new Scenes.WizardScene<WizardContext>(
 
 				return ctx.scene.leave();
 			} else {
-				return await ctx.replyWithHTML(
-					"You need to provide a valid  contract address.\nPlease submit contract address:",
+				await ctx.replyWithHTML(
+					"Invalid contract address\n Exiting session...",
 					Markup.inlineKeyboard([Markup.button.callback("Exit Session", "cancel")]),
 				);
+				return ctx.scene.leave();
 			}
 		}
 	},
