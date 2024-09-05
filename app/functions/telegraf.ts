@@ -88,6 +88,16 @@ interface MyWizardSession extends Scenes.WizardSessionData {
 		chatHistory: string[][];
 		address: string | null;
 	};
+	txinfoStore: {
+		res: {
+			chain: string;
+			address: string;
+			token: TokenData;
+		} | null;
+
+		chatHistory: string[][];
+		address: string | null;
+	};
 }
 
 // Create custom context with new Session passed generically

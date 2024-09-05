@@ -9,52 +9,42 @@ import { getCaPrompt } from "../prompt";
 const initialData = {
 	res: null,
 	chatHistory: [],
-	address:null
+	address: null,
 };
 
 const stepHandler = new Composer<WizardContext>();
 
-export const infoWizard = new Scenes.WizardScene<WizardContext>(
-	"info-wizard",
+export const txinfoWizard = new Scenes.WizardScene<WizardContext>(
+	"tx_info-wizard",
 	async (ctx) => {
 		if (!ctx.from) {
 			return await ctx.scene.leave();
 		}
 
-		ctx.scene.session.infoStore = JSON.parse(JSON.stringify(initialData));
+		ctx.scene.session.txinfoStore = JSON.parse(JSON.stringify(initialData));
 		// @ts-ignore
-		ctx.scene.session.infoStore.addressddress = ctx.scene.state.address;
-		
+		ctx.scene.session.txinfoStore.address = ctx.scene.state.address;
+		const address = ctx.scene.session.txinfoStore.address;
 
-		await ctx.replyWithHTML("<b>What contract address do you want to get info for</b>");
+		const res = await processToken(address);
+		const coin = res?.token;
 
-		return ctx.wizard.next();
-	},
-	async (ctx) => {
-		if (!ctx.from) {
-			return await ctx.scene.leave();
+		if (!coin) {
+			await ctx.reply(
+				"I couldn't find the token, unsupported chain, or wrong contract address. Please ensure you use a clear and high-quality screenshot of the contract address. Low-quality images may not be processed correctly. If the issue persists, please try again as it could be a random malfunction.",
+			);
+
+			return ctx.scene.leave();
 		}
-		if (ctx.message && "text" in ctx.message) {
-			const { text: address } = ctx.message;
 
-			const resp = await queryAi(getCaPrompt(address));
-			if (address.length && resp.toLowerCase() !== "null") {
-				const res = await processToken(address);
-				const coin = res?.token;
+		ctx.scene.session.txinfoStore.res = res;
+		await ctx.replyWithHTML(
+			`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin.name}</i></b>\n<b>Token Address: </b> <code><i>${coin.address}</i></code>`,
+		);
 
-				if (!coin) {
-					await ctx.reply("I couldn't find the token, unsupported chain, or wrong contract address.");
-					return ctx.scene.leave();
-				}
-
-				ctx.scene.session.infoStore.res = res;
-				await ctx.replyWithHTML(
-					`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin.name}</i></b>\n<b>Token Address: </b> <code><i>${coin.address}</i></code>`,
-				);
-
-				const response2 = `🟢<a href="https://birdeye.so/token/${coin?.address}?chain=${
-					res?.chain
-				}"><b>${coin.name?.toUpperCase()}</b></a> [${formatNumber(coin.mc)}] $${coin.symbol?.toUpperCase()}
+		const response2 = `🟢<a href="https://birdeye.so/token/${coin?.address}?chain=${
+			res?.chain
+		}"><b>${coin.name?.toUpperCase()}</b></a> [${formatNumber(coin.mc)}] $${coin.symbol?.toUpperCase()}
 🌐${res.chain.charAt(0).toUpperCase() + res.chain.slice(1)}
 💰 USD: ${coin.price ? `<code>$${coin?.price?.toFixed(7)}</code>` : "N/A"}
 💎FDV: <code>${formatNumber(coin?.mc)}</code>
@@ -65,33 +55,28 @@ export const infoWizard = new Scenes.WizardScene<WizardContext>(
 <code>${coin?.address}</code>
 `;
 
-				await ctx.replyWithHTML(
-					response2,
-					Markup.inlineKeyboard([
-						Markup.button.callback("Buy", `proceedbuy_${coin.address}`),
-						Markup.button.callback(
-							"Sell",
+		await ctx.replyWithHTML(
+			response2,
+			Markup.inlineKeyboard([
+				Markup.button.callback("Buy", `proceedbuy_${coin.address}`),
+				Markup.button.callback(
+					"Sell",
 
-							`proceedsell_${coin.address}`,
-						),
-					]),
-				);
-				await ctx.reply(
-					`Do you have any other questiions about ${coin.name}?\nYou can type exit or use the Exit session button to leave the session.`,
-					Markup.inlineKeyboard([
-						Markup.button.callback(
-							"Exit Session",
+					`proceedsell_${coin.address}`,
+				),
+			]),
+		);
+		await ctx.reply(
+			`You can ask any other questions about ${coin.name}?\ntype exit or use the Exit session button to leave the session.`,
+			Markup.inlineKeyboard([
+				Markup.button.callback(
+					"Exit Session",
 
-							"cancel",
-						),
-					]),
-				);
-				return ctx.wizard.next();
-			} else {
-				await ctx.replyWithHTML("Invalid contract address\n Exiting session...");
-				return ctx.scene.leave();
-			}
-		}
+					"cancel",
+				),
+			]),
+		);
+		return ctx.wizard.next();
 	},
 
 	stepHandler,
@@ -176,7 +161,7 @@ stepHandler.on("text", async (ctx) => {
 		const { text: prompt } = ctx.message;
 
 		if (prompt.toLowerCase() !== "exit") {
-			const res = ctx.scene.session.infoStore.res;
+			const res = ctx.scene.session.txinfoStore.res;
 
 			const coin = res?.token;
 
@@ -189,7 +174,7 @@ stepHandler.on("text", async (ctx) => {
 				...res?.token,
 			})}". use the information provided to answer any question in this "${prompt}. Reply "This information is unavailable" to any question you can't answer"`;
 
-			const detailsCompletionMessage = await conversation(prompt4, ctx.scene.session.infoStore.chatHistory);
+			const detailsCompletionMessage = await conversation(prompt4, ctx.scene.session.txinfoStore.chatHistory);
 
 			if (detailsCompletionMessage) {
 				await ctx.replyWithHTML(
@@ -211,19 +196,19 @@ stepHandler.on("text", async (ctx) => {
 
 				// console.log(completionMessage);
 
-				ctx.scene.session.infoStore.chatHistory.push(["user", prompt4]);
-				ctx.scene.session.infoStore.chatHistory.push(["assistant", detailsCompletionMessage]);
+				ctx.scene.session.txinfoStore.chatHistory.push(["user", prompt4]);
+				ctx.scene.session.txinfoStore.chatHistory.push(["assistant", detailsCompletionMessage]);
 
 				return;
 			} else {
-				const exitMessage = await conversation("exit", ctx.scene.session.infoStore.chatHistory);
+				const exitMessage = await conversation("exit", ctx.scene.session.txinfoStore.chatHistory);
 				if (exitMessage) {
 					await ctx.replyWithHTML(exitMessage);
 				}
 				return ctx.scene.leave();
 			}
 		}
-		const exitMessage = await conversation("exit", ctx.scene.session.infoStore.chatHistory);
+		const exitMessage = await conversation("exit", ctx.scene.session.txinfoStore.chatHistory);
 		if (exitMessage) {
 			await ctx.replyWithHTML(exitMessage);
 		}

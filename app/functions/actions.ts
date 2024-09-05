@@ -344,7 +344,7 @@ bot.on("photo", async (ctx) => {
 
 		if (res === "null") return ctx.reply("No contract address detected in your image");
 
-		await ctx.scene.enter("info-wizard", { address: res });
+		await ctx.scene.enter("tx_info-wizard", { address: res });
 	} catch (error) {
 		console.error("Error processing photo:", error);
 		await ctx.reply("Sorry, there was an error processing your photo.");
