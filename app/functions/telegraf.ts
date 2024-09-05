@@ -86,6 +86,7 @@ interface MyWizardSession extends Scenes.WizardSessionData {
 		} | null;
 
 		chatHistory: string[][];
+		address: string | null;
 	};
 }
 

@@ -2,12 +2,13 @@ import { bot } from "./wizards";
 import { getJoke } from "./commands";
 import fetchData, { fetchCoin } from "./fetchCoins";
 import { Markup } from "telegraf";
-import { queryAi } from "./queryApi";
+import { analyzeImageWithGPT, queryAi } from "./queryApi";
 import { StaticPool } from "node-worker-threads-pool";
-
+import axios from "axios";
 import path from "path";
 import { createUser, getUserLanguage } from "./AWSusers";
 import { processToken } from "./helper";
+import { getCaPrompt } from "./prompt";
 
 const filePath = path.join(__dirname, "worker.mjs");
 // onsole.log(pathh);
@@ -326,6 +327,28 @@ bot.action(/language_(.+)$/, async (ctx) => {
 bot.command("exit", (ctx) => {
 	ctx.reply("This session has been cancelled");
 	ctx.scene.leave(); // This forces the bot to exit any active wizard or scene
+});
+
+bot.on("photo", async (ctx) => {
+	try {
+		// 'photo' array contains different sizes of the image, we can get the largest by accessing the last element
+		const photo = ctx.message.photo[ctx.message.photo.length - 1];
+
+		// Get file_id of the photo
+		const fileId = photo.file_id;
+
+		// Get the file link from Telegram
+		const fileUrl = await ctx.telegram.getFileLink(fileId);
+
+		const res = await analyzeImageWithGPT(fileUrl.href);
+
+		if (res === "null") return ctx.reply("No contract address detected in your image");
+
+		await ctx.scene.enter("info-wizard", { address: res });
+	} catch (error) {
+		console.error("Error processing photo:", error);
+		await ctx.reply("Sorry, there was an error processing your photo.");
+	}
 });
 
 export { bot };

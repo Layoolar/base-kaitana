@@ -9,6 +9,7 @@ import { getCaPrompt } from "../prompt";
 const initialData = {
 	res: null,
 	chatHistory: [],
+	address: null,
 };
 
 const stepHandler = new Composer<WizardContext>();
@@ -21,35 +22,37 @@ export const infoWizard = new Scenes.WizardScene<WizardContext>(
 		}
 
 		ctx.scene.session.infoStore = JSON.parse(JSON.stringify(initialData));
+		// @ts-ignore
+		ctx.scene.session.infoStore.address = ctx.scene.state.address;
+
+		if (ctx.scene.session.infoStore.address) return ctx.wizard.next();
 		await ctx.replyWithHTML("<b>What contract address do you want to get info for</b>");
 
 		return ctx.wizard.next();
 	},
 	async (ctx) => {
-		if (!ctx.from) {
-			return await ctx.scene.leave();
-		}
-		if (ctx.message && "text" in ctx.message) {
-			const { text: address } = ctx.message;
+		// @ts-ignore
+		const { text: address } = ctx.message;
+		console.log(ctx.scene.session.infoStore.address);
 
-			const resp = await queryAi(getCaPrompt(address));
-			if (address.length && resp.toLowerCase() !== "null") {
-				const res = await processToken(address);
-				const coin = res?.token;
+		const resp = await queryAi(address ? getCaPrompt(address) : ctx.scene.session.infoStore.address);
+		if (resp.toLowerCase() !== "null") {
+			const res = await processToken(address);
+			const coin = res?.token;
 
-				if (!coin) {
-					await ctx.reply("I couldn't find the token, unsupported chain, or wrong contract address.");
-					return ctx.scene.leave();
-				}
+			if (!coin) {
+				await ctx.reply("I couldn't find the token, unsupported chain, or wrong contract address.");
+				return ctx.scene.leave();
+			}
 
-				ctx.scene.session.infoStore.res = res;
-				await ctx.replyWithHTML(
-					`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin.name}</i></b>\n<b>Token Address: </b> <code><i>${coin.address}</i></code>`,
-				);
+			ctx.scene.session.infoStore.res = res;
+			await ctx.replyWithHTML(
+				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin.name}</i></b>\n<b>Token Address: </b> <code><i>${coin.address}</i></code>`,
+			);
 
-				const response2 = `🟢<a href="https://birdeye.so/token/${coin?.address}?chain=${
-					res?.chain
-				}"><b>${coin.name?.toUpperCase()}</b></a> [${formatNumber(coin.mc)}] $${coin.symbol?.toUpperCase()}
+			const response2 = `🟢<a href="https://birdeye.so/token/${coin?.address}?chain=${
+				res?.chain
+			}"><b>${coin.name?.toUpperCase()}</b></a> [${formatNumber(coin.mc)}] $${coin.symbol?.toUpperCase()}
 🌐${res.chain.charAt(0).toUpperCase() + res.chain.slice(1)}
 💰 USD: ${coin.price ? `<code>$${coin?.price?.toFixed(7)}</code>` : "N/A"}
 💎FDV: <code>${formatNumber(coin?.mc)}</code>
@@ -60,32 +63,31 @@ export const infoWizard = new Scenes.WizardScene<WizardContext>(
 <code>${coin?.address}</code>
 `;
 
-				await ctx.replyWithHTML(
-					response2,
-					Markup.inlineKeyboard([
-						Markup.button.callback("Buy", `proceedbuy_${coin.address}`),
-						Markup.button.callback(
-							"Sell",
+			await ctx.replyWithHTML(
+				response2,
+				Markup.inlineKeyboard([
+					Markup.button.callback("Buy", `proceedbuy_${coin.address}`),
+					Markup.button.callback(
+						"Sell",
 
-							`proceedsell_${coin.address}`,
-						),
-					]),
-				);
-				await ctx.reply(
-					`Do you have any other questiions about ${coin.name}?\nYou can type exit or use the Exit session button to leave the session.`,
-					Markup.inlineKeyboard([
-						Markup.button.callback(
-							"Exit Session",
+						`proceedsell_${coin.address}`,
+					),
+				]),
+			);
+			await ctx.reply(
+				`Do you have any other questiions about ${coin.name}?\nYou can type exit or use the Exit session button to leave the session.`,
+				Markup.inlineKeyboard([
+					Markup.button.callback(
+						"Exit Session",
 
-							"cancel",
-						),
-					]),
-				);
-				return ctx.wizard.next();
-			} else {
-				await ctx.replyWithHTML("Invalid contract address\n Exiting session...");
-				return ctx.scene.leave();
-			}
+						"cancel",
+					),
+				]),
+			);
+			return ctx.wizard.next();
+		} else {
+			await ctx.replyWithHTML("Invalid contract address\n Exiting session...");
+			return ctx.scene.leave();
 		}
 	},
 

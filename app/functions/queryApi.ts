@@ -2,7 +2,7 @@ import OpenAI from "openai";
 import type { ChatCompletionUserMessageParam } from "openai/resources";
 import "dotenv/config";
 
-export const queryAi = async (text: string): Promise<string> => {
+export const queryAi = async (text: string | null): Promise<string> => {
 	let aiReply = "";
 	await fetch("https://api.openai.com/v1/chat/completions", {
 		method: "POST",
@@ -66,3 +66,50 @@ export async function conversation(input: string, chatHistory: string[][]) {
 
 	// console.log();
 }
+const axios = require("axios");
+
+// Function to send image URL and text to OpenAI API
+export const analyzeImageWithGPT = async (imageUrl: string) => {
+	const apiKey = process.env.OPENAI_API_KEY;
+	const apiUrl = "https://api.openai.com/v1/chat/completions";
+
+	const data = {
+		model: "gpt-4o", // Use the appropriate model
+		messages: [
+			{
+				role: "user",
+				content: [
+					{
+						type: "text",
+						text: `look for a contract address in this image, if there is none reply with one word "null" 
+						if the contract address is present send it.`,
+					},
+					{
+						type: "image_url",
+						image_url: {
+							url: imageUrl,
+						},
+					},
+				],
+			},
+		],
+		max_tokens: 300,
+	};
+
+	try {
+		const response = await axios.post(apiUrl, data, {
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${apiKey}`,
+			},
+		});
+
+		return response.data.choices[0].message.content;
+	} catch (error: any) {
+		console.error("Error:", error.response ? error.response.data : error.message);
+
+		throw error;
+	}
+};
+
+// Example usage
