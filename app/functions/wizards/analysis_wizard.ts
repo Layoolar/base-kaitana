@@ -8,6 +8,7 @@ import { toUnicode } from "punycode";
 import { fetchOHLCVData } from "../fetchCandlestickData";
 import { isEmpty, processToken } from "../helper";
 import { getUserLanguage } from "../AWSusers";
+import { url } from "inspector";
 
 const initialData = {
 	address: "",
@@ -84,7 +85,19 @@ You must choose out of up or down and give reason, make it conversational
 			}[userLanguage],
 		);
 	}
-	ctx.reply(await queryAi(`${analysisPromptCandle} Reply in ${userLanguage}`));
+
+	const response = await queryAi(`${analysisPromptCandle}`);
+	const chartData = await generateTimeAndPriceGraph(
+		ctx.scene.session.analysisStore.address.toLowerCase(),
+		timeframe,
+		ctx.scene.session.analysisStore.chain?.toLowerCase(),
+	);
+	if (!chartData) {
+		ctx.reply("An error occurred, please try again");
+		return ctx.scene.leave();
+	}
+
+	ctx.replyWithPhoto({ url: chartData?.url }, { caption: response });
 	ctx.answerCbQuery();
 	return ctx.scene.leave();
 });
