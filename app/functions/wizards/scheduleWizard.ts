@@ -8,12 +8,18 @@ import { getBuyPrompt, getCaPrompt, getTimePrompt, getSellPrompt } from "../prom
 
 const stepHandler = new Composer<WizardContext>();
 
+const initialData = {
+	res: null,
+	time: undefined,
+	operation: "",
+};
 export const prebuyWizard = new Scenes.WizardScene<WizardContext>(
 	"prebuy-wizard",
 	async (ctx) => {
 		if (!ctx.from) {
 			return await ctx.scene.leave();
 		}
+		ctx.scene.session.scStore = JSON.parse(JSON.stringify(initialData));
 		await ctx.replyWithHTML("<b>What is the contract address of the token you want to buy? </b>");
 		//ctx.scene.session.store.sol_transaction = initialData;
 		return ctx.wizard.next();

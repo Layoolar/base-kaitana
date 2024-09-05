@@ -78,6 +78,15 @@ interface MyWizardSession extends Scenes.WizardSessionData {
 		currency: string;
 		chain: string | null;
 	};
+	infoStore: {
+		res: {
+			chain: string;
+			address: string;
+			token: TokenData;
+		} | null;
+
+		chatHistory: string[][];
+	};
 }
 
 // Create custom context with new Session passed generically

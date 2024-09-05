@@ -129,33 +129,26 @@ export type BetData = {
 	status: "open" | "closed";
 	betVerdict: string;
 };
-const groups: number[] = [];
+const groupId = -4005329091;
 bot.use(async (ctx, next) => {
-	// If the message is from a group and the group ID is not registered, register it
+	if (ctx.chat?.type === "private") {
+		try {
+			if (!ctx.from?.id) return;
 
-	if (ctx.chat) {
-		if (ctx.chat.type === "group" || ctx.chat.type === "supergroup") {
-			// console.log("here");
-			// const res = databases.getCallHistory(ctx.chat.id);
+			const chatMember = await ctx.telegram.getChatMember(groupId, ctx.from?.id);
 
-			// if (res) return next();
-			let found = false;
-			//	console.log("hi");
-
-			groups.forEach((group) => {
-				if (group === ctx.chat?.id) {
-					found = true;
-				}
-			});
-
-			if (!found) {
-				await addGroup({ id: ctx.chat.id, currentCalled: null, callHistory: [] });
-				groups.push(ctx.chat.id);
+			if (chatMember.status !== "left" && chatMember.status !== "kicked") {
+				return next();
+			} else {
+				await ctx.reply("You must be a member of the specified group to use this bot.");
 			}
+		} catch (error) {
+			console.error("Error checking group membership:", error);
+			await ctx.reply("An error occurred while verifying your group membership.");
 		}
+	} else {
+		return next();
 	}
-
-	return next();
 });
 
 export async function getJoke() {
@@ -1948,11 +1941,15 @@ const start = async () => {
 			// Check if the user is already registered
 			const existingUser = await getUser(userId); // Replace with your method to get user by ID
 
+			// 			TG: https://t.me/parrotaientry
+			// WEB: https://parrotbot.lol
+			// X: https://x.com/parrotaibot
+			// BOT: https://t.me/ParrotAI_bot
 			if (existingUser) {
 				await ctx.replyWithPhoto(
 					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
 					{
-						caption: `Welcome to <b>Parrot AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>🌐 Website: </b>https://parrotbot.lol/\n<b>📖Manual: </b>https://docs.parrotbot.io\n<b>📣 Announcements: </b>https://t.me/parrotannouncements\n<b>💬 Telegram: </b> https://t.me/Parrotbot_Portal`,
+						caption: `Welcome to <b>Parrot AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/parrotaientry\n<b>🌐 WEB: </b>https://parrotbot.lol/\n<b>📖 X:</b>https://x.com/parrotaibot\n<b>🤖 BOT: </b>https://x.com/parrotaibot\n`,
 						parse_mode: "HTML",
 					},
 				);
