@@ -1,7 +1,7 @@
 import { Context } from "telegraf";
 import { CoinDataType, Data } from "./commands";
 import axios, { AxiosResponse } from "axios";
-import { testdata } from "./data";
+
 import { TokenData } from "./timePriceData";
 
 interface DexScreenerPair {
