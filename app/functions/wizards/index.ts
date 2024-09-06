@@ -6,7 +6,7 @@ import { transactionWizard } from "./transaction_wizard";
 import { chartWizard } from "./chart_wizard";
 import { promptWizard } from "./prompt_wizard";
 import { detailstWizard } from "./details_wizard";
-import { buyWizard } from "../../../buywizard";
+import { buyWizard } from "./buywizard";
 import { sellWizard } from "./sellwizard";
 import { analysisWizard } from "./analysis_wizard";
 import { sendWizard } from "./send_wizard";
