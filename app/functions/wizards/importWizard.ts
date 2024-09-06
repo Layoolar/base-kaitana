@@ -32,7 +32,9 @@ export const importWizard = new Scenes.WizardScene<WizardContext>(
 				const token = res?.token;
 
 				if (!token) {
-					await ctx.reply("I couldn't find the token, unsupported chain, or wrong contract address.");
+					await ctx.reply(
+						"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
+					);
 					return ctx.scene.leave();
 				}
 
@@ -53,10 +55,8 @@ export const importWizard = new Scenes.WizardScene<WizardContext>(
 );
 
 const cancelFn = async (ctx: WizardContext) => {
-	const exitMessage = await queryAi("send me a goodbye message");
-	if (exitMessage) {
-		await ctx.replyWithHTML(exitMessage);
-	}
+	await ctx.replyWithHTML("<i> Session exited...</i>");
+
 	return await ctx.scene.leave();
 };
 stepHandler.action("cancel", cancelFn);

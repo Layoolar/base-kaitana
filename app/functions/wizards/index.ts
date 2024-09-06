@@ -16,6 +16,7 @@ import { presellWizard } from "./presell_wizard";
 import { deleteWizard } from "./deleteWizard";
 import { importWizard } from "./importWizard";
 import { txinfoWizard } from "./txtInfo_wizard";
+import {scheduleWizard} from './scheduleWizard'
 
 const stage = new Scenes.Stage<WizardContext>([
 	transactionWizard,
@@ -32,6 +33,7 @@ const stage = new Scenes.Stage<WizardContext>([
 	importWizard,
 	deleteWizard,
 	txinfoWizard,
+	scheduleWizard
 ]);
 
 bot.use(session());

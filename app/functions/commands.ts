@@ -1850,7 +1850,10 @@ bot.command("schedule", async (ctx) => {
  * If user exit from bot
  *
  */
-
+bot.command("schedule", async (ctx) => {
+	await ctx.scene.enter("sc-wizard");
+	return;
+});
 bot.command("ta", checkGroup, async (ctx) => {
 	await ctx.scene.enter("analysis-wizard");
 	return;

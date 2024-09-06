@@ -93,7 +93,7 @@ You must choose out of up or down and give reason, make it conversational
 		ctx.scene.session.analysisStore.chain?.toLowerCase(),
 	);
 	if (!chartData) {
-		ctx.reply("An error occurred, please try again");
+		ctx.reply("An error occurred, please try again\n <i> Session exited...</i>");
 		return ctx.scene.leave();
 	}
 
@@ -151,13 +151,7 @@ You must choose out of up or down and give reason, make it conversational
 		);
 		if (!coinData) {
 			ctx.reply(
-				{
-					english: "I couldn't find the token, unsupported chain, or wrong contract address.",
-					french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
-					spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
-					arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
-					chinese: "我找不到代币，不支持的链或错误的合约地址。",
-				}[userLanguage],
+				"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
 			);
 			return ctx.scene.leave();
 		}
@@ -229,15 +223,9 @@ stepHandler.on("text", async (ctx) => {
 			if (tokenInfo === null) {
 				// Token not found
 				await ctx.reply(
-					{
-						english: "I couldn't find the token, unsupported chain, or wrong contract address.",
-						french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
-						spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
-						arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
-						chinese: "我找不到代币，不支持的链或错误的合约地址。",
-					}[userLanguage],
+					"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
 				);
-				return;
+				return ctx.scene.leave();
 			} else {
 				// Token found, store token information
 				//	console.log(tokenInfo);

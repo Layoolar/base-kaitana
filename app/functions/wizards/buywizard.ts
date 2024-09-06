@@ -318,16 +318,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 
 		if (chain?.toLowerCase() !== "ethereum" && chain?.toLowerCase() !== "base") {
 			await ctx.reply(
-				{
-					english:
-						"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
-					french: "Nous prenons actuellement uniquement en charge les échanges sur Ethereum, Binance Smart Chain et Solana pour le moment. Veuillez patienter pendant que nous travaillons à prendre en charge d'autres jetons.",
-					spanish:
-						"Actualmente solo admitimos operaciones de trading en Ethereum, Binance Smart Chain y Solana. Por favor, tenga paciencia mientras trabajamos en admitir otros tokens.",
-					arabic: "نحن ندعم حاليًا التداول فقط على Ethereum و Binance Smart Chain و Solana في الوقت الحالي. يرجى التحلي بالصبر بينما نعمل على دعم رموز أخرى.",
-					chinese:
-						"目前我们只支持在以太坊、币安智能链和Solana上交易。请您耐心等待，我们正在努力支持其他代币。",
-				}[userLanguage],
+				"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
 			);
 			return ctx.scene.leave();
 		}
@@ -336,15 +327,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			ctx.scene.session.buyStore.currency = "ETH";
 			const res = await getEtherBalance(user.walletAddress);
 			if (!res) {
-				await ctx.reply(
-					{
-						english: "Couldn't get balance, please try again",
-						french: "Impossible d'obtenir le solde, veuillez réessayer",
-						spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
-						arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
-						chinese: "无法获取余额，请重试",
-					}[ctx.scene.session.buyStore.language],
-				);
+				await ctx.reply("Couldn't get balance, please try again\n <i> Session exited...</i>");
 				return ctx.scene.leave();
 			}
 			ctx.scene.session.buyStore.userBalance = parseFloat(res.base);
@@ -353,15 +336,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			ctx.scene.session.buyStore.currency = "SOL";
 			const solbalance = await getSolBalance(user.solWalletAddress);
 			if (!solbalance) {
-				await ctx.reply(
-					{
-						english: "Couldn't get balance, please try again",
-						french: "Impossible d'obtenir le solde, veuillez réessayer",
-						spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
-						arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
-						chinese: "无法获取余额，请重试",
-					}[ctx.scene.session.buyStore.language],
-				);
+				await ctx.reply("Couldn't get wallet balance, please try again\n <i> Session exited...</i>");
 
 				return ctx.scene.leave();
 			}
@@ -370,15 +345,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			ctx.scene.session.buyStore.currency = "ETH";
 			const res = await getEtherBalance(user.walletAddress);
 			if (!res) {
-				await ctx.reply(
-					{
-						english: "Couldn't get balance, please try again",
-						french: "Impossible d'obtenir le solde, veuillez réessayer",
-						spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
-						arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
-						chinese: "无法获取余额，请重试",
-					}[ctx.scene.session.buyStore.language],
-				);
+				await ctx.reply("Couldn't get balance, please try again\n <i> Session exited...</i>");
 				return ctx.scene.leave();
 			}
 			ctx.scene.session.buyStore.userBalance = parseFloat(res.eth);
@@ -390,7 +357,8 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			if (ctx.scene.session.buyStore.userBalance === 0) {
 				ctx.reply(
 					{
-						english: "Wallet balance is currently zero, please fund your wallet and try again",
+						english:
+							"Wallet balance is currently zero, please fund your wallet and try again\n <i> Session exited...</i>",
 						french: "Le solde du portefeuille est actuellement à zéro, veuillez approvisionner votre portefeuille et réessayer",
 						spanish:
 							"El saldo de la cartera está actualmente en cero, por favor fondee su cartera e intente nuevamente",
@@ -402,7 +370,7 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 			}
 			ctx.reply(
 				{
-					english: "An error occurred, please try again",
+					english: "An error occurred, please try again\n <i> Session exited...</i>",
 					french: "Une erreur s'est produite, veuillez réessayer",
 					spanish: "Se ha producido un error, por favor inténtalo de nuevo",
 					arabic: "حدث خطأ، يرجى المحاولة مرة أخرى",
@@ -523,7 +491,8 @@ stepHandler2.on("text", async (ctx) => {
 		if (!token) {
 			await ctx.reply(
 				{
-					english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+					english:
+						"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
 					french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
 					spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
 					arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
@@ -587,7 +556,8 @@ const executeBuy = async (
 	if (userBalance <= amount) {
 		ctx.reply(
 			{
-				english: "You have insufficient balance to make this transaction, please try again with a valid amount",
+				english:
+					"You have insufficient balance to make this transaction, please try again with a valid amount\n <i> Session exited...</i>",
 				french: "Vous n'avez pas assez de solde pour effectuer cette transaction, veuillez réessayer avec un montant valide",
 				spanish:
 					"No tienes suficiente saldo para realizar esta transacción, por favor inténtalo de nuevo con un monto válido",
@@ -644,7 +614,7 @@ const executeBuy = async (
 			ctx.reply(
 				{
 					english: `An Error occurred please try again later\nError Message: ${
-						error.message || "internal server error"
+						error.message || "internal server error \n\n <i> Session exited...</i>"
 					}.`,
 					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
 						error.message || "Erreur interne du serveur"
@@ -696,7 +666,7 @@ const executeBuy = async (
 			ctx.reply(
 				{
 					english: `An Error occurred please try again later\nError Message: ${
-						error.message || "internal server error"
+						error.message || "internal server error\n <i> Session exited...</i>"
 					}.`,
 					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
 						error.message || "Erreur interne du serveur"
@@ -728,7 +698,7 @@ const executeBuy = async (
 		ctx.reply(
 			{
 				english: `An Error occurred please try again later\nError Message: ${
-					error.message || "internal server error"
+					error.message || "internal server error\n\n <i> Session exited...</i>"
 				}.`,
 				french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
 					error.message || "Erreur interne du serveur"

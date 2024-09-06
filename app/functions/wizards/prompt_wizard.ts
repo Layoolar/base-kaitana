@@ -38,15 +38,16 @@ const getVoice = async (ctx: WizardContext) => {
 	}
 	const userLanguage = await getUserLanguage(userId);
 	if (voice.duration > 10) {
-		return ctx.reply(
+		ctx.reply(
 			{
-				english: "Maximum duration is 10 seconds.",
+				english: "Maximum duration is 10 seconds.\n <i> Session exited...</i>",
 				french: "La durée maximale est de 10 secondes.",
 				spanish: "La duración máxima es de 10 segundos.",
 				arabic: "المدة القصوى هي 10 ثوانٍ.",
 				chinese: "最长持续时间为10秒。",
 			}[userLanguage],
 		);
+		return ctx.scene.leave();
 	}
 
 	if (!ctx.scene.session.promptStore.address) {
@@ -83,7 +84,8 @@ const getVoice = async (ctx: WizardContext) => {
 			if (!selectedToken) {
 				ctx.reply(
 					{
-						english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+						english:
+							"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
 						french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
 						spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
 						arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
@@ -100,7 +102,7 @@ const getVoice = async (ctx: WizardContext) => {
 			if (!data) {
 				ctx.reply(
 					{
-						english: "An error occurred, please try again later.",
+						english: "An error occurred, please try again.\n <i> Session exited...</i>",
 						french: "Une erreur s'est produite, veuillez réessayer plus tard.",
 						spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
 						arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
@@ -163,12 +165,8 @@ const getVoice = async (ctx: WizardContext) => {
 				return;
 			}
 		}
-		const exitMessage = await conversation("exit", ctx.scene.session.promptStore.chatHistory);
-		if (exitMessage) {
-			await ctx.replyWithHTML(
-			 exitMessage,
-			);
-		}
+		await ctx.replyWithHTML(`<b><i>Session Exited...<i></b>
+Thank you for using ParrotAI. See you soon.`);
 
 		await ctx.scene.leave();
 
@@ -195,10 +193,7 @@ const getVoice = async (ctx: WizardContext) => {
 // add regx for leavinf only worhs
 
 const cancelFn = async (ctx: WizardContext) => {
-	const exitMessage = await conversation("exit", ctx.scene.session.promptStore.chatHistory);
-	if (exitMessage) {
-		await ctx.replyWithHTML(exitMessage);
-	}
+	await ctx.replyWithHTML(`<b><i>Session Exited...<i></b>\nThank you for using ParrotAI. See you soon.`);
 	return await ctx.scene.leave();
 };
 const audiobuyFn = async (ctx: WizardContext) => {
@@ -213,7 +208,8 @@ const audiobuyFn = async (ctx: WizardContext) => {
 	if (!token) {
 		ctx.reply(
 			{
-				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				english:
+					"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
 				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
 				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
 				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
@@ -249,7 +245,8 @@ const audiosellFn = async (ctx: WizardContext) => {
 	if (!token) {
 		await ctx.reply(
 			{
-				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				english:
+					"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
 				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
 				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
 				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
@@ -300,7 +297,7 @@ const getText = async (ctx: WizardContext) => {
 			if (sellOption !== "null") {
 				return ctx.reply(
 					{
-						english: "Use the sell button provided above to buy the token.",
+						english: "Use the sell button provided above to sell the token.",
 						french: "Utilisez le bouton de vente fourni ci-dessus pour acheter le jeton.",
 						spanish: "Utilice el botón de venta proporcionado arriba para comprar el token.",
 						arabic: "استخدم زر البيع المقدم أعلاه لشراء الرمز.",
@@ -317,7 +314,8 @@ const getText = async (ctx: WizardContext) => {
 			if (!selectedToken) {
 				await ctx.reply(
 					{
-						english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+						english:
+							"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
 						french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
 						spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
 						arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
@@ -332,7 +330,7 @@ const getText = async (ctx: WizardContext) => {
 			if (!data) {
 				ctx.reply(
 					{
-						english: "An error occurred, please try again later.",
+						english: "An error occurred, please try again.\n <i> Session exited...</i>",
 						french: "Une erreur s'est produite, veuillez réessayer plus tard.",
 						spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
 						arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
@@ -396,10 +394,7 @@ const getText = async (ctx: WizardContext) => {
 				return;
 			}
 		}
-		const exitMessage = await conversation("exit", ctx.scene.session.promptStore.chatHistory);
-		if (exitMessage) {
-			await ctx.replyWithHTML(exitMessage);
-		}
+		await ctx.replyWithHTML(`<b><i>Session Exited...<i></b>\nThank you for using ParrotAI. See you soon.`);
 		await ctx.scene.leave();
 	}
 };
@@ -430,7 +425,8 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 	if (!coin) {
 		await ctx.reply(
 			{
-				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				english:
+					"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
 				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
 				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
 				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
@@ -444,7 +440,8 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 	if (isEmpty(coin) || !coin.name) {
 		return await ctx.reply(
 			{
-				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				english:
+					"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
 				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
 				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
 				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
@@ -458,9 +455,9 @@ stepHandler1.action(/details_(.+)/, async (ctx) => {
 		`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin.name}</i></b>\n<b>Token Address: </b> <code><i>${coin.address}</i></code>`,
 	);
 
-				const response2 = `🟢<a href="https://birdeye.so/token/${coin?.address}?chain=${
-					res?.chain
-				}"><b>${coin.name?.toUpperCase()}</b></a> [${formatNumber(coin.mc)}] $${coin.symbol?.toUpperCase()}
+	const response2 = `🟢<a href="https://birdeye.so/token/${coin?.address}?chain=${
+		res?.chain
+	}"><b>${coin.name?.toUpperCase()}</b></a> [${formatNumber(coin.mc)}] $${coin.symbol?.toUpperCase()}
 🌐${res.chain.charAt(0).toUpperCase() + res.chain.slice(1)}
 💰 USD: <code>$${coin?.price?.toFixed(7)}</code>
 💎FDV: <code>${formatNumber(coin?.mc)}</code>
@@ -531,7 +528,7 @@ export const promptWizard = new Scenes.WizardScene<WizardContext>(
 		if (ctx.scene.session.promptStore.prompt.length === 0) {
 			ctx.reply(
 				{
-					english: "Your audio is empty, please try again.",
+					english: "Your audio is empty, please try again.\n <i> Session exited...</i>",
 					french: "Votre audio est vide, veuillez réessayer.",
 					spanish: "Tu audio está vacío, por favor inténtalo de nuevo.",
 					arabic: "الصوت فارغ، يرجى المحاولة مرة أخرى.",

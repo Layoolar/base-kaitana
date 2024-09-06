@@ -53,7 +53,7 @@ stepHandler.action(/timeframechart_(.+)/, async (ctx) => {
 		ctx.scene.session.chartStore.chain?.toLowerCase(),
 	);
 	if (!graphData) {
-		ctx.reply("Please check your request and try again");
+		ctx.reply("Please check your request and try again\n <i> Session exited...</i>");
 		return ctx.scene.leave();
 	} else {
 		//Respond with graph data
@@ -66,7 +66,7 @@ stepHandler.action(/timeframechart_(.+)/, async (ctx) => {
 });
 
 stepHandler.action("cancel", async (ctx) => {
-	await ctx.reply("You've cancelled the operation");
+	await ctx.reply("You've cancelled the operation\n <i> Session exited...</i>");
 	return await ctx.scene.leave();
 });
 
@@ -97,7 +97,7 @@ export const chartWizard = new Scenes.WizardScene<WizardContext>(
 				);
 				return;
 			} else if (address.toLowerCase() === "error") {
-				await ctx.replyWithHTML("<b>An error occured please try agin </b>");
+				await ctx.replyWithHTML("<b>An error occured please try again\n <i> Session exited...</i> </b>");
 				ctx.scene.leave();
 			} else {
 				const tokenInfo = await processToken(address);

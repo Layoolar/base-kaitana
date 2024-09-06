@@ -39,7 +39,7 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 		if (!wallet) {
 			await ctx.reply(
 				{
-					english: `You do not have an attached wallet, send a direct message with /wallet to initialise it`,
+					english: `You do not have an attached wallet, send a direct message with /wallet to initialise it\n <i> Session exited...</i>`,
 					french: `Vous n'avez pas de portefeuille attaché, envoyez un message direct avec /wallet pour l'initialiser`,
 					spanish: `No tienes un monedero adjunto, envía un mensaje directo con /wallet para iniciarlo`,
 					arabic: `ليس لديك محفظة مرفقة، أرسل رسالة مباشرة مع /wallet لتهيئتها`,
@@ -69,7 +69,7 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 			await ctx.reply(
 				{
 					english:
-						"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
+						"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
 					french: "Nous prenons actuellement uniquement en charge les échanges sur Ethereum, Binance Smart Chain et Solana pour le moment. Veuillez patienter pendant que nous travaillons à prendre en charge d'autres jetons.",
 					spanish:
 						"Actualmente solo admitimos operaciones de trading en Ethereum, Binance Smart Chain y Solana. Por favor, tenga paciencia mientras trabajamos en admitir otros tokens.",
@@ -253,7 +253,7 @@ stepHandler.action("sendsell", async (ctx) => {
 	if (!sellAddress || !amount || !token) {
 		ctx.reply(
 			{
-				english: "An error occurred, please try again",
+				english: "An error occurred, please try again\n <i> Session exited...</i>",
 				french: "Une erreur s'est produite, veuillez réessayer",
 				spanish: "Se ha producido un error, por favor inténtalo de nuevo",
 				arabic: "حدث خطأ، يرجى المحاولة مرة أخرى",
@@ -267,7 +267,7 @@ stepHandler.action("sendsell", async (ctx) => {
 		if (parseFloat(time) > 86400000) {
 			ctx.reply(
 				{
-					english: "Error: Maximum interval is 24 hours",
+					english: "Error: Maximum interval is 24 hours\n <i> Session exited...</i>",
 					french: "Erreur : L'intervalle maximum est de 24 heures",
 					spanish: "Error: El intervalo máximo es de 24 horas",
 					arabic: "خطأ: الحد الأقصى للفترة هو 24 ساعة",
@@ -295,7 +295,7 @@ stepHandler.action("sendsell", async (ctx) => {
 				console.log(error);
 				ctx.reply(
 					{
-						english: "An error occurred, please try again",
+						english: "An error occurred, please try again\n <i> Session exited...</i>",
 						french: "Une erreur s'est produite, veuillez réessayer",
 						spanish: "Se ha producido un error, por favor inténtalo de nuevo",
 						arabic: "حدث خطأ، يرجى المحاولة مرة أخرى",
@@ -322,7 +322,7 @@ stepHandler.action("sendsell", async (ctx) => {
 			console.log(error);
 			ctx.reply(
 				{
-					english: "An error occurred, please try again",
+					english: "An error occurred, please try again\n <i> Session exited...</i>",
 					french: "Une erreur s'est produite, veuillez réessayer",
 					spanish: "Se ha producido un error, por favor inténtalo de nuevo",
 					arabic: "حدث خطأ، يرجى المحاولة مرة أخرى",
@@ -370,7 +370,7 @@ const executeSell = async (
 	if (!userEthBalance) {
 		await ctx.reply(
 			{
-				english: "Couldn't get balance, please try again",
+				english: "Couldn't get balance, please try again\n <i> Session exited...</i>",
 				french: "Impossible d'obtenir le solde, veuillez réessayer",
 				spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
 				arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
@@ -384,7 +384,8 @@ const executeSell = async (
 	if (!tokenData) {
 		ctx.reply(
 			{
-				english: "I couldn't find the token, unsupported chain, or wrong contract address.",
+				english:
+					"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
 				french: "Je n'ai pas pu trouver le jeton, chaîne non prise en charge ou mauvaise adresse de contrat.",
 				spanish: "No pude encontrar el token, cadena no compatible o dirección de contrato incorrecta.",
 				arabic: "لم أتمكن من العثور على الرمز، سلسلة غير مدعومة، أو عنوان العقد خاطئ.",
@@ -401,7 +402,7 @@ const executeSell = async (
 		if (!tokensBalance) {
 			await ctx.reply(
 				{
-					english: "Couldn't get balance, please try again",
+					english: "Couldn't get balance, please try again\n <i> Session exited...</i>",
 					french: "Impossible d'obtenir le solde, veuillez réessayer",
 					spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
 					arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
@@ -420,7 +421,7 @@ const executeSell = async (
 		if (!solbalance || solbalance.length === 0) {
 			await ctx.reply(
 				{
-					english: "Couldn't get balance, please try again",
+					english: "Couldn't get balance, please try again\n <i> Session exited...</i>",
 					french: "Impossible d'obtenir le solde, veuillez réessayer",
 					spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
 					arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
@@ -450,7 +451,7 @@ const executeSell = async (
 	} else {
 		await ctx.reply(
 			{
-				english: "Only Trading on Solana, Base and Ethereum are supported at this time",
+				english: "Only Trading on Base and Ethereum are supported at this time\n <i> Session exited...</i>",
 				french: "Seuls les échanges sur Solana, Base et Ethereum sont pris en charge pour le moment",
 				spanish: "Solo se admiten transacciones en Solana, Base y Ethereum en este momento",
 				arabic: "يتم دعم التداول فقط على Solana و Base و Ethereum في الوقت الحالي",
@@ -463,7 +464,7 @@ const executeSell = async (
 	if (!ctx.scene.session.sellStore.userBalance) {
 		await ctx.reply(
 			{
-				english: "Couldn't get balance, please try again",
+				english: "Couldn't get balance, please try again\n <i> Session exited...</i>",
 				french: "Impossible d'obtenir le solde, veuillez réessayer",
 				spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
 				arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
@@ -478,7 +479,8 @@ const executeSell = async (
 	if (amountintokens > ctx.scene.session.sellStore.userBalance) {
 		ctx.replyWithHTML(
 			{
-				english: "You have insufficient balance to make this transaction, please try again with a valid amount",
+				english:
+					"You have insufficient balance to make this transaction, please try again with a valid amount\n <i> Session exited...</i>",
 				french: "Vous n'avez pas assez de solde pour effectuer cette transaction, veuillez réessayer avec un montant valide",
 				spanish:
 					"No tienes suficiente saldo para realizar esta transacción, por favor inténtalo de nuevo con un monto válido",
@@ -531,7 +533,7 @@ const executeSell = async (
 			ctx.reply(
 				{
 					english: `An Error occurred please try again later\nError Message: ${
-						error.message || "internal server error"
+						error.message || "internal server error\n <i> Session exited...</i>"
 					}.`,
 					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
 						error.message || "Erreur interne du serveur"
@@ -588,7 +590,7 @@ const executeSell = async (
 			ctx.reply(
 				{
 					english: `An Error occurred please try again later\nError Message: ${
-						error.message || "internal server error"
+						error.message || "internal server error\n <i> Session exited...</i>"
 					}.`,
 					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
 						error.message || "Erreur interne du serveur"
@@ -629,7 +631,7 @@ const executeSell = async (
 		ctx.reply(
 			{
 				english: `An Error occurred please try again later\nError Message: ${
-					error.message || "internal server error"
+					error.message || "internal server error\n <i> Session exited...</i>"
 				}.`,
 				french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
 					error.message || "Erreur interne du serveur"

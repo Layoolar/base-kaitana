@@ -31,7 +31,9 @@ export const presellWizard = new Scenes.WizardScene<WizardContext>(
 				const token = res?.token;
 
 				if (!token) {
-					await ctx.reply("I couldn't find the token, unsupported chain, or wrong contract address.");
+					await ctx.reply(
+						"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
+					);
 					return ctx.scene.leave();
 				}
 
@@ -39,7 +41,7 @@ export const presellWizard = new Scenes.WizardScene<WizardContext>(
 
 				if (res.chain.toLowerCase() !== "ethereum" && res.chain.toLowerCase() !== "base") {
 					await ctx.reply(
-						"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
+						"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
 					);
 					ctx.scene.leave();
 				}
@@ -54,10 +56,7 @@ export const presellWizard = new Scenes.WizardScene<WizardContext>(
 	stepHandler,
 );
 const cancelFn = async (ctx: WizardContext) => {
-	const exitMessage = await queryAi("send me a goodbye message");
-	if (exitMessage) {
-		await ctx.replyWithHTML(exitMessage);
-	}
+	await ctx.replyWithHTML(`<b><i>Session Exited...<i></b>\nThank you for using ParrotAI. See you soon.`);
 	return await ctx.scene.leave();
 };
 stepHandler.action("cancel", cancelFn);

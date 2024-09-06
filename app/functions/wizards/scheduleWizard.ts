@@ -13,8 +13,8 @@ const initialData = {
 	time: undefined,
 	operation: "",
 };
-export const prebuyWizard = new Scenes.WizardScene<WizardContext>(
-	"prebuy-wizard",
+export const scheduleWizard = new Scenes.WizardScene<WizardContext>(
+	"sc-wizard",
 	async (ctx) => {
 		if (!ctx.from) {
 			return await ctx.scene.leave();
@@ -37,7 +37,9 @@ export const prebuyWizard = new Scenes.WizardScene<WizardContext>(
 				const token = res?.token;
 
 				if (!token) {
-					await ctx.reply("I couldn't find the token, unsupported chain, or wrong contract address.");
+					await ctx.reply(
+						"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
+					);
 					return ctx.scene.leave();
 				}
 
@@ -90,10 +92,7 @@ export const prebuyWizard = new Scenes.WizardScene<WizardContext>(
 	},
 );
 const cancelFn = async (ctx: WizardContext) => {
-	const exitMessage = await queryAi("send me a goodbye message");
-	if (exitMessage) {
-		await ctx.replyWithHTML(exitMessage);
-	}
+	await ctx.replyWithHTML(`<b><i>Session Exited...<i></b>\nThank you for using ParrotAI. See you soon.`);
 	return await ctx.scene.leave();
 };
 stepHandler.action("cancel", cancelFn);

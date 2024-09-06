@@ -31,7 +31,7 @@ export const txinfoWizard = new Scenes.WizardScene<WizardContext>(
 
 		if (!coin) {
 			await ctx.reply(
-				"I couldn't find the token, unsupported chain, or wrong contract address. Please ensure you use a clear and high-quality screenshot of the contract address. Low-quality images may not be processed correctly. If the issue persists, please try again as it could be a random malfunction.",
+				"I couldn't find the token, unsupported chain, or wrong contract address. Please ensure you use a clear and high-quality screenshot of the contract address. Low-quality images may not be processed correctly. If the issue persists, please try again as it could be a random malfunction.\n\n <i> Session exited...</i>",
 			);
 
 			return ctx.scene.leave();
@@ -66,8 +66,8 @@ export const txinfoWizard = new Scenes.WizardScene<WizardContext>(
 				),
 			]),
 		);
-		await ctx.reply(
-			`You can ask any other questions about ${coin.name}?\ntype exit or use the Exit session button to leave the session.`,
+		await ctx.replyWithHTML(
+			`Type any other questions about ${coin.name}?\n<i>you can type exit or use the Exit session button to leave the session.</i>`,
 			Markup.inlineKeyboard([
 				Markup.button.callback(
 					"Exit Session",
@@ -101,13 +101,15 @@ stepHandler.action(/proceedbuy_(.+)/, async (ctx) => {
 	const time = ctx.match[1].split(" ")[2];
 
 	if (!token) {
-		await ctx.reply("I couldn't find the token, unsupported chain, or wrong contract address.");
+		await ctx.reply(
+			"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
+		);
 		return ctx.scene.leave();
 	}
 
 	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
 		await ctx.reply(
-			"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
+			"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
 		);
 		return ctx.scene.leave();
 	}
@@ -133,11 +135,12 @@ stepHandler.action(/proceedsell_(.+)/, async (ctx) => {
 	const time = ctx.match[1].split(" ")[2];
 
 	if (!token) {
-		return await ctx.reply("An error occurred, please try again");
+		await ctx.reply("An error occurred, please try again\n <i> Session exited...</i>");
+		return ctx.scene.leave();
 	}
 	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
 		await ctx.reply(
-			"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
+			"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
 		);
 		return ctx.scene.leave();
 	}
@@ -146,10 +149,7 @@ stepHandler.action(/proceedsell_(.+)/, async (ctx) => {
 });
 
 const cancelFn = async (ctx: WizardContext) => {
-	const exitMessage = await queryAi("send me a goodbye message");
-	if (exitMessage) {
-		await ctx.replyWithHTML(exitMessage);
-	}
+	await ctx.replyWithHTML(`<b><i>Session Exited...<i></b>\nThank you for using ParrotAI. See you soon.`);
 	return await ctx.scene.leave();
 };
 stepHandler.action("cancel", cancelFn);
@@ -166,7 +166,9 @@ stepHandler.on("text", async (ctx) => {
 			const coin = res?.token;
 
 			if (!coin) {
-				await ctx.reply("I couldn't find the token, unsupported chain, or wrong contract address.");
+				await ctx.reply(
+					"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
+				);
 				return ctx.scene.leave();
 			}
 
@@ -201,17 +203,11 @@ stepHandler.on("text", async (ctx) => {
 
 				return;
 			} else {
-				const exitMessage = await conversation("exit", ctx.scene.session.txinfoStore.chatHistory);
-				if (exitMessage) {
-					await ctx.replyWithHTML(exitMessage);
-				}
+				await ctx.replyWithHTML(`<b><i>Session Exited...<i></b>\nThank you for using ParrotAI. See you soon.`);
 				return ctx.scene.leave();
 			}
 		}
-		const exitMessage = await conversation("exit", ctx.scene.session.txinfoStore.chatHistory);
-		if (exitMessage) {
-			await ctx.replyWithHTML(exitMessage);
-		}
+		await ctx.replyWithHTML(`<b><i>Session Exited...<i></b>\nThank you for using ParrotAI. See you soon.`);
 
 		await ctx.scene.leave();
 	}

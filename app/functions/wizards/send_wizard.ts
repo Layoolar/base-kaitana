@@ -31,7 +31,7 @@ stepHandler.action("sendd", async (ctx) => {
 	}
 
 	if (parseFloat(userBalance) < amountinEth) {
-		ctx.reply("You have insufficient balance to make this transaction");
+		ctx.reply("You have insufficient balance to make this transaction\n <i> Session exited...</i>");
 		return ctx.scene.leave();
 	}
 	let tx;
@@ -57,11 +57,11 @@ stepHandler.action("sendd", async (ctx) => {
 					}">${tx?.hash}</a>`,
 				);
 			}
-		} else ctx.reply(`An error occured. Please try again later`);
+		} else ctx.reply(`An error occured. Please try again later\n <i> Session exited...</i>`);
 		return ctx.scene.leave();
 	} catch (error) {
 		if (tx) ctx.reply(`An error occured.\nTransaction hash: ${tx?.hash} `);
-		else ctx.reply(`An error occured. Please try again later`);
+		else ctx.reply(`An error occured. Please try again later\n <i> Session exited...</i>`);
 		return ctx.scene.leave();
 	}
 });
@@ -84,7 +84,7 @@ export const sendWizard = new Scenes.WizardScene<WizardContext>(
 		//console.log(ctx.from);
 		ctx.scene.session.sendStore = JSON.parse(JSON.stringify(initialData));
 		if (!ctx.from?.id) {
-			ctx.reply("An error occurred please try again");
+			ctx.reply("An error occurred please try again\n <i> Session exited...</i>");
 			return ctx.scene.leave();
 		}
 
@@ -98,7 +98,7 @@ export const sendWizard = new Scenes.WizardScene<WizardContext>(
 		const userBalance = await getEtherBalance(wallet?.walletAddress);
 		const ethprice = await getEthPrice();
 		if (!userBalance || !wallet?.walletAddress) {
-			ctx.reply("An error occurred (Failed to get balance), please try again.");
+			ctx.reply("An error occurred (Failed to get balance), please try again.\n <i> Session exited...</i>");
 			return ctx.scene.leave();
 		}
 		ctx.scene.session.sendStore.userBalance =
