@@ -130,26 +130,28 @@ export type BetData = {
 	betVerdict: string;
 };
 const groupId = -4005329091;
-bot.use(async (ctx, next) => {
-	if (ctx.chat?.type === "private") {
-		try {
-			if (!ctx.from?.id) return;
+// bot.use(async (ctx, next) => {
+// 	if (ctx.chat?.type === "private") {
+// 		try {
+// 			if (!ctx.from?.id) return;
 
-			const chatMember = await ctx.telegram.getChatMember(groupId, ctx.from?.id);
+// 			const chatMember = await ctx.telegram.getChatMember(groupId, ctx.from?.id);
 
-			if (chatMember.status !== "left" && chatMember.status !== "kicked") {
-				return next();
-			} else {
-				await ctx.reply("You must be a member of the specified group to use this bot.");
-			}
-		} catch (error) {
-			console.error("Error checking group membership:", error);
-			await ctx.reply("An error occurred while verifying your group membership.");
-		}
-	} else {
-		return next();
-	}
-});
+// 			if (chatMember.status !== "left" && chatMember.status !== "kicked") {
+// 				return next();
+// 			} else {
+// 				ctx.replyWithHTML(
+// 					`You must be a member of the <a href="https://t.me/parrotaientry">Parrot</a> group to use this bot.`,
+// 				);
+// 			}
+// 		} catch (error) {
+// 			console.error("Error checking group membership:", error);
+// 			await ctx.reply("An error occurred while verifying your group membership.");
+// 		}
+// 	} else {
+// 		return next();
+// 	}
+// });
 
 export async function getJoke() {
 	try {
