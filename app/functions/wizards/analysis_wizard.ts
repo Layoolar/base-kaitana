@@ -93,7 +93,7 @@ You must choose out of up or down and give reason, make it conversational
 		ctx.scene.session.analysisStore.chain?.toLowerCase(),
 	);
 	if (!chartData) {
-		ctx.reply("An error occurred, please try again\n <i> Session exited...</i>");
+		ctx.reply("An error occurred, please try again\n </i> Session exited...</i>");
 		return ctx.scene.leave();
 	}
 
@@ -151,7 +151,7 @@ You must choose out of up or down and give reason, make it conversational
 		);
 		if (!coinData) {
 			ctx.reply(
-				"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
+				"I couldn't find the token, unsupported chain, or wrong contract address.\n </i> Session exited...</i>",
 			);
 			return ctx.scene.leave();
 		}
@@ -223,7 +223,7 @@ stepHandler.on("text", async (ctx) => {
 			if (tokenInfo === null) {
 				// Token not found
 				await ctx.reply(
-					"I couldn't find the token, unsupported chain, or wrong contract address.\n <i> Session exited...</i>",
+					"I couldn't find the token, unsupported chain, or wrong contract address.\n </i> Session exited...</i>",
 				);
 				return ctx.scene.leave();
 			} else {

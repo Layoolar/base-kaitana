@@ -92,7 +92,7 @@ export const scheduleWizard = new Scenes.WizardScene<WizardContext>(
 	},
 );
 const cancelFn = async (ctx: WizardContext) => {
-	await ctx.replyWithHTML(`<b><i>Session Exited...<i></b>\nThank you for using ParrotAI. See you soon.`);
+	await ctx.replyWithHTML(`<b><i>Session Exited...</i></b>\nThank you for using ParrotAI. See you soon.`);
 	return await ctx.scene.leave();
 };
 stepHandler.action("cancel", cancelFn);

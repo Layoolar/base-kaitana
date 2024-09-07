@@ -165,7 +165,7 @@ const getVoice = async (ctx: WizardContext) => {
 				return;
 			}
 		}
-		await ctx.replyWithHTML(`<b><i>Session Exited...<i></b>
+		await ctx.replyWithHTML(`<b><i>Session Exited...</i></b>
 Thank you for using ParrotAI. See you soon.`);
 
 		await ctx.scene.leave();
@@ -193,7 +193,7 @@ Thank you for using ParrotAI. See you soon.`);
 // add regx for leavinf only worhs
 
 const cancelFn = async (ctx: WizardContext) => {
-	await ctx.replyWithHTML(`<b><i>Session Exited...<i></b>\nThank you for using ParrotAI. See you soon.`);
+	await ctx.replyWithHTML(`<b><i>Session Exited...</i></b>\nThank you for using ParrotAI. See you soon.`);
 	return await ctx.scene.leave();
 };
 const audiobuyFn = async (ctx: WizardContext) => {
@@ -394,7 +394,7 @@ const getText = async (ctx: WizardContext) => {
 				return;
 			}
 		}
-		await ctx.replyWithHTML(`<b><i>Session Exited...<i></b>\nThank you for using ParrotAI. See you soon.`);
+		await ctx.replyWithHTML(`<b><i>Session Exited...</i></b>\nThank you for using ParrotAI. See you soon.`);
 		await ctx.scene.leave();
 	}
 };

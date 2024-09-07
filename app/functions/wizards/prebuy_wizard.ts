@@ -56,7 +56,7 @@ export const prebuyWizard = new Scenes.WizardScene<WizardContext>(
 	stepHandler,
 );
 const cancelFn = async (ctx: WizardContext) => {
-await ctx.replyWithHTML(`<b><i>Session Exited...<i></b>\nThank you for using ParrotAI. See you soon.`);
+await ctx.replyWithHTML(`<b><i>Session Exited...</i></b>\nThank you for using ParrotAI. See you soon.`);
 
 	return await ctx.scene.leave();
 };
