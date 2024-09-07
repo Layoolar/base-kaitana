@@ -42,6 +42,7 @@ export const downloadFile = async (fileId, userId) => {
 	});
 
 	const filePath = path.join(__dirname, userId.toString() + "voice_note.ogg");
+console.log(filePath)
 	const writer = fs.createWriteStream(filePath);
 
 	response.data.pipe(writer);
