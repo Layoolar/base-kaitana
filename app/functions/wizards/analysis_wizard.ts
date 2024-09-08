@@ -87,8 +87,7 @@ You must choose out of up or down and give reason, make it conversational
 	}
 
 	const response = await queryAi(`${analysisPromptCandle}`);
-	const chartData = await generateTimeAndPriceGraph(
-		ctx.scene.session.analysisStore.address.toLowerCase(),
+	const chartData = await generateTimeAndPriceGraph(		ctx.scene.session.analysisStore.address.toLowerCase(),
 		timeframe,
 		ctx.scene.session.analysisStore.chain?.toLowerCase(),
 	);

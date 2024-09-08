@@ -293,6 +293,8 @@ const commands = {
 		"❌ /delete": "Delete tokens from your wallet",
 		"📈 /trending": "Check trending tokens",
 		"💬 Voice": "Send a voice note to the bot (max 10 seconds), spelling out the token name or ticker",
+
+		"🖼 Image": "Send any screenshot or pic containing an 0x address to the bot for information",
 	},
 	french: {
 		"/start": "Envoyez cette commande en privé au bot pour vous inscrire et commencer",
@@ -1976,7 +1978,7 @@ const start = async () => {
 				await ctx.replyWithPhoto(
 					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
 					{
-						caption: `Welcome to <b>Parrot AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>🌐 Website: </b>https://parrotbot.lol/\n<b>📖Manual: </b>https://docs.parrotbot.io\n<b>📣 Announcements: </b>https://t.me/parrotannouncements\n<b>💬 Telegram: </b> https://t.me/Parrotbot_Portal`,
+						caption: `Welcome to <b>Parrot AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>🌐 Website: </b>https://parrotbot.lol/\n<b>📖Manual: </b>https://docs.parrotbot.io\n<b>📣 Announcements: </b>https://t.me/parrotannouncements\n<b>💬 Telegram: </b> https://t.me/Parrotbot_Portal\n\n💬 Voice: Send a voice note to the bot (max 10 seconds), spelling out the token name or ticker\n🖼 Image: Send any screenshot or pic containing an 0x address to the bot for information`,
 						parse_mode: "HTML",
 					},
 				);
