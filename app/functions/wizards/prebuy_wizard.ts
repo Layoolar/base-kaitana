@@ -2,7 +2,7 @@ import { WizardContext } from "@app/functions/telegraf";
 import { Composer, Markup, Scenes } from "telegraf";
 import { fetchCoin } from "../fetchCoins";
 import { processToken } from "../helper";
-import { formatNumber } from "../commands";
+
 import { queryAi } from "../queryApi";
 import { getCaPrompt } from "../prompt";
 

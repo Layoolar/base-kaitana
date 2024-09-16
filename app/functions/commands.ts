@@ -930,16 +930,16 @@ export const neww = async () => {
 			await updateLog(ca, coin);
 
 			await ctx.replyWithHTML(
-				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin.name}</i></b>\n<b>Token Address: </b> <code><i>${coin.address}</i></code>`,
+				`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin?.name}</i></b>\n<b>Token Address: </b> <code><i>${coin?.address}</i></code>`,
 			);
 
-			const response2 = `🟢<a href="https://birdeye.so/token/${coin.address}?chain=${
+			const response2 = `🟢<a href="https://birdeye.so/token/${coin?.address}?chain=${
 				res.chain
-			}"><b>${coin.name.toUpperCase()}</b></a> [${formatNumber(coin.mc)}] $${coin.symbol.toUpperCase()}
-🌐${res.chain.charAt(0).toUpperCase() + res.chain.slice(1)}
-💰 USD: <code>$${coin.price.toFixed(7)}</code>
-💎FDV: <code>${formatNumber(coin.mc)}</code>
-💦 Liq: <code>${coin.liquidity}</code>
+			}"><b>${coin?.name?.toUpperCase()}</b></a> [${formatNumber(coin?.mc)}] $${coin?.symbol?.toUpperCase()}
+🌐${res.chain.charAt(0)?.toUpperCase() + res.chain.slice(1)}
+💰 USD: <code>$${coin?.price?.toFixed(7)}</code>
+💎FDV: <code>${formatNumber(coin?.mc)}</code>
+💦 Liq: <code>${coin?.liquidity}</code>
 📊 Vol: <code>Vol</code>
 📈 1hr: ${coin.priceChange1hPercent ? `${coin.priceChange1hPercent.toFixed(2)}%` : "N/A"}
 📉 24h: ${coin.priceChange8hPercent ? `${coin.priceChange8hPercent.toFixed(2)}%` : "N/A"}

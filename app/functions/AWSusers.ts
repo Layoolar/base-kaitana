@@ -267,5 +267,3 @@ export const updateSolWallet = async (userId: number, newWallet: string, newPriv
 		return false;
 	}
 };
-
-// Example usage
