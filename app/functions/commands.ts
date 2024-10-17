@@ -290,7 +290,8 @@ const commands = {
 		"📊 /analysis": "Analyse a token",
 		"🕥 /schedule": "Schedule trade.",
 		"📈 /trending": "Check trending tokens",
-		
+		"💬 Voice": "Send a voice note to the bot (max 10 seconds), spelling out the token name or ticker",
+		"🖼 Image": "Send any screenshot or pic containing an address to the bot for information",
 	},
 	french: {
 		"/start": "Envoyez cette commande en privé au bot pour vous inscrire et commencer",
