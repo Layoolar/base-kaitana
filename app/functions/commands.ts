@@ -1753,12 +1753,16 @@ const start = async () => {
 			const existingUser = await getUser(userId); // Replace with your method to get user by ID
 
 			if (existingUser) {
-				await ctx.replyWithPhoto(
-					{ source: path.join(__dirname, "../assets", "homepag.jpg") }, // Random placeholder image link
-					{
-						caption: `Welcome to <b>Fortuna AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/\n<b>🌐 WEB: </b>https://\n<b>📖 X:</b>https://x.com\n<b>🤖 BOT: </b>https://x.com`,
-						parse_mode: "HTML",
-					},
+				// await ctx.replyWithPhoto(
+
+				// 	{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
+				// 	{
+				// 		caption: `Welcome to <b>Fortuna AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/\n<b>🌐 WEB: </b>https://\n<b>📖 X:</b>https://x.com\n<b>🤖 BOT: </b>https://x.com`,
+				// 		parse_mode: "HTML",
+				// 	},
+				// );
+				ctx.replyWithHTML(
+					`Welcome to <b>Fortuna AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/\n<b>🌐 WEB: </b>https://\n<b>📖 X:</b>https://x.com\n<b>🤖 BOT: </b>https://x.com`,
 				);
 			} else {
 				await createUser({
@@ -1775,12 +1779,15 @@ const start = async () => {
 					language: "english",
 				});
 
-				await ctx.replyWithPhoto(
-					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
-					{
-						caption: `Welcome to <b>Fortuna AI</b>🦜\n\n<i>The best sniper and purchasing bot on SOl.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/\n<b>🌐 WEB: </b>https://\n<b>📖 X:</b>https://x.com/parrotaibot\n<b>🤖 BOT: </b>https://x.com`,
-						parse_mode: "HTML",
-					},
+				// await ctx.replyWithPhoto(
+				// 	{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
+				// 	{
+				// 		caption: `Welcome to <b>Fortuna AI</b>🦜\n\n<i>The best sniper and purchasing bot on SOl.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/\n<b>🌐 WEB: </b>https://\n<b>📖 X:</b>https://x.com/parrotaibot\n<b>🤖 BOT: </b>https://x.com`,
+				// 		parse_mode: "HTML",
+				// 	},
+				// );
+				ctx.replyWithHTML(
+					`Welcome to <b>Fortuna AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/\n<b>🌐 WEB: </b>https://\n<b>📖 X:</b>https://x.com\n<b>🤖 BOT: </b>https://x.com`,
 				);
 			}
 		} else {
