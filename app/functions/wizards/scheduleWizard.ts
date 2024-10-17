@@ -20,7 +20,7 @@ export const scheduleWizard = new Scenes.WizardScene<WizardContext>(
 			return await ctx.scene.leave();
 		}
 		ctx.scene.session.scStore = JSON.parse(JSON.stringify(initialData));
-		await ctx.replyWithHTML("<b>What is the contract address of the token you want to buy? </b>");
+		await ctx.replyWithHTML("<b>What is the contract address of the token you want to trade? </b>");
 		//ctx.scene.session.store.sol_transaction = initialData;
 		return ctx.wizard.next();
 	},
@@ -47,9 +47,9 @@ export const scheduleWizard = new Scenes.WizardScene<WizardContext>(
 
 				const ca = address.trim();
 
-				if (res.chain.toLowerCase() !== "ethereum" && res.chain.toLowerCase() !== "base") {
+				if (res.chain.toLowerCase() !== "solana") {
 					await ctx.reply(
-						"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
+						"We currently only support trading on Solana for now. Please bear with us as we are working on supporting other tokens.",
 					);
 					ctx.scene.leave();
 				}
@@ -92,7 +92,7 @@ export const scheduleWizard = new Scenes.WizardScene<WizardContext>(
 	},
 );
 const cancelFn = async (ctx: WizardContext) => {
-	await ctx.replyWithHTML(`<b><i>Session Exited...</i></b>\nThank you for using ParrotAI. See you soon.`);
+	await ctx.replyWithHTML(`<b><i>Session Exited...</i></b>\nThank you for using Fortuna AI. See you soon.`);
 	return await ctx.scene.leave();
 };
 stepHandler.action("cancel", cancelFn);

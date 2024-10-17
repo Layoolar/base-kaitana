@@ -1,5 +1,7 @@
 import * as solana from "@solana/web3.js";
 import bs58 from "bs58";
+import { Keypair, PublicKey } from "@solana/web3.js";
+import { solToTokenSwap, tokenToSolSwap } from "./newsolana";
 
 // const connection = new solana.Connection(process.env.CONNECT_ENDPOINT, {
 // 	wsEndpoint: process.env.WS_ENDPOINT,
@@ -23,4 +25,24 @@ export const createSolWallet = () => {
 	const privateKeyBuffer = Buffer.from(walletKeyPair.secretKey);
 	const privateKeyBase58 = bs58.encode(privateKeyBuffer);
 	return { privateKeyBase58, publicKey };
+};
+
+export const createKeypair = (secretKey: string) => {
+	const secretKeyBase = bs58.decode(secretKey);
+	const wallet = Keypair.fromSecretKey(secretKeyBase);
+
+	return wallet;
+};
+
+export const handleSolForToken = async (privateKey: string, address: string, amount: number) => {
+	const keypair = createKeypair(privateKey);
+	const response = await solToTokenSwap(connection, keypair, address, amount);
+
+	return response;
+};
+export const handleTokenForSol = async (privateKey: string, address: string, amount: number) => {
+	const keypair = createKeypair(privateKey);
+	const response = await tokenToSolSwap(connection, keypair, address, amount);
+
+	return response;
 };

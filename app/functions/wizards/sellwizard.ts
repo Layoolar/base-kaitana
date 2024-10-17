@@ -15,6 +15,7 @@ import { sellTokensWithSolana } from "../solana";
 import { getUserLanguage, getUserWalletDetails, removeUserHolding } from "../AWSusers";
 import { addtoCount } from "../databases";
 import { updateTransaction } from "../awslogs";
+import { handleTokenForSol } from "../solhelper";
 
 const initialData = {
 	sellAddress: null,
@@ -65,11 +66,11 @@ export const sellWizard = new Scenes.WizardScene<WizardContext>(
 
 		const chain = ctx.scene.session.sellStore.chain;
 
-		if (chain?.toLowerCase() !== "ethereum" && chain?.toLowerCase() !== "base") {
+		if (chain?.toLowerCase() !== "solana") {
 			await ctx.reply(
 				{
 					english:
-						"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
+						"We currently only support trading on Solana for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
 					french: "Nous prenons actuellement uniquement en charge les échanges sur Ethereum, Binance Smart Chain et Solana pour le moment. Veuillez patienter pendant que nous travaillons à prendre en charge d'autres jetons.",
 					spanish:
 						"Actualmente solo admitimos operaciones de trading en Ethereum, Binance Smart Chain y Solana. Por favor, tenga paciencia mientras trabajamos en admitir otros tokens.",
@@ -451,7 +452,7 @@ const executeSell = async (
 	} else {
 		await ctx.reply(
 			{
-				english: "Only Trading on Base and Ethereum are supported at this time\n <i> Session exited...</i>",
+				english: "Only Trading on Solana is supported at this time\n <i> Session exited...</i>",
 				french: "Seuls les échanges sur Solana, Base et Ethereum sont pris en charge pour le moment",
 				spanish: "Solo se admiten transacciones en Solana, Base y Ethereum en este momento",
 				arabic: "يتم دعم التداول فقط على Solana و Base و Ethereum في الوقت الحالي",
@@ -492,85 +493,22 @@ const executeSell = async (
 	}
 
 	let hash;
-	if (ctx.scene.session.sellStore.chain?.toLowerCase() === "ethereum") {
-		try {
-			hash = await sellOnEth(
-				wallet?.privateKey,
-				token.address,
-				amountintokens.toFixed(2).toString(),
-				tokenData.token.decimals,
-				parseFloat(userEthBalance?.eth),
-			);
 
-			if (!hash)
-				throw new Error(
-					{
-						english: "Transaction failed/expired",
-						french: "Transaction échouée/expirée",
-						spanish: "Transacción fallida/caducada",
-						arabic: "فشلت العملية / انتهت الصلاحية",
-						chinese: "交易失败/已过期",
-					}[userLanguage],
-				);
-			await ctx.replyWithHTML(
-				{
-					english: `You sold ${token?.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash: <a href="https://etherscan.io/tx/${hash}">${hash}</a>`,
-					french: `Vous avez vendu ${token?.name} \n<i>Montant : <b>${amountintokens} ${token.symbol}</b></i>\n<i>Adresse du contrat : <b>${sellAddress}</b></i>\nHash de transaction : <a href="https://etherscan.io/tx/${hash}">${hash}</a>`,
-					spanish: `Has vendido ${token?.name} \n<i>Cantidad: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Dirección del contrato: <b>${sellAddress}</b></i>\nHash de transacción: <a href="https://etherscan.io/tx/${hash}">${hash}</a>`,
-					arabic: `لقد قمت ببيع ${token?.name} \n<i>المبلغ: <b>${amountintokens} ${token.symbol}</b></i>\n<i>عنوان العقد: <b>${sellAddress}</b></i>\nمعرف المعاملة: <a href="https://etherscan.io/tx/${hash}">${hash}</a>`,
-					chinese: `您已出售 ${token?.name} \n<i>数量： <b>${amountintokens} ${token.symbol}</b></i>\n<i>合约地址： <b>${sellAddress}</b></i>\n交易哈希： <a href="https://etherscan.io/tx/${hash}">${hash}</a>`,
-				}[userLanguage],
-			);
-			const balance = await getTokenBalance(wallet?.walletAddress, sellAddress);
-			if (balance <= 0 && hash) await removeUserHolding(ctx.from?.id, sellAddress, "ethereum");
-
-			await updateTransaction((amountintokens * token.price) / ethprice);
-
-			addtoCount();
-			//ctx.scene.leave();
-			return hash;
-		} catch (error: any) {
-			ctx.reply(
-				{
-					english: `An Error occurred please try again later\nError Message: ${
-						error.message || "internal server error\n <i> Session exited...</i>"
-					}.`,
-					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
-						error.message || "Erreur interne du serveur"
-					}.`,
-					spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${
-						error.message || "Error interno del servidor"
-					}.`,
-					arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${
-						error.message || "خطأ داخلي في الخادم"
-					}.`,
-					chinese: `发生错误，请稍后重试\n错误信息: ${error.message || "服务器内部错误"}.`,
-				}[userLanguage],
-			);
-			return ctx.scene.leave();
-		}
-	}
 
 	if (ctx.scene.session.sellStore.chain?.toLowerCase() === "solana") {
 		try {
-			throw new Error(
-				{
-					english: "Due to the congestion on the SOL ecosystem, Spl token trades are temporarily unavailable",
-					french: "En raison de la congestion sur l'écosystème SOL, les échanges de jetons Spl ne sont temporairement pas disponibles",
-					spanish:
-						"Debido a la congestión en el ecosistema SOL, los intercambios de tokens Spl no están disponibles temporalmente",
-					arabic: "نظرًا للازدحام في نظام SOL، فإن تداول رموز Spl غير متاح مؤقتًا",
-					chinese: "由于SOL生态系统拥堵，Spl代币交易暂时不可用",
-				}[userLanguage],
-			);
-			hash = await sellTokensWithSolana(
-				wallet?.solPrivateKey,
-				sellAddress,
-				amountintokens.toFixed(15),
-				token.decimals,
-			);
+			
+			//xdcdc
+			// hash = await sellTokensWithSolana(
+			// 	wallet?.solPrivateKey,
+			// 	sellAddress,
+			// 	amountintokens.toFixed(15),
+			// 	token.decimals,
+			// );
+			if(!wallet?.solPrivateKey) throw new Error("")
+			hash= await handleTokenForSol(wallet?.solPrivateKey,sellAddress,amountintokens)
 
-			if (!hash) throw new Error("Transaction failed/expired");
+			if (!hash.success) throw new Error("Transaction failed/expired");
 
 			await ctx.replyWithHTML(
 				`You sold ${token.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://solscan.io/tx/${hash}">${hash}</a>`,
@@ -607,64 +545,5 @@ const executeSell = async (
 			return await ctx.scene.leave();
 		}
 	}
-	//console.log(wallet?.privateKey, token.address, amountintokens, token.decimals);
 
-	try {
-		hash = await sell(
-			wallet?.privateKey,
-			token.address,
-			amountintokens.toFixed(2).toString(),
-			token.decimals,
-			parseFloat(userEthBalance?.base),
-		);
-		if (!hash)
-			throw new Error(
-				{
-					english: "Transaction failed/expired",
-					french: "Transaction échouée/expirée",
-					spanish: "Transacción fallida/caducada",
-					arabic: "فشلت العملية / انتهت الصلاحية",
-					chinese: "交易失败/已过期",
-				}[userLanguage],
-			);
-	} catch (error: any) {
-		ctx.reply(
-			{
-				english: `An Error occurred please try again later\nError Message: ${
-					error.message || "internal server error\n <i> Session exited...</i>"
-				}.`,
-				french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
-					error.message || "Erreur interne du serveur"
-				}.`,
-				spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${
-					error.message || "Error interno del servidor"
-				}.`,
-				arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${
-					error.message || "خطأ داخلي في الخادم"
-				}.`,
-				chinese: `发生错误，请稍后重试\n错误信息: ${error.message || "服务器内部错误"}.`,
-			}[userLanguage],
-		);
-		return ctx.scene.leave();
-	}
-
-	await ctx.replyWithHTML(
-		{
-			english: `You sold ${token?.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash: <a href="https://basescan.org/tx/${hash}">${hash}</a>`,
-			french: `Vous avez vendu ${token?.name} \n<i>Montant : <b>${amountintokens} ${token.symbol}</b></i>\n<i>Adresse de contrat : <b>${sellAddress}</b></i>\nHash de transaction : <a href="https://basescan.org/tx/${hash}">${hash}</a>`,
-			spanish: `Has vendido ${token?.name} \n<i>Cantidad: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Dirección del contrato: <b>${sellAddress}</b></i>\nHash de transacción: <a href="https://basescan.org/tx/${hash}">${hash}</a>`,
-			arabic: `لقد قمت ببيع ${token?.name} \n<i>المبلغ: <b>${amountintokens} ${token.symbol}</b></i>\n<i>عنوان العقد: <b>${sellAddress}</b></i>\nمعرف المعاملة: <a href="https://basescan.org/tx/${hash}">${hash}</a>`,
-			chinese: `您已出售 ${token?.name} \n<i>数量： <b>${amountintokens} ${token.symbol}</b></i>\n<i>合约地址： <b>${sellAddress}</b></i>\n交易哈希： <a href="https://basescan.org/tx/${hash}">${hash}</a>`,
-		}[userLanguage],
-	);
-
-	const balance = await getTokenBalance(wallet?.walletAddress, sellAddress);
-	if (balance <= 0 && hash) removeUserHolding(ctx.from?.id, sellAddress, "base");
-
-	await updateTransaction((amountintokens * token.price) / ethprice);
-	// await sendMessageToAllGroups(
-	// 	`Succssful transaction made throught @NOVA bot.\n Transaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
-	// );
-	//ctx.scene.leave();
-	return hash;
 };

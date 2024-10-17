@@ -124,7 +124,7 @@ stepHandler2.on("text", async (ctx) => {
 		const { text } = ctx.message;
 		const currentEthPrice = await getEthPrice();
 		const ca = await queryAi(getCaPrompt(text));
-		console.log(ca);
+		
 		if (ca.toLowerCase() === "null") {
 			// Reply with a warning emoji for invalid input
 			await ctx.replyWithHTML(
@@ -133,6 +133,7 @@ stepHandler2.on("text", async (ctx) => {
 			);
 			return;
 		}
+		//ll
 		ctx.scene.session.sendStore.recipientAddress = ca;
 		await ctx.replyWithHTML(
 			`What amount (in ETH or Usd) of ETH do you want to send, you have ${

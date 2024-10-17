@@ -39,9 +39,9 @@ export const presellWizard = new Scenes.WizardScene<WizardContext>(
 
 				const ca = address.trim();
 
-				if (res.chain.toLowerCase() !== "ethereum" && res.chain.toLowerCase() !== "base") {
+				if (res.chain.toLowerCase() !== "solana") {
 					await ctx.reply(
-						"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
+						"We currently only support trading on Solana for now. Please bear with us as we are working on supporting other chains.\n <i> Session exited...</i>",
 					);
 					ctx.scene.leave();
 				}
@@ -56,7 +56,7 @@ export const presellWizard = new Scenes.WizardScene<WizardContext>(
 	stepHandler,
 );
 const cancelFn = async (ctx: WizardContext) => {
-	await ctx.replyWithHTML(`<b><i>Session Exited...</i></b>\nThank you for using ParrotAI. See you soon.`);
+	await ctx.replyWithHTML(`<b><i>Session Exited...</i></b>\nThank you for using Fortuna AI. See you soon.`);
 	return await ctx.scene.leave();
 };
 stepHandler.action("cancel", cancelFn);

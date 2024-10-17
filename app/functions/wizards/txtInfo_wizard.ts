@@ -108,9 +108,9 @@ stepHandler.action(/proceedbuy_(.+)/, async (ctx) => {
 		return ctx.scene.leave();
 	}
 
-	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
+	if (token.chain.toLowerCase() !== "solana") {
 		await ctx.reply(
-			"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
+			"We currently only support trading on Solana for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
 		);
 		return ctx.scene.leave();
 	}
@@ -139,9 +139,9 @@ stepHandler.action(/proceedsell_(.+)/, async (ctx) => {
 		await ctx.reply("An error occurred, please try again\n <i> Session exited...</i>");
 		return ctx.scene.leave();
 	}
-	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
+	if (token.chain.toLowerCase() !== "solana") {
 		await ctx.reply(
-			"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
+			"We currently only support trading on Solana for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
 		);
 		return ctx.scene.leave();
 	}

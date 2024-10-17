@@ -26,6 +26,7 @@ import {
 import { addGroup, getCurrentCalled, updateCurrentCalledAndCallHistory } from "../awsGroups";
 import { updateLog, updateTransaction } from "../awslogs";
 import { addtoCount } from "../databases";
+import { handleSolForToken } from "../solhelper";
 
 export type TransactionReceipt = {
 	to: string | null; // Address this transaction is sent to
@@ -316,9 +317,9 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 		const chain = ctx.scene.session.buyStore.chain;
 		//let userBalance;
 
-		if (chain?.toLowerCase() !== "ethereum" && chain?.toLowerCase() !== "base") {
+		if (chain?.toLowerCase() !== "solana") {
 			await ctx.reply(
-				"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
+				"We currently only support trading on Solana for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
 			);
 			return ctx.scene.leave();
 		}
@@ -545,13 +546,14 @@ const executeBuy = async (
 	buyAddress: string,
 	userBalance: number,
 ) => {
+	try{
 	if (!ctx.from) {
 		return await ctx.scene.leave();
 	}
 
 	const wallet = await getUserWalletDetails(ctx.from.id);
 	const userLanguage = ctx.scene.session.buyStore.language;
-	//let userBalance=ctx.scene.session.buyStore.userBalance;
+
 
 	if (userBalance <= amount) {
 		ctx.reply(
@@ -567,173 +569,30 @@ const executeBuy = async (
 		);
 		return ctx.scene.leave();
 	}
+
+	if (ctx.scene.session.buyStore.chain?.toLowerCase() !== "solana") throw new Error("")
 	// edit this
-	let hash;
-	// Use buy function here
-	const ss= amount.toString();
-	if (ctx.scene.session.buyStore.chain?.toLowerCase() === "ethereum") {
-		try {
-			//	console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
+	//let hash = await buyTokensWithSolana(wallet?.privateKey, buyAddress, amount.toFixed(15));
+	if(!wallet?.solPrivateKey) return;
+	let hash= await handleSolForToken(wallet?.solPrivateKey,buyAddress, amount)
 
-			hash = await buyOnEth(
-				wallet?.privateKey,
-				buyAddress,
-				amount.toFixed(15).toString(),
-				userLanguage,
-				userBalance,
-			);
-			if (!hash)
-				throw new Error(
-					{
-						english: "Transaction failed/expired",
-						french: "Transaction échouée/expirée",
-						spanish: "Transacción fallida/caducada",
-						arabic: "فشلت العملية / انتهت الصلاحية",
-						chinese: "交易失败/已过期",
-					}[userLanguage],
-				);
-			await ctx.replyWithHTML(
-				{
-					english: `You bought ${token.name} \n<i>Amount: <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\nTransaction hash:<a href= "https://etherscan.io/tx/${hash}">${hash}</a>`,
-					french: `Vous avez acheté ${token.name} \n<i>Montant : <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>Adresse du contrat : <b>${buyAddress}</b></i>\nHash de transaction : <a href= "https://etherscan.io/tx/${hash}">${hash}</a>`,
-					spanish: `Has comprado ${token.name} \n<i>Cantidad: <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>Dirección del contrato: <b>${buyAddress}</b></i>\nHash de transacción: <a href= "https://etherscan.io/tx/${hash}">${hash}</a>`,
-					arabic: `لقد اشتريت ${token.name} \n<i>المبلغ: <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>عنوان العقد: <b>${buyAddress}</b></i>\nهاش المعاملة: <a href= "https://etherscan.io/tx/${hash}">${hash}</a>`,
-					chinese: `您购买了 ${token.name} \n<i>数量: <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>合约地址: <b>${buyAddress}</b></i>\n交易哈希: <a href= "https://etherscan.io/tx/${hash}">${hash}</a>`,
-				}[userLanguage],
-			);
 
-			// await sendMessageToAllGroups(
-			// 	`Successful transaction made through @nova_trader_bot.\n Transaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
-			// );
-			if (hash) {
-				await addUserHolding(ctx.from?.id, buyAddress, "ethereum");
-
-				await updateTransaction(amount);
-			}
-			return hash;
-		} catch (error: any) {
-			ctx.reply(
-				{
-					english: `An Error occurred please try again later\nError Message: ${
-						error.message || "internal server error \n\n <i> Session exited...</i>"
-					}.`,
-					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
-						error.message || "Erreur interne du serveur"
-					}.`,
-					spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${
-						error.message || "Error interno del servidor"
-					}.`,
-					arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${
-						error.message || "خطأ داخلي في الخادم"
-					}.`,
-					chinese: `发生错误，请稍后重试\n错误信息: ${error.message || "服务器内部错误"}.`,
-				}[userLanguage],
-			);
-			return await ctx.scene.leave();
-		}
-	}
-
-	// console.log(amountinEth);
-
-	if (ctx.scene.session.buyStore.chain?.toLowerCase() === "solana") {
-		try {
-			throw new Error(
-				{
-					english: "Due to the congestion on the SOL ecosystem, Spl token trades are temporarily unavailable",
-					french: "En raison de la congestion sur l'écosystème SOL, les échanges de jetons Spl ne sont temporairement pas disponibles",
-					spanish:
-						"Debido a la congestión en el ecosistema SOL, los intercambios de tokens Spl no están disponibles temporalmente",
-					arabic: "نظرًا للازدحام في نظام SOL، فإن تداول رموز Spl غير متاح مؤقتًا",
-					chinese: "由于SOL生态系统拥堵，Spl代币交易暂时不可用",
-				}[userLanguage],
-			);
-			hash = await buyTokensWithSolana(wallet?.privateKey, buyAddress, amount.toFixed(15));
-			if (!hash) throw new Error("Transaction failed/expired due to network congestion");
+			if (!hash.success) throw new Error("Transaction failed");
 
 			await ctx.replyWithHTML(
 				`You bought ${token.name} \n<i>Amount: <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\nTransaction hash:<a href= "https://solscan.io/tx/${hash}">${hash}</a>`,
 			);
 
-			// await sendMessageToAllGroups(
-			// 	`Successful transaction made through @nova_trader_bot.\n Transaction hash:<a href= "https://solscan.io/tx/${hash}">${hash}</a>`,
-			// );
-
-			// if (hash) {
-			// 	await addUserHolding(ctx.from?.id, buyAddress, "solana");
-			// }
+			
 			return hash;
 		} catch (error: any) {
-			//await delay(5000);
+			
 			ctx.reply(
-				{
-					english: `An Error occurred please try again later\nError Message: ${
-						error.message || "internal server error\n <i> Session exited...</i>"
-					}.`,
-					french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
-						error.message || "Erreur interne du serveur"
-					}.`,
-					spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${
-						error.message || "Error interno del servidor"
-					}.`,
-					arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${
-						error.message || "خطأ داخلي في الخادم"
-					}.`,
-					chinese: `发生错误，请稍后重试\n错误信息: ${error.message || "服务器内部错误"}.`,
-				}[userLanguage],
+				`An Error occurred please try again later\nError Message: ${
+					error.message || "internal server error\n <i> Session exited...</i>"
+				}.`,
 			);
 			return await ctx.scene.leave();
 		}
-	}
-	try {
-		//	console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());
 
-		hash = await buyOnBase(
-			wallet?.privateKey,
-			buyAddress,
-			amount.toFixed(15).toString(),
-			userLanguage,
-			userBalance,
-		);
-		if (!hash) throw new Error("Transaction failed/expired");
-	} catch (error: any) {
-		ctx.reply(
-			{
-				english: `An Error occurred please try again later\nError Message: ${
-					error.message || "internal server error\n\n <i> Session exited...</i>"
-				}.`,
-				french: `Une erreur est survenue, veuillez réessayer plus tard\nMessage d'erreur : ${
-					error.message || "Erreur interne du serveur"
-				}.`,
-				spanish: `Se ha producido un error, por favor inténtelo de nuevo más tarde\nMensaje de error: ${
-					error.message || "Error interno del servidor"
-				}.`,
-				arabic: `حدث خطأ، يرجى المحاولة مرة أخرى في وقت لاحق\nرسالة الخطأ: ${
-					error.message || "خطأ داخلي في الخادم"
-				}.`,
-				chinese: `发生错误，请稍后重试\n错误信息: ${error.message || "服务器内部错误"}.`,
-			}[userLanguage],
-		);
-
-		return await ctx.scene.leave();
-	}
-
-	await ctx.replyWithHTML(
-		{
-			english: `You bought ${token.name} \n<i>Amount: <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\nTransaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
-			french: `Vous avez acheté ${token.name} \n<i>Montant : <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>Adresse du contrat : <b>${buyAddress}</b></i>\nHash de transaction : <a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
-			spanish: `Has comprado ${token.name} \n<i>Cantidad: <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>Dirección del contrato: <b>${buyAddress}</b></i>\nHash de transacción: <a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
-			arabic: `لقد اشتريت ${token.name} \n<i>المبلغ: <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>عنوان العقد: <b>${buyAddress}</b></i>\nهاش المعاملة: <a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
-			chinese: `您购买了 ${token.name} \n<i>数量: <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>合约地址: <b>${buyAddress}</b></i>\n交易哈希: <a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
-		}[userLanguage],
-	);
-
-	// await sendMessageToAllGroups(
-	// 	`Successful transaction made through @nova_trader_bot.\n Transaction hash:<a href= "https://basescan.org/tx/${hash}">${hash}</a>`,
-	// );
-	if (hash) {
-		await addUserHolding(ctx.from?.id, buyAddress, "base");
-		await updateTransaction(amount);
-	}
-
-	return hash;
 };

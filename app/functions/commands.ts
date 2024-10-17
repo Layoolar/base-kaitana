@@ -287,14 +287,9 @@ const commands = {
 		"🔴 /sell": "Sell tokens",
 		"👝 /wallet": "Manage your wallet",
 		"ℹ️ /info": "Get information about a token",
-		"📊 /ta": "Analyse a token",
+		"📊 /analysis": "Analyse a token",
 		"🕥 /schedule": "Schedule trade.",
-		"🛳 /import": "Import tokens into your wallet",
-		"❌ /delete": "Delete tokens from your wallet",
 		"📈 /trending": "Check trending tokens",
-		"💬 Voice": "Send a voice note to the bot (max 10 seconds), spelling out the token name or ticker",
-
-		"🖼 Image": "Send any screenshot or pic containing an 0x address to the bot for information",
 	},
 	french: {
 		"/start": "Envoyez cette commande en privé au bot pour vous inscrire et commencer",
@@ -434,15 +429,10 @@ bot.action("genwallet", async (ctx) => {
 		await updateSolWallet(ctx.from?.id, solWallet.publicKey, solWallet.privateKeyBase58);
 	}
 
-	const translations2 = {
-		english: `Wallet generated successfully, your ETH wallet address is: <b><code>${wallet.walletAddress}</code></b>\nPrivate key: <code>${wallet.privateKey}</code>.\n\nWallet Address and private keys are above, click on them to copy. This message will be deleted in one minute. You can use /wallet to re-check your wallet details.`,
-		french: `Portefeuille généré avec succès, votre adresse de portefeuille ETH est : <b><code>${wallet.walletAddress}</code></b>\nClé privée : <code>${wallet.privateKey}</code>.\n\nLes adresses de portefeuille et les clés privées se trouvent ci-dessus, cliquez dessus pour les copier. Ce message sera supprimé dans une minute. Vous pouvez utiliser /wallet pour vérifier à nouveau les détails de votre portefeuille.`,
-		spanish: `Monedero generado exitosamente, tu dirección de monedero ETH es: <b><code>${wallet.walletAddress}</code></b>\nClave privada: <code>${wallet.privateKey}</code>.\n\nLas direcciones de monedero y las claves privadas están arriba, haz clic en ellas para copiarlas. Este mensaje será eliminado en un minuto. Puedes usar /wallet para volver a verificar los detalles de tu monedero.`,
-		arabic: `تم إنشاء المحفظة بنجاح، عنوان محفظتك ETH هو: <b><code>${wallet.walletAddress}</code></b>\nالمفتاح الخاص: <code>${wallet.privateKey}</code>.\n\nعناوين المحافظ والمفاتيح الخاصة أعلاه، انقر فوقها لنسخها. سيتم حذف هذه الرسالة في دقيقة واحدة. يمكنك استخدام /wallet لإعادة التحقق من تفاصيل محفظتك.`,
-		chinese: `钱包生成成功，您的ETH钱包地址为：<b><code>${wallet.walletAddress}</code></b>\n私钥：<code>${wallet.privateKey}</code>。\n\n上方为钱包地址和私钥，请点击以复制。此消息将在一分钟内被删除。您可以使用 /wallet 重新检查您的钱包详情。`,
-	};
 	await ctx
-		.replyWithHTML(translations2[userLanguage])
+		.replyWithHTML(
+			`Wallet generated successfully, your SOL wallet address is: <b><code>${solWallet.publicKey}</code></b>\nPrivate key: <code>${solWallet.privateKeyBase58}</code>.\n\nWallet Address and private keys are above, click on them to copy. This message will be deleted in one minute. You can use /wallet to re-check your wallet details.`,
+		)
 		.then((message) => {
 			const messageId = message.message_id;
 
@@ -466,18 +456,19 @@ bot.action("exportkey", async (ctx) => {
 	if (!ctx.from) {
 		return;
 	}
-	const userLanguage = await getUserLanguage(ctx.from.id);
 
 	const walletDetails = await getUserWalletDetails(ctx.from.id);
-	const translations = {
-		english: `The private key for your ETH wallet is <b><code>${walletDetails?.privateKey}</code></b>\n\nThis message will be deleted in one minute.`,
-		french: `La clé privée de votre portefeuille ETH est <b><code>${walletDetails?.privateKey}</code></b>\n\nCe message sera supprimé dans une minute.`,
-		spanish: `La clave privada de tu monedero ETH es <b><code>${walletDetails?.privateKey}</code></b>\n\nEste mensaje será eliminado en un minuto.`,
-		arabic: `المفتاح الخاص لمحفظتك ETH هو <b><code>${walletDetails?.privateKey}</code></b>\n\nسيتم حذف هذه الرسالة في دقيقة واحدة.`,
-		chinese: `您的ETH钱包的私钥为 <b><code>${walletDetails?.privateKey}</code></b>\n\n此消息将在一分钟内被删除。`,
-	};
+	// const translations = {
+	// 	english: `The private key for your SOL wallet is <b><code>${walletDetails?.privateKey}</code></b>\n\nThis message will be deleted in one minute.`,
+	// 	french: `La clé privée de votre portefeuille ETH est <b><code>${walletDetails?.privateKey}</code></b>\n\nCe message sera supprimé dans une minute.`,
+	// 	spanish: `La clave privada de tu monedero ETH es <b><code>${walletDetails?.privateKey}</code></b>\n\nEste mensaje será eliminado en un minuto.`,
+	// 	arabic: `المفتاح الخاص لمحفظتك ETH هو <b><code>${walletDetails?.privateKey}</code></b>\n\nسيتم حذف هذه الرسالة في دقيقة واحدة.`,
+	// 	chinese: `您的ETH钱包的私钥为 <b><code>${walletDetails?.privateKey}</code></b>\n\n此消息将在一分钟内被删除。`,
+	// };
 	await ctx
-		.replyWithHTML(translations[userLanguage])
+		.replyWithHTML(
+			`The private key for your SOL wallet is <b><code>${walletDetails?.solPrivateKey}</code></b>\n\nThis message will be deleted in one minute.`,
+		)
 		.then((message) => {
 			const messageId = message.message_id;
 
@@ -502,105 +493,17 @@ bot.action("walletaddress", async (ctx) => {
 	const userLanguage = await getUserLanguage(ctx.from.id);
 	const walletDetails = await getUserWalletDetails(ctx.from.id);
 	const translations = {
-		english: `Your ETH wallet address is <b><code>${walletDetails?.walletAddress}</code></b>`,
-		french: `Votre adresse de portefeuille ETH est <b><code>${walletDetails?.walletAddress}</code></b>`,
-		spanish: `Tu dirección de monedero ETH es <b><code>${walletDetails?.walletAddress}</code></b>`,
-		arabic: `عنوان محفظتك ETH هو <b><code>${walletDetails?.walletAddress}</code></b>`,
-		chinese: `您的ETH钱包地址为 <b><code>${walletDetails?.walletAddress}</code></b>`,
+		english: `Your SOL wallet address is <b><code>${walletDetails?.solWalletAddress}</code></b>`,
+		french: `Votre adresse de portefeuille ETH est <b><code>${walletDetails?.solWalletAddress}</code></b>`,
+		spanish: `Tu dirección de monedero ETH es <b><code>${walletDetails?.solWalletAddress}</code></b>`,
+		arabic: `عنوان محفظتك ETH هو <b><code>${walletDetails?.solWalletAddress}</code></b>`,
+		chinese: `您的ETH钱包地址为 <b><code>${walletDetails?.solWalletAddress}</code></b>`,
 	};
 	// / console.log(walletDetails);
 	await ctx.replyWithHTML(translations[userLanguage]);
 });
 
 bot.action("checkbalance", checkUserExistence, async (ctx) => {
-	if (!ctx.from) {
-		return;
-	}
-
-	const userLanguage = await getUserLanguage(ctx.from.id);
-	const translations = {
-		english: "What balance do you want to check?",
-		french: "Quel solde voulez-vous vérifier?",
-		spanish: "¿Qué saldo quieres verificar?",
-		arabic: "ما الرصيد الذي ترغب في التحقق منه؟",
-		chinese: "您想检查什么余额？",
-	};
-	await ctx.replyWithHTML(
-		`${getGreeting()} ${ctx.from?.username || ctx.from?.first_name || ctx.from?.last_name}, ${
-			translations[userLanguage]
-		}`,
-		Markup.inlineKeyboard([
-			[Markup.button.callback("Base balance", "basebalance")],
-			[Markup.button.callback("ETH balance", "ethbalance")],
-		]),
-	);
-});
-
-bot.action("basebalance", async (ctx) => {
-	if (!ctx.from) {
-		return;
-	}
-	const userLanguage = await getUserLanguage(ctx.from.id);
-	const translations = {
-		english: "Fetching balances...",
-		french: "Récupération des soldes...",
-		spanish: "Obteniendo saldos...",
-		arabic: "جلب الأرصدة...",
-		chinese: "正在获取余额...",
-	};
-
-	const translations2 = {
-		english: "An error occurred, please try again later.",
-		french: "Une erreur s'est produite, veuillez réessayer plus tard.",
-		spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
-		arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
-		chinese: "发生错误，请稍后再试。",
-	};
-	const translations3 = {
-		english: "You have no other tokens",
-		french: "Vous n'avez pas d'autres jetons",
-		spanish: "No tienes otros tokens",
-		arabic: "ليس لديك رموز أخرى",
-		chinese: "您没有其他代币",
-	};
-
-	const user_id = ctx.from?.id;
-	if (!user_id) {
-		return;
-	}
-	await ctx.reply(translations[userLanguage]);
-	const wallet = await getUserWalletDetails(user_id);
-
-	if (!wallet) {
-		return await ctx.reply("No wallet found.");
-	}
-
-	if (wallet?.baseholding.length === 0) {
-		const balance = await getEtherBalance(wallet.walletAddress);
-		const currentEthPrice = await getEthPrice();
-
-		if (!balance || !currentEthPrice) {
-			return ctx.reply(translations2[userLanguage]);
-		}
-		const usdNetworth = parseFloat(balance.base) * currentEthPrice;
-		return ctx.replyWithHTML(
-			`${translations3[userLanguage]}\nBalance: <b>${parseFloat(balance.base).toFixed(
-				5,
-			)}</b> ETH\nNet Worth: <b>$${usdNetworth.toFixed(5)}</b>`,
-		);
-	} else {
-		if (!wallet.walletAddress) {
-			return await ctx.reply("No wallet found.");
-		}
-		const balancesString = await getAllTokenBalances(wallet?.walletAddress, wallet?.baseholding, "base");
-
-		if (balancesString) {
-			await ctx.replyWithHTML(balancesString);
-		}
-	}
-});
-
-bot.action("solbalance", async (ctx) => {
 	if (!ctx.from) {
 		return;
 	}
@@ -665,67 +568,6 @@ bot.action("solbalance", async (ctx) => {
 		}
 	}
 });
-bot.action("ethbalance", async (ctx) => {
-	if (!ctx.from) {
-		return;
-	}
-	const userLanguage = await getUserLanguage(ctx.from.id);
-	const translations = {
-		english: "Fetching balances...",
-		french: "Récupération des soldes...",
-		spanish: "Obteniendo saldos...",
-		arabic: "جلب الأرصدة...",
-		chinese: "正在获取余额...",
-	};
-	const translations2 = {
-		english: "An error occurred, please try again later.",
-		french: "Une erreur s'est produite, veuillez réessayer plus tard.",
-		spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
-		arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
-		chinese: "发生错误，请稍后再试。",
-	};
-	const translations3 = {
-		english: "You have no other tokens",
-		french: "Vous n'avez pas d'autres jetons",
-		spanish: "No tienes otros tokens",
-		arabic: "ليس لديك رموز أخرى",
-		chinese: "您没有其他代币",
-	};
-
-	const user_id = ctx.from?.id;
-	if (!user_id) {
-		return;
-	}
-	await ctx.reply(translations[userLanguage]);
-	const wallet = await getUserWalletDetails(user_id);
-	if (!wallet) {
-		return await ctx.reply("No wallet found.");
-	}
-	if (wallet?.ethholding.length === 0) {
-		const balance = await getEtherBalance(wallet.walletAddress);
-
-		const currentEthPrice = await getEthPrice();
-
-		if (!balance || !currentEthPrice) {
-			return await ctx.reply(translations2[userLanguage]);
-		}
-		const usdNetworth = parseFloat(balance.eth) * currentEthPrice;
-		return await ctx.replyWithHTML(
-			`${translations3[userLanguage]}\nBalance: <b>${parseFloat(balance.eth).toFixed(
-				5,
-			)}</b> ETH\nNet Worth: <b>$${usdNetworth.toFixed(5)}</b>`,
-		);
-	} else {
-		if (!wallet.walletAddress) {
-			return await ctx.reply("No wallet found.");
-		}
-		const balancesString = await getAllTokenBalances(wallet?.walletAddress, wallet?.ethholding, "ethereum");
-		// console.log(balancesString);
-		if (balancesString) {
-			await ctx.replyWithHTML(balancesString);
-		}
-	}
-});
 
 bot.command("wallet", checkUserExistence, checkGroup, async (ctx) => {
 	const user_id = ctx.from?.id;
@@ -785,13 +627,13 @@ bot.command("wallet", checkUserExistence, checkGroup, async (ctx) => {
 					[
 						Markup.button.callback(
 							{
-								english: "Send ETH",
+								english: "Send Sol",
 								french: "Envoyer de l'ETH",
 								spanish: "Enviar ETH",
 								arabic: "إرسال ETH",
 								chinese: "发送ETH",
 							}[userLanguage],
-							"sendeth",
+							"sendsol",
 						),
 						Markup.button.callback(
 							{
@@ -947,46 +789,6 @@ export const neww = async () => {
 <code>${ca}</code>
 `;
 
-			// const extractedData = {
-			// 	address: coin.address,
-			// 	decimals: coin.decimals,
-			// 	symbol: coin.symbol,
-			// 	name: coin.name,
-			// 	supply: coin.supply,
-			// 	mc: coin.mc,
-			// 	numberOfMarkets: coin.numberMarkets,
-			// 	website: coin.extensions?.website ? `<a href ="${coin.extensions.website}">Website</a>` : null,
-			// 	twitter: coin.extensions?.twitter ? `<a href ="${coin.extensions.twitter}">Twitter</a>` : null,
-			// 	telegram: coin.extensions?.telegram ? `<a href ="${coin.extensions.telegram}">Telegram</a>` : null,
-			// 	discord: coin.extensions?.discord ? `<a href ="${coin.extensions.discord}">Discord</a>` : null,
-			// 	liquidity: coin.liquidity,
-			// 	price: coin.price.toFixed(7),
-			// 	priceChange30m: coin.priceChange30mPercent ? `${coin.priceChange30mPercent?.toFixed(2)}%` : "N/A",
-			// 	priceChange1h: coin.priceChange1hPercent ? `${coin.priceChange1hPercent?.toFixed(2)}%` : "N/A",
-			// 	priceChange2h: coin.priceChange2hPercent ? `${coin.priceChange2hPercent?.toFixed(2)}%` : "N/A",
-			// 	priceChange4h: coin.priceChange4hPercent ? `${coin.priceChange4hPercent?.toFixed(2)}%` : "N/A",
-			// 	priceChange6h: coin.priceChange6hPercent ? `${coin.priceChange6hPercent?.toFixed(2)}%` : "N/A",
-			// 	priceChange8h: coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}%` : "N/A",
-			// 	priceChange12h: coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}%` : "N/A",
-			// 	priceChange24h: coin.priceChange8hPercent ? `${coin.priceChange8hPercent?.toFixed(2)}%` : "N/A",
-			// };
-			// const response = await queryAi(
-			// 	`This is a data response a token. reply with bullet points of the data provided here ${JSON.stringify({
-			// 		...extractedData,
-			// 	})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
-			// );
-
-			// if (response.trim().length === 0) {
-			// 	return ctx.reply(
-			// 		{
-			// 			english: "An error occurred, please try again later.",
-			// 			french: "Une erreur s'est produite, veuillez réessayer plus tard.",
-			// 			spanish: "Ocurrió un error, por favor intenta de nuevo más tarde.",
-			// 			arabic: "حدث خطأ، يرجى المحاولة مرة أخرى لاحقًا.",
-			// 			chinese: "发生错误，请稍后再试。",
-			// 		}[userLanguage],
-			// 	);
-			// }
 			return await ctx.replyWithHTML(
 				response2,
 				Markup.inlineKeyboard([
@@ -1271,11 +1073,11 @@ bot.action(/proceedbuy_(.+)/, async (ctx) => {
 		);
 	}
 
-	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
+	if (token.chain.toLowerCase() !== "solana") {
 		return await ctx.reply(
 			{
 				english:
-					"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
+					"We currently only support trading on Solana for now. Please bear with us as we are working on supporting other tokens.",
 				french: "Nous prenons actuellement uniquement en charge les échanges sur Ethereum, Binance Smart Chain et Solana pour le moment. Veuillez patienter pendant que nous travaillons à prendre en charge d'autres jetons.",
 				spanish:
 					"Actualmente solo admitimos operaciones de trading en Ethereum, Binance Smart Chain y Solana. Por favor, tenga paciencia mientras trabajamos en admitir otros tokens.",
@@ -1315,11 +1117,11 @@ bot.action(/proceedsell_(.+)/, async (ctx) => {
 			}[userLanguage],
 		);
 	}
-	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
+	if (token.chain.toLowerCase() !== "solana") {
 		return await ctx.reply(
 			{
 				english:
-					"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
+					"We currently only support trading on Solana for now. Please bear with us as we are working on supporting other chains.",
 				french: "Nous prenons actuellement uniquement en charge les échanges sur Ethereum, Binance Smart Chain et Solana pour le moment. Veuillez patienter pendant que nous travaillons à prendre en charge d'autres jetons.",
 				spanish:
 					"Actualmente solo admitimos operaciones de trading en Ethereum, Binance Smart Chain y Solana. Por favor, tenga paciencia mientras trabajamos en admitir otros tokens.",
@@ -1948,15 +1750,11 @@ const start = async () => {
 			// Check if the user is already registered
 			const existingUser = await getUser(userId); // Replace with your method to get user by ID
 
-			// 			TG: https://t.me/parrotaientry
-			// WEB: https://parrotbot.lol
-			// X: https://x.com/parrotaibot
-			// BOT: https://t.me/ParrotAI_bot
 			if (existingUser) {
 				await ctx.replyWithPhoto(
-					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
+					{ source: path.join(__dirname, "../assets", "homepag.jpg") }, // Random placeholder image link
 					{
-						caption: `Welcome to <b>Fortuna AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/parrotaientry\n<b>🌐 WEB: </b>https://parrotbot.lol/\n<b>📖 X:</b>https://x.com/parrotaibot\n<b>🤖 BOT: </b>https://x.com/parrotaibot\n\n💬 Voice: Send a voice note to the bot (max 10 seconds), spelling out the token name or ticker\n🖼 Image: Send any screenshot or pic containing an 0x address to the bot for information`,
+						caption: `Welcome to <b>Fortuna AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/\n<b>🌐 WEB: </b>https://\n<b>📖 X:</b>https://x.com\n<b>🤖 BOT: </b>https://x.com`,
 						parse_mode: "HTML",
 					},
 				);
@@ -1978,7 +1776,7 @@ const start = async () => {
 				await ctx.replyWithPhoto(
 					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
 					{
-						caption: `Welcome to <b>Fortuna AI</b>🦜\n\n<i>The best sniper and purchasing bot on SOl.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/parrotaientry\n<b>🌐 WEB: </b>https://parrotbot.lol/\n<b>📖 X:</b>https://x.com/parrotaibot\n<b>🤖 BOT: </b>https://x.com/parrotaibot\n\n💬 Voice: Send a voice note to the bot (max 10 seconds), spelling out the token name or ticker\n🖼 Image: Send any screenshot or pic containing an 0x address to the bot for information`,
+						caption: `Welcome to <b>Fortuna AI</b>🦜\n\n<i>The best sniper and purchasing bot on SOl.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/\n<b>🌐 WEB: </b>https://\n<b>📖 X:</b>https://x.com/parrotaibot\n<b>🤖 BOT: </b>https://x.com`,
 						parse_mode: "HTML",
 					},
 				);
