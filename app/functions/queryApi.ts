@@ -81,7 +81,7 @@ export const analyzeImageWithGPT = async (imageUrl: string) => {
 				content: [
 					{
 						type: "text",
-						text: `look for a contract address in this image, if there is none reply with one word "null" 
+						text: `look for a solana token address in this image, if there is none reply with one word "null" 
 						if the contract address is present send it.`,
 					},
 					{
