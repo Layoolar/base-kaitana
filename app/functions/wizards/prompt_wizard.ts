@@ -12,7 +12,7 @@ import { isHoneypot } from "../honeyPot";
 
 import { getUserLanguage } from "../AWSusers";
 import { databases } from "@configs/config";
-//import { pool } from "../actions";
+import { pool } from "../actions";
 import { updateLog } from "../awslogs";
 import { formatNumber } from "../commands";
 
@@ -62,8 +62,8 @@ const getVoice = async (ctx: WizardContext) => {
 		);
 	}
 	try {
-		//const output = await pool.exec({ voice, userId });
-		const output = "test";
+		const output = await pool.exec({ voice, userId });
+	
 		ctx.replyWithHTML(
 			{
 				english: `<b>Audio transcription:</b> ${output}\nIf this isn't what you wanted, use the audio button to record another audio.`,

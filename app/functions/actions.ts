@@ -10,13 +10,13 @@ import { createUser, getUserLanguage } from "./AWSusers";
 import { processToken } from "./helper";
 import { getCaPrompt } from "./prompt";
 
-// const filePath = path.join(__dirname, "worker.mjs");
-// // onsole.log(pathh);
-// export const pool = new StaticPool({
-// 	size: 2,
-// 	task: filePath,
-// 	workerData: "workerData!",
-// });
+const filePath = path.join(__dirname, "worker.mjs");
+
+export const pool = new StaticPool({
+	size: 2,
+	task: filePath,
+	workerData: "workerData!",
+});
 
 bot.action("send_token", async (ctx) => {
 	return await ctx.scene.enter("transaction-wizard");
@@ -293,45 +293,45 @@ bot.action("soltrend", async (ctx) => {
 // language english french chinese spanish arabic
 // group is only english
 
-// bot.on("voice", async (ctx) => {
-// 	const userId = ctx.from.id;
+bot.on("voice", async (ctx) => {
+	const userId = ctx.from.id;
 
-// 	const userLanguage = await getUserLanguage(userId);
+	const userLanguage = await getUserLanguage(userId);
 
-// 	if (ctx.chat.type !== "private") {
-// 		return ctx.reply(
-// 			{
-// 				english: "Voice commands can only be used in private chat.",
-// 				french: "Les commandes vocales ne peuvent être utilisées que dans un chat privé.",
-// 				spanish: "Los comandos de voz solo se pueden usar en un chat privado.",
-// 				arabic: "يمكن استخدام الأوامر الصوتية في الدردشة الخاصة فقط.",
-// 				chinese: "语音命令只能在私人聊天中使用。",
-// 			}[userLanguage],
-// 		);
-// 	}
+	if (ctx.chat.type !== "private") {
+		return ctx.reply(
+			{
+				english: "Voice commands can only be used in private chat.",
+				french: "Les commandes vocales ne peuvent être utilisées que dans un chat privé.",
+				spanish: "Los comandos de voz solo se pueden usar en un chat privado.",
+				arabic: "يمكن استخدام الأوامر الصوتية في الدردشة الخاصة فقط.",
+				chinese: "语音命令只能在私人聊天中使用。",
+			}[userLanguage],
+		);
+	}
 
-// 	const voice = ctx.message.voice;
-// 	if (voice.duration > 10) {
-// 		return ctx.reply(
-// 			{
-// 				english: "Maximum duration is 10 seconds.",
-// 				french: "La durée maximale est de 10 secondes.",
-// 				spanish: "La duración máxima es de 10 segundos.",
-// 				arabic: "المدة القصوى هي 10 ثوانٍ.",
-// 				chinese: "最长持续时间为10秒。",
-// 			}[userLanguage],
-// 		);
-// 	}
+	const voice = ctx.message.voice;
+	if (voice.duration > 10) {
+		return ctx.reply(
+			{
+				english: "Maximum duration is 10 seconds.",
+				french: "La durée maximale est de 10 secondes.",
+				spanish: "La duración máxima es de 10 segundos.",
+				arabic: "المدة القصوى هي 10 ثوانٍ.",
+				chinese: "最长持续时间为10秒。",
+			}[userLanguage],
+		);
+	}
 
-// 	try {
-// 		const res = await pool.exec({ voice, userId });
+	try {
+		const res = await pool.exec({ voice, userId });
 
-// 		return await ctx.scene.enter("prompt-wizard", { prompt: res });
-// 	} catch (error) {
-// 		console.log("this error", error);
-// 		await ctx.reply("Failed to transcribe audio.");
-// 	}
-// });
+		return await ctx.scene.enter("prompt-wizard", { prompt: res });
+	} catch (error) {
+		console.log("this error", error);
+		await ctx.reply("Failed to transcribe audio.");
+	}
+});
 
 bot.action(/language_(.+)$/, async (ctx) => {
 	const language = ctx.match[1].toLowerCase() as "english" | "french" | "spanish" | "arabic" | "chinese"; // This extracts the language part from the callback data
@@ -372,26 +372,26 @@ bot.command("exit", (ctx) => {
 	ctx.scene.leave(); // This forces the bot to exit any active wizard or scene
 });
 
-// bot.on("photo", async (ctx) => {
-// 	try {
-// 		// 'photo' array contains different sizes of the image, we can get the largest by accessing the last element
-// 		const photo = ctx.message.photo[ctx.message.photo.length - 1];
+bot.on("photo", async (ctx) => {
+	try {
+		// 'photo' array contains different sizes of the image, we can get the largest by accessing the last element
+		const photo = ctx.message.photo[ctx.message.photo.length - 1];
 
-// 		// Get file_id of the photo
-// 		const fileId = photo.file_id;
+		// Get file_id of the photo
+		const fileId = photo.file_id;
 
-// 		// Get the file link from Telegram
-// 		const fileUrl = await ctx.telegram.getFileLink(fileId);
+		// Get the file link from Telegram
+		const fileUrl = await ctx.telegram.getFileLink(fileId);
 
-// 		const res = await analyzeImageWithGPT(fileUrl.href);
+		const res = await analyzeImageWithGPT(fileUrl.href);
 
-// 		if (res === "null") return ctx.reply("No contract address detected in your image");
+		if (res === "null") return ctx.reply("No contract address detected in your image");
 
-// 		await ctx.scene.enter("tx_info-wizard", { address: res });
-// 	} catch (error) {
-// 		console.error("Error processing photo:", error);
-// 		await ctx.reply("Sorry, there was an error processing your photo.");
-// 	}
-// });
+		await ctx.scene.enter("tx_info-wizard", { address: res });
+	} catch (error) {
+		console.error("Error processing photo:", error);
+		await ctx.reply("Sorry, there was an error processing your photo.");
+	}
+});
 
 export { bot };

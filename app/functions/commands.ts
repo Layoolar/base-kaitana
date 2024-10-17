@@ -290,6 +290,7 @@ const commands = {
 		"📊 /analysis": "Analyse a token",
 		"🕥 /schedule": "Schedule trade.",
 		"📈 /trending": "Check trending tokens",
+		
 	},
 	french: {
 		"/start": "Envoyez cette commande en privé au bot pour vous inscrire et commencer",
