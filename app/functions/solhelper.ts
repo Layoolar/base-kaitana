@@ -1,7 +1,7 @@
 import * as solana from "@solana/web3.js";
 import bs58 from "bs58";
 import { Keypair, PublicKey } from "@solana/web3.js";
-import { solToTokenSwap, tokenToSolSwap } from "./newsolana";
+import { sendSolTrasaction, solToTokenSwap, tokenToSolSwap } from "./newsolana";
 
 // const connection = new solana.Connection(process.env.CONNECT_ENDPOINT, {
 // 	wsEndpoint: process.env.WS_ENDPOINT,
@@ -14,7 +14,7 @@ import { solToTokenSwap, tokenToSolSwap } from "./newsolana";
 const QUICKNODE_RPC =
 	// "https://rpc.hellomoon.io/238422d4-9179-4087-85b3-b07354b6ba9a";
 	"https://mainnet.helius-rpc.com/?api-key=7ac71d07-8188-40ac-bacc-d91d36b61b38";
-const connection = new solana.Connection(QUICKNODE_RPC, "confirmed");
+export const connection = new solana.Connection(QUICKNODE_RPC, "confirmed");
 
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export const createSolWallet = () => {
@@ -37,6 +37,12 @@ export const createKeypair = (secretKey: string) => {
 export const handleSolForToken = async (privateKey: string, address: string, amount: number) => {
 	const keypair = createKeypair(privateKey);
 	const response = await solToTokenSwap(connection, keypair, address, amount);
+
+	return response;
+};
+export const handleSendSol = async (privateKey: string, publicKey: string, amount: number) => {
+	const keypair = createKeypair(privateKey);
+	const response = await sendSolTrasaction(connection,keypair,keypair.publicKey,amount)
 
 	return response;
 };

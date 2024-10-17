@@ -21,7 +21,7 @@ ${prompt}`;
 
 export const getamountprompt = (
 	prompt: string,
-) => ` Check the prompt below. I want you to find out if there is an amount there either in eth tokens or in us dollars. You must return one word. Either the amount or null.
+) => ` Check the prompt below. I want you to find out if there is an amount there either in sol tokens or in us dollars. You must return one word. Either the amount or null.
 
 Examples:
 Prompt 1: "buy $100 worth of token"
@@ -30,10 +30,10 @@ This prompt should return strictly "$100"
 
 Reason: it has an amount in usd
 
-Example 2: "get me 0.01eth worth"?
-This prompt should strictly return "0.01eth"
+Example 2: "get me 0.01sol worth"?
+This prompt should strictly return "0.01sol"
 
-Reason: it has an amount in eth.
+Reason: it has an amount in sol.
 
 Example 3: "buy this token for me"
 This prompt should strictly return "null"
@@ -45,10 +45,10 @@ this prompt should return "$30"
 
 Reason: it has "30 dollars present"
 
-Example 5: "i want to buy 3 Ethereum worth"
-this prompt should return "3eth"
+Example 5: "i want to buy 3 solana worth"
+this prompt should return "3sol"
 
-Reason: it has an amount 3 etheruem present
+Reason: it has an amount 3 solana present
 
 Example 6:"55usd"
 this prompt should return "$55"

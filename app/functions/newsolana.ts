@@ -25,7 +25,7 @@ const sendSolTrasaction = async (connection: Connection, fromKeyPair: Keypair, t
 	const transfer = SystemProgram.transfer({
 		fromPubkey: fromKeyPair.publicKey,
 		toPubkey: toKey,
-		lamports: numOfSol * LAMPORTS_PER_SOL,
+		lamports: Math.round(numOfSol * LAMPORTS_PER_SOL),
 	});
 
 	const blockHash = (await connection.getLatestBlockhash("confirmed")).blockhash;
@@ -45,6 +45,10 @@ const sendSolTrasaction = async (connection: Connection, fromKeyPair: Keypair, t
 	console.log("txn signature is: https://solscan.io/tx/", base58.encode(transaction.signatures[0]));
 
 	await sendBundle(sc, [transaction], bundleTransactionLimit, connection, fromKeyPair);
+	return {
+		hashUrl: `https://solscan.io/tx/${base58.encode(transaction.signatures[0])}`,
+		hash: base58.encode(transaction.signatures[0]),
+	};
 };
 // Function to request sol to a particular account: Remember to use clusterURL("devnet") in connection before you request airdrop
 const requestAirdrop = async (connection: Connection, publicKey: PublicKey) => {
