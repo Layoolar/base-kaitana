@@ -1858,7 +1858,7 @@ bot.command("schedule", async (ctx) => {
 	await ctx.scene.enter("sc-wizard");
 	return;
 });
-bot.command("ta", checkGroup, async (ctx) => {
+bot.command("analysis", checkGroup, async (ctx) => {
 	await ctx.scene.enter("analysis-wizard");
 	return;
 });
@@ -1956,7 +1956,7 @@ const start = async () => {
 				await ctx.replyWithPhoto(
 					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
 					{
-						caption: `Welcome to <b>Parrot AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/parrotaientry\n<b>🌐 WEB: </b>https://parrotbot.lol/\n<b>📖 X:</b>https://x.com/parrotaibot\n<b>🤖 BOT: </b>https://x.com/parrotaibot\n\n💬 Voice: Send a voice note to the bot (max 10 seconds), spelling out the token name or ticker\n🖼 Image: Send any screenshot or pic containing an 0x address to the bot for information`,
+						caption: `Welcome to <b>Fortuna AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/parrotaientry\n<b>🌐 WEB: </b>https://parrotbot.lol/\n<b>📖 X:</b>https://x.com/parrotaibot\n<b>🤖 BOT: </b>https://x.com/parrotaibot\n\n💬 Voice: Send a voice note to the bot (max 10 seconds), spelling out the token name or ticker\n🖼 Image: Send any screenshot or pic containing an 0x address to the bot for information`,
 						parse_mode: "HTML",
 					},
 				);
@@ -1978,7 +1978,7 @@ const start = async () => {
 				await ctx.replyWithPhoto(
 					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
 					{
-						caption: `Welcome to <b>Parrot AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/parrotaientry\n<b>🌐 WEB: </b>https://parrotbot.lol/\n<b>📖 X:</b>https://x.com/parrotaibot\n<b>🤖 BOT: </b>https://x.com/parrotaibot\n\n💬 Voice: Send a voice note to the bot (max 10 seconds), spelling out the token name or ticker\n🖼 Image: Send any screenshot or pic containing an 0x address to the bot for information`,
+						caption: `Welcome to <b>Fortuna AI</b>🦜\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/parrotaientry\n<b>🌐 WEB: </b>https://parrotbot.lol/\n<b>📖 X:</b>https://x.com/parrotaibot\n<b>🤖 BOT: </b>https://x.com/parrotaibot\n\n💬 Voice: Send a voice note to the bot (max 10 seconds), spelling out the token name or ticker\n🖼 Image: Send any screenshot or pic containing an 0x address to the bot for information`,
 						parse_mode: "HTML",
 					},
 				);

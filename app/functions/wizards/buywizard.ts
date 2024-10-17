@@ -570,6 +570,7 @@ const executeBuy = async (
 	// edit this
 	let hash;
 	// Use buy function here
+	const ss= amount.toString();
 	if (ctx.scene.session.buyStore.chain?.toLowerCase() === "ethereum") {
 		try {
 			//	console.log(wallet?.privateKey, buyAddress, amountinEth.toFixed(15).toString());

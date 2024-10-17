@@ -64,7 +64,6 @@ export const deleteFile = (filePath) => {
 
 const transcribeAudio = async (filePath) => {
 	try {
-		openai.v
 		const transcription = await openai.audio.transcriptions.create({
 			// @ts-ignore
 			file: fs.createReadStream(filePath),

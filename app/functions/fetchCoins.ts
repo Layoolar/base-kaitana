@@ -120,7 +120,7 @@ const fetchData = async (chain: string) => {
 // 	.then((data) => console.log(data))
 // 	.catch((error) => console.error(error));
 
-//export const fetchCointest = async () => testdata.data;
+// export const fetchCointest = async () => testdata.data;
 
 const fetchCoin = async (address: string | null | undefined, network: string | undefined) => {
 	try {
