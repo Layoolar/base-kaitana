@@ -1,5 +1,5 @@
 import { bot } from "./wizards";
-import { getJoke } from "./commands";
+import { formatNumber, getJoke } from "./commands";
 import fetchData, { fetchCoin } from "./fetchCoins";
 import { Markup } from "telegraf";
 import { analyzeImageWithGPT, queryAi } from "./queryApi";
@@ -64,7 +64,9 @@ bot.action("bsctrend", async (ctx) => {
 	bot.action(/coinbsc_(.+)/, async (ctx) => {
 		const coinAddress = ctx.match[1];
 
-		const coin = (await processToken(coinAddress))?.token;
+		const res = await processToken(coinAddress);
+
+		const coin = res?.token;
 		if (!coin) {
 			return;
 		}
@@ -99,9 +101,22 @@ bot.action("bsctrend", async (ctx) => {
 			})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
 		);
 
+		const response2 = `🟢<a href="https://birdeye.so/token/${coin?.address}?chain=${
+			res.chain
+		}"><b>${coin?.name?.toUpperCase()}</b></a> [${formatNumber(coin?.mc)}] $${coin?.symbol?.toUpperCase()}
+🌐${res.chain.charAt(0)?.toUpperCase() + res.chain.slice(1)}
+💰 USD: <code>$${coin?.price?.toFixed(7)}</code>
+💎FDV: <code>${formatNumber(coin?.mc)}</code>
+💦 Liq: <code>${coin?.liquidity}</code>
+📊 Vol: <code>Vol</code>
+📈 1hr: ${coin.priceChange1hPercent ? `${coin.priceChange1hPercent.toFixed(2)}%` : "N/A"}
+📉 24h: ${coin.priceChange8hPercent ? `${coin.priceChange8hPercent.toFixed(2)}%` : "N/A"}
+
+<code>${coin?.address}</code>
+`;
 		// ctx.telegram.answer_callback_query;
 		ctx.answerCbQuery();
-		return await ctx.replyWithHTML(response);
+		return await ctx.replyWithHTML(response2);
 	});
 
 	// bot.action("cancel", async (ctx) => {
@@ -131,7 +146,8 @@ bot.action("ethtrend", async (ctx) => {
 
 	bot.action(/coineth_(.+)/, async (ctx) => {
 		const coinAddress = ctx.match[1];
-		const coin = (await processToken(coinAddress))?.token;
+		const res = await processToken(coinAddress);
+		const coin = res?.token;
 		if (!coin) {
 			return;
 		}
@@ -166,9 +182,21 @@ bot.action("ethtrend", async (ctx) => {
 			})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
 		);
 
-		// ctx.telegram.answer_callback_query;
+		const response2 = `🟢<a href="https://birdeye.so/token/${coin?.address}?chain=${
+			res.chain
+		}"><b>${coin?.name?.toUpperCase()}</b></a> [${formatNumber(coin?.mc)}] $${coin?.symbol?.toUpperCase()}
+🌐${res.chain.charAt(0)?.toUpperCase() + res.chain.slice(1)}
+💰 USD: <code>$${coin?.price?.toFixed(7)}</code>
+💎FDV: <code>${formatNumber(coin?.mc)}</code>
+💦 Liq: <code>${coin?.liquidity}</code>
+📊 Vol: <code>Vol</code>
+📈 1hr: ${coin.priceChange1hPercent ? `${coin.priceChange1hPercent.toFixed(2)}%` : "N/A"}
+📉 24h: ${coin.priceChange8hPercent ? `${coin.priceChange8hPercent.toFixed(2)}%` : "N/A"}
+
+<code>${coin?.address}</code>
+`; // ctx.telegram.answer_callback_query;
 		ctx.answerCbQuery();
-		return await ctx.replyWithHTML(response);
+		return await ctx.replyWithHTML(response2);
 	});
 
 	// bot.action("cancel", async (ctx) => {
@@ -193,7 +221,9 @@ bot.action("soltrend", async (ctx) => {
 	bot.action(/coinsol_(.+)/, async (ctx) => {
 		const coinAddress = ctx.match[1];
 
-		const coin = (await processToken(coinAddress))?.token;
+		const res = await processToken(coinAddress);
+
+		const coin = res?.token;
 		if (!coin) {
 			return;
 		}
@@ -227,10 +257,23 @@ bot.action("soltrend", async (ctx) => {
 				...extractedData,
 			})}. you must return the link exactly as they are and you must abreviate the numbers, for example 1m instead of 1,000,000 except the field "price" and emojis after label title, make sure to add the emojis after the label title for example price💰: `,
 		);
+		const response2 = `🟢<a href="https://birdeye.so/token/${coin?.address}?chain=${
+			res.chain
+		}"><b>${coin?.name?.toUpperCase()}</b></a> [${formatNumber(coin?.mc)}] $${coin?.symbol?.toUpperCase()}
+🌐${res.chain.charAt(0)?.toUpperCase() + res.chain.slice(1)}
+💰 USD: <code>$${coin?.price?.toFixed(7)}</code>
+💎FDV: <code>${formatNumber(coin?.mc)}</code>
+💦 Liq: <code>${coin?.liquidity}</code>
+📊 Vol: <code>Vol</code>
+📈 1hr: ${coin.priceChange1hPercent ? `${coin.priceChange1hPercent.toFixed(2)}%` : "N/A"}
+📉 24h: ${coin.priceChange8hPercent ? `${coin.priceChange8hPercent.toFixed(2)}%` : "N/A"}
+
+<code>${coin?.address}</code>
+`;
 
 		// ctx.telegram.answer_callback_query;
 		ctx.answerCbQuery();
-		return await ctx.replyWithHTML(response);
+		return await ctx.replyWithHTML(response2);
 	});
 
 	// bot.action("cancel", async (ctx) => {
