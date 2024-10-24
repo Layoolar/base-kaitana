@@ -11,7 +11,7 @@ AWS.config.update({
 
 const dynamodb = new AWS.DynamoDB();
 
-const tableName = "Users";
+const tableName = "users";
 
 const params = {
 	TableName: tableName,
@@ -68,6 +68,7 @@ export const createUser = async (user: MyUser) => {
 
 	try {
 		// Check if the user already exists
+		//	checkTableExists();
 		const data = await docClient.get(params).promise();
 		if (data.Item) {
 			console.log("User already exists:", data.Item);

@@ -1756,7 +1756,7 @@ const start = async () => {
 				await ctx.replyWithPhoto(
 					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
 					{
-						caption: `Welcome to <b>Fortuna AI</b>\n\n<i>The best sniper and purchasing bot on SOL.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/\n<b>🌐 WEB: </b>https://\n<b>📖 X:</b>https://x.com\n<b>🤖 BOT: </b>https://x.com`,
+						caption: `Welcome to <b>Fortuna AI</b>, I am your trading bot.\n\n<i>Fortuna AI is an enigmatic trading bot, weaving advanced algorithms to unveil the future of a project success like a digital oracle. 🔮</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b>https://t.me/FortunaAIBot\n<b>🌐 WEB: </b>https://www.FortunaAIbot.xyz\n<b>📖 X:</b>https://x.com/FortunaAIBot\n<b>🤖 BOT: </b>https://t.me/FortunaAI_bot`,
 						parse_mode: "HTML",
 					},
 				);
@@ -1778,7 +1778,7 @@ const start = async () => {
 				await ctx.replyWithPhoto(
 					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
 					{
-						caption: `Welcome to <b>Fortuna AI</b>\n\n<i>The best sniper and purchasing bot on SOl.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b> https://t.me/\n<b>🌐 WEB: </b>https://\n<b>📖 X:</b>https://x.com/parrotaibot\n<b>🤖 BOT: </b>https://x.com`,
+						caption: `Welcome to <b>Fortuna AI</b>, I am your trading bot.\n\n<i>Fortuna AI is an enigmatic trading bot, weaving advanced algorithms to unveil the future of a project success like a digital oracle. 🔮</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b>https://t.me/FortunaAIBot\n<b>🌐 WEB: </b>https://www.FortunaAIbot.xyz\n<b>📖 X:</b>https://x.com/FortunaAIBot\n<b>🤖 BOT: </b>https://t.me/FortunaAI_bot`,
 						parse_mode: "HTML",
 					},
 				);
