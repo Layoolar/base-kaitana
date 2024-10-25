@@ -11,7 +11,7 @@ AWS.config.update({
 
 const dynamodb = new AWS.DynamoDB();
 
-const tableName = "users";
+const tableName = "Users";
 
 const params = {
 	TableName: tableName,
@@ -56,6 +56,7 @@ export const createUserTable = async () => {
 	}
 };
 
+//createUserTable();
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 //const tableName = "MyUserTable";
