@@ -47,16 +47,12 @@ stepHandler.action("sendd", async (ctx) => {
 		// 	ctx.scene.session.sendStore.chain,
 		// 	userWallet?.walletAddress,
 		// );
-		tx = await handleSendSol(
-			userWallet.solPrivateKey,
-			userWallet.solWalletAddress,
-			amountinSol,
-		);
-		if(!tx.hash){
+		tx = await handleSendSol(userWallet.solPrivateKey, recipientAddress, amountinSol);
+
+		//console.log(tx);
+		if (!tx.hash) {
 			ctx.reply(`An error occured. Please try again later\n <i> Session exited...</i>`);
-		}
-		
-		else ctx.reply(`Transaction sent hash:${tx.hashUrl}`)
+		} else ctx.reply(`Transaction sent hash:${tx.hashUrl}`);
 
 		return ctx.scene.leave();
 	} catch (error) {
@@ -100,7 +96,7 @@ export const sendWizard = new Scenes.WizardScene<WizardContext>(
 		}
 
 		const userBalance = await getSolBalance(wallet?.solWalletAddress);
-	
+
 		if (!userBalance || !wallet?.walletAddress) {
 			ctx.reply("An error occurred (Failed to get balance), please try again.\n <i> Session exited...</i>");
 			return ctx.scene.leave();
@@ -185,7 +181,7 @@ stepHandler.on("text", async (ctx) => {
 				Markup.button.callback("Cancel", "cancel"),
 			]),
 		);
-		
+
 		return ctx.wizard.next();
 	}
 });

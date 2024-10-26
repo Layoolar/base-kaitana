@@ -42,10 +42,14 @@ export const handleSolForToken = async (privateKey: string, address: string, amo
 };
 export const handleSendSol = async (privateKey: string, publicKey: string, amount: number) => {
 	const keypair = createKeypair(privateKey);
-	const response = await sendSolTrasaction(connection,keypair,keypair.publicKey,amount)
+
+const kk = new solana.PublicKey(publicKey);
+
+	const response = await sendSolTrasaction(connection, keypair, new solana.PublicKey(publicKey), amount);
 
 	return response;
 };
+
 export const handleTokenForSol = async (privateKey: string, address: string, amount: number) => {
 	const keypair = createKeypair(privateKey);
 	const response = await tokenToSolSwap(connection, keypair, address, amount);
