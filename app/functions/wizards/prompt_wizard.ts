@@ -167,7 +167,7 @@ const getVoice = async (ctx: WizardContext) => {
 			}
 		}
 		await ctx.replyWithHTML(`<b><i>Session Exited...</i></b>
-Thank you for using FortunaAI. See you soon.`);
+Thank you for using Fortuna AI. See you soon.`);
 
 		await ctx.scene.leave();
 

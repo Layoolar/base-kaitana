@@ -336,6 +336,11 @@ export const buyWizard = new Scenes.WizardScene<WizardContext>(
 		} else if (chain === "solana") {
 			ctx.scene.session.buyStore.currency = "SOL";
 			const solbalance = await getSolBalance(user.solWalletAddress);
+			if (solbalance === 0) {
+				await ctx.reply("wallet balance is currently 0, please try again\n <i> Session exited...</i>");
+
+				return ctx.scene.leave();
+			}
 			if (!solbalance) {
 				await ctx.reply("Couldn't get wallet balance, please try again\n <i> Session exited...</i>");
 
@@ -546,53 +551,48 @@ const executeBuy = async (
 	buyAddress: string,
 	userBalance: number,
 ) => {
-	try{
-	if (!ctx.from) {
-		return await ctx.scene.leave();
-	}
-
-	const wallet = await getUserWalletDetails(ctx.from.id);
-	const userLanguage = ctx.scene.session.buyStore.language;
-
-
-	if (userBalance <= amount) {
-		ctx.reply(
-			{
-				english:
-					"You have insufficient balance to make this transaction, please try again with a valid amount\n <i> Session exited...</i>",
-				french: "Vous n'avez pas assez de solde pour effectuer cette transaction, veuillez réessayer avec un montant valide",
-				spanish:
-					"No tienes suficiente saldo para realizar esta transacción, por favor inténtalo de nuevo con un monto válido",
-				arabic: "لا يوجد لديك رصيد كافٍ لإتمام هذه العملية، يرجى المحاولة مرة أخرى بمبلغ صالح",
-				chinese: "您的余额不足以完成此交易，请使用有效金额重试",
-			}[userLanguage],
-		);
-		return ctx.scene.leave();
-	}
-
-	if (ctx.scene.session.buyStore.chain?.toLowerCase() !== "solana") throw new Error("")
-	// edit this
-	//let hash = await buyTokensWithSolana(wallet?.privateKey, buyAddress, amount.toFixed(15));
-	if(!wallet?.solPrivateKey) return;
-	let hash= await handleSolForToken(wallet?.solPrivateKey,buyAddress, amount)
-
-
-			if (!hash.success) throw new Error("Transaction failed");
-
-			await ctx.replyWithHTML(
-				`You bought ${token.name} \n<i>Amount: <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\nTransaction hash:<a href= "https://solscan.io/tx/${hash}">${hash}</a>`,
-			);
-
-			
-			return hash;
-		} catch (error: any) {
-			
-			ctx.reply(
-				`An Error occurred please try again later\nError Message: ${
-					error.message || "internal server error\n <i> Session exited...</i>"
-				}.`,
-			);
+	try {
+		if (!ctx.from) {
 			return await ctx.scene.leave();
 		}
 
+		const wallet = await getUserWalletDetails(ctx.from.id);
+		const userLanguage = ctx.scene.session.buyStore.language;
+
+		if (userBalance <= amount) {
+			ctx.reply(
+				{
+					english:
+						"You have insufficient balance to make this transaction, please try again with a valid amount\n <i> Session exited...</i>",
+					french: "Vous n'avez pas assez de solde pour effectuer cette transaction, veuillez réessayer avec un montant valide",
+					spanish:
+						"No tienes suficiente saldo para realizar esta transacción, por favor inténtalo de nuevo con un monto válido",
+					arabic: "لا يوجد لديك رصيد كافٍ لإتمام هذه العملية، يرجى المحاولة مرة أخرى بمبلغ صالح",
+					chinese: "您的余额不足以完成此交易，请使用有效金额重试",
+				}[userLanguage],
+			);
+			return ctx.scene.leave();
+		}
+
+		if (ctx.scene.session.buyStore.chain?.toLowerCase() !== "solana") throw new Error("");
+		// edit this
+		//let hash = await buyTokensWithSolana(wallet?.privateKey, buyAddress, amount.toFixed(15));
+		if (!wallet?.solPrivateKey) return;
+		let hash = await handleSolForToken(wallet?.solPrivateKey, buyAddress, amount);
+
+		if (!hash.success) throw new Error("Transaction failed");
+
+		await ctx.replyWithHTML(
+			`You bought ${token.name} \n<i>Amount: <b>${amount} ${ctx.scene.session.buyStore.currency}</b></i>\n<i>Contract Address: <b>${buyAddress}</b></i>\nTransaction hash:<a href= "https://solscan.io/tx/${hash.hashUrl}">${hash.hashUrl}</a>`,
+		);
+
+		return hash;
+	} catch (error: any) {
+		ctx.reply(
+			`An Error occurred please try again later\nError Message: ${
+				error.message || "internal server error\n <i> Session exited...</i>"
+			}.`,
+		);
+		return await ctx.scene.leave();
+	}
 };

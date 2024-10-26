@@ -494,10 +494,8 @@ const executeSell = async (
 
 	let hash;
 
-
 	if (ctx.scene.session.sellStore.chain?.toLowerCase() === "solana") {
 		try {
-			
 			//xdcdc
 			// hash = await sellTokensWithSolana(
 			// 	wallet?.solPrivateKey,
@@ -505,13 +503,13 @@ const executeSell = async (
 			// 	amountintokens.toFixed(15),
 			// 	token.decimals,
 			// );
-			if(!wallet?.solPrivateKey) throw new Error("")
-			hash= await handleTokenForSol(wallet?.solPrivateKey,sellAddress,amountintokens)
+			if (!wallet?.solPrivateKey) throw new Error("");
+			hash = await handleTokenForSol(wallet?.solPrivateKey, sellAddress, amountintokens);
 
 			if (!hash.success) throw new Error("Transaction failed/expired");
 
 			await ctx.replyWithHTML(
-				`You sold ${token.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://solscan.io/tx/${hash}">${hash}</a>`,
+				`You sold ${token.name} \n<i>Amount: <b>${amountintokens} ${token.symbol}</b></i>\n<i>Contract Address: <b>${sellAddress}</b></i>\nTransaction hash:<a href= "https://solscan.io/tx/${hash.hashUrl}">${hash.hashUrl}</a>`,
 			);
 
 			// await sendMessageToAllGroups(
@@ -545,5 +543,4 @@ const executeSell = async (
 			return await ctx.scene.leave();
 		}
 	}
-
 };
