@@ -271,12 +271,7 @@ const checkGroup: MiddlewareFn<Context> = async (ctx, next) => {
 // 	return next();
 // };
 bot.catch((error: any) => {
-	if (error.response && error.response.description.includes("bot was blocked by the user")) {
-		const userId = error.on && error.on.message ? error.on.message.from.id : null;
-		console.log(`Bot was blocked by user ${userId}.`);
-	} else {
-		console.error("Global error handler:", error);
-	}
+	console.error("Global error handler:", error);
 });
 
 // caption: `Welcome to <b>Parrot AI</b>\n\n<i>The best sniper and purchasing bot on ETH.</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /ta</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>🌐 Website: </b>https://parrotbot.lol/\n<b>📖Manual: </b>https://docs.parrotbot.io\n<b>📣 Announcements: </b>https://t.me/parrotannouncements\n<b>💬 Telegram: </b> https://t.me/Parrotbot_Portal`,
