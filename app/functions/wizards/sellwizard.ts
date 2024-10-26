@@ -367,20 +367,20 @@ const executeSell = async (
 	const wallet = await getUserWalletDetails(ctx.from.id);
 	const tokenData = await processToken(sellAddress);
 	const ethprice = (await getEthPrice()) as number;
-	const userEthBalance = await getEtherBalance(wallet?.walletAddress);
-	if (!userEthBalance) {
-		await ctx.reply(
-			{
-				english: "Couldn't get balance, please try again\n <i> Session exited...</i>",
-				french: "Impossible d'obtenir le solde, veuillez réessayer",
-				spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
-				arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
-				chinese: "无法获取余额，请重试",
-			}[ctx.scene.session.sellStore.language],
-		);
+	//const userEthBalance = await getEtherBalance(wallet?.walletAddress);
+	// if (!userEthBalance) {
+	// 	await ctx.reply(
+	// 		{
+	// 			english: "Couldn't get balance, please try again\n <i> Session exited...</i>",
+	// 			french: "Impossible d'obtenir le solde, veuillez réessayer",
+	// 			spanish: "No se pudo obtener el saldo, por favor inténtelo de nuevo",
+	// 			arabic: "لم يمكن الحصول على الرصيد، يرجى المحاولة مرة أخرى",
+	// 			chinese: "无法获取余额，请重试",
+	// 		}[ctx.scene.session.sellStore.language],
+	// 	);
 
-		return ctx.scene.leave();
-	}
+	// 	sreturn ctx.scene.leave();
+	// }
 
 	if (!tokenData) {
 		ctx.reply(
@@ -418,7 +418,9 @@ const executeSell = async (
 		//userBalance = res?.base;
 	} else if (tokenData.chain === "solana") {
 		ctx.scene.session.sellStore.currency = "SOL";
+
 		const solbalance = await getParticularSolTokenBalance(sellAddress, wallet?.solWalletAddress);
+		console.log(solbalance);
 		if (!solbalance || solbalance.length === 0) {
 			await ctx.reply(
 				{

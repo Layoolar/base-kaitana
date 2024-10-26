@@ -542,6 +542,7 @@ bot.action("checkbalance", checkUserExistence, async (ctx) => {
 	if (tokens.length === 0) {
 		const balance = await getSolBalance(wallet.solWalletAddress);
 		// getSolBalance
+
 		const currentSolPrice = await getSolPrice();
 
 		if (!balance || !currentSolPrice) {
@@ -649,6 +650,10 @@ bot.command("wallet", checkUserExistence, checkGroup, async (ctx) => {
 	}
 
 	// console.log("hey");
+});
+bot.action("sendsol", async (ctx) => {
+	await ctx.scene.enter("send-wizard");
+	return;
 });
 
 export const neww = async () => {

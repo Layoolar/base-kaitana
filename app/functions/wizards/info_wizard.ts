@@ -52,9 +52,9 @@ export const infoWizard = new Scenes.WizardScene<WizardContext>(
 				await ctx.replyWithHTML(
 					`<b>Getting Token Information...</b>\n\n<b>Token Name: </b><b><i>${coin?.name}</i></b>\n<b>Token Address: </b> <code><i>${coin?.address}</i></code>`,
 				);
-const response2 = `🟢<a href="https://birdeye.so/token/${coin?.address}?chain=${
-	res.chain
-}"><b>${coin?.name?.toUpperCase()}</b></a> [${formatNumber(coin?.mc)}] $${coin?.symbol?.toUpperCase()}
+				const response2 = `🟢<a href="https://birdeye.so/token/${coin?.address}?chain=${
+					res.chain
+				}"><b>${coin?.name?.toUpperCase()}</b></a> [${formatNumber(coin?.mc)}] $${coin?.symbol?.toUpperCase()}
 🌐${res.chain.charAt(0)?.toUpperCase() + res.chain.slice(1)}
 💰 USD: <code>$${coin?.price?.toFixed(7)}</code>
 💎FDV: <code>${formatNumber(coin?.mc)}</code>
@@ -65,7 +65,6 @@ const response2 = `🟢<a href="https://birdeye.so/token/${coin?.address}?chain=
 
 <code>${coin?.address}</code>
 `;
-
 
 				await ctx.replyWithHTML(
 					response2,
@@ -124,9 +123,9 @@ stepHandler.action(/proceedbuy_(.+)/, async (ctx) => {
 		return ctx.scene.leave();
 	}
 
-	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
+	if (token.chain.toLowerCase() !== "solana") {
 		await ctx.reply(
-			"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
+			"We currently only support trading on Solana for now. Please bear with us as we are working on supporting other tokens.\n <i> Session exited...</i>",
 		);
 		return ctx.scene.leave();
 	}
@@ -154,9 +153,9 @@ stepHandler.action(/proceedsell_(.+)/, async (ctx) => {
 	if (!token) {
 		return await ctx.reply("An error occurred, please try again");
 	}
-	if (token.chain.toLowerCase() !== "ethereum" && token.chain.toLowerCase() !== "base") {
+	if (token.chain.toLowerCase() !== "solana") {
 		await ctx.reply(
-			"We currently only support trading on Ethereum for now. Please bear with us as we are working on supporting other tokens.",
+			"We currently only support trading on Solana for now. Please bear with us as we are working on supporting other tokens.",
 		);
 		return ctx.scene.leave();
 	}
@@ -217,7 +216,9 @@ stepHandler.on("text", async (ctx) => {
 
 				return;
 			} else {
-				await ctx.replyWithHTML(`<b><i>Session exited...</i></b>\nThank you for using FortunaAI. See you soon.`);
+				await ctx.replyWithHTML(
+					`<b><i>Session exited...</i></b>\nThank you for using FortunaAI. See you soon.`,
+				);
 				return ctx.scene.leave();
 			}
 		}

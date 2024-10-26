@@ -110,8 +110,9 @@ export async function getSolTokenAccounts(wallet) {
 			},
 		},
 	];
+
 	const accounts = await connection.getParsedProgramAccounts(
-		splToken.TOKEN_PROGRAM_ID, //new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+		new solanaWeb3.PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"), //new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
 		{ filters: filters },
 	);
 	//console.log(`Found ${accounts.length} token account(s) for wallet ${wallet}.`);
