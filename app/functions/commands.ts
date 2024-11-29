@@ -1756,7 +1756,7 @@ const start = async () => {
 				await ctx.replyWithPhoto(
 					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
 					{
-						caption: `Welcome to <b>Fortuna AI</b>, I am your trading bot.\n\n<i>Fortuna AI is an enigmatic trading bot, weaving advanced algorithms to unveil the future of a project success like a digital oracle. 🔮</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /analysis</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b>https://t.me/FortunaAIBot\n<b>🌐 WEB: </b>https://www.FortunaAIbot.xyz\n<b>📖 X:</b>https://x.com/FortunaAIBot\n<b>🤖 BOT: </b>https://t.me/FortunaAI_bot`,
+						caption: `Welcome to <b>AIthena</b>, I am your trading bot.\n\n<i>AIthena is an enigmatic trading bot, weaving advanced algorithms to unveil the future of a project success like a digital oracle. 🔮</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /analysis</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b>https://t.me/FortunaAIBot\n<b>🌐 WEB: </b>https://www.FortunaAIbot.xyz\n<b>📖 X:</b>https://x.com/FortunaAIBot\n<b>🤖 BOT: </b>https://t.me/FortunaAI_bot`,
 						parse_mode: "HTML",
 					},
 				);
@@ -1778,7 +1778,7 @@ const start = async () => {
 				await ctx.replyWithPhoto(
 					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
 					{
-						caption: `Welcome to <b>Fortuna AI</b>, I am your trading bot.\n\n<i>Fortuna AI is an enigmatic trading bot, weaving advanced algorithms to unveil the future of a project success like a digital oracle. 🔮</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /analysis</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b>https://t.me/FortunaAIBot\n<b>🌐 WEB: </b>https://www.FortunaAIbot.xyz\n<b>📖 X:</b>https://x.com/FortunaAIBot\n<b>🤖 BOT: </b>https://t.me/FortunaAI_bot`,
+						caption: `Welcome to <b>AIthena</b>, I am your trading bot.\n\n<i>AIthena is an enigmatic trading bot, weaving advanced algorithms to unveil the future of a project success like a digital oracle. 🔮</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /analysis</b>\n🔫<b>/snipe</b> - Coming Soon\n\n<b>💬 TG:</b>https://t.me/FortunaAIBot\n<b>🌐 WEB: </b>https://www.FortunaAIbot.xyz\n<b>📖 X:</b>https://x.com/FortunaAIBot\n<b>🤖 BOT: </b>https://t.me/FortunaAI_bot`,
 						parse_mode: "HTML",
 					},
 				);

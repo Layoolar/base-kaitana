@@ -356,7 +356,7 @@ bot.action(/language_(.+)$/, async (ctx) => {
 		// Reply to the user
 		await ctx.replyWithPhoto(
 			{
-				english: `Welcome to Fortuna Ai🦜\n\nThe best sniper and purchasing bot on ETH.\n\nCommands:\n/help\n/buy\n/sell\n/info\n/analysis`,
+				english: `Welcome to AIthena \n\nThe best sniper and purchasing bot on ETH.\n\nCommands:\n/help\n/buy\n/sell\n/info\n/analysis`,
 				french: "Bienvenue ! Vous avez été enregistré avec succès. Utilisez /help pour commencer.",
 				spanish: "¡Bienvenido! Te has registrado exitosamente. Usa /help para empezar.",
 				arabic: "مرحبًا! لقد تم تسجيلك بنجاح. استخدم /help للبدء.",
