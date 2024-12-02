@@ -129,28 +129,28 @@ export type BetData = {
 	status: "open" | "closed";
 	betVerdict: string;
 };
-const groupId = -4005329091;
+//const groupId = -4005329091;
+const groupId = -1002497305786;
+
 // bot.use(async (ctx, next) => {
-// 	if (ctx.chat?.type === "private") {
-// 		try {
-// 			if (!ctx.from?.id) return;
-
-// 			const chatMember = await ctx.telegram.getChatMember(groupId, ctx.from?.id);
-
-// 			if (chatMember.status !== "left" && chatMember.status !== "kicked") {
-// 				return next();
-// 			} else {
-// 				ctx.replyWithHTML(
-// 					`You must be a member of the <a href="https://t.me/parrotaientry">Parrot</a> group to use this bot.`,
-// 				);
-// 			}
-// 		} catch (error) {
-// 			console.error("Error checking group membership:", error);
-// 			await ctx.reply("An error occurred while verifying your group membership.");
-// 		}
-// 	} else {
-// 		return next();
-// 	}
+// 	// if (ctx.chat?.type === "private") {
+// 	// 	try {
+// 	// 		if (!ctx.from?.id) return;
+// 	// 		const chatMember = await ctx.telegram.getChatMember(groupId, ctx.from?.id);
+// 	// 		if (chatMember.status !== "left" && chatMember.status !== "kicked") {
+// 	// 			return next();
+// 	// 		} else {
+// 	// 			ctx.replyWithHTML(
+// 	// 				`You must be a member of the <a href="https://t.me/parrotaientry">Parrot</a> group to use this bot.`,
+// 	// 			);
+// 	// 		}
+// 	// 	} catch (error) {
+// 	// 		console.error("Error checking group membership:", error);
+// 	// 		await ctx.reply("An error occurred while verifying your group membership.");
+// 	// 	}
+// 	// } else {
+// 	// 	return next();
+// 	// }
 // });
 
 export async function getJoke() {
@@ -1754,9 +1754,9 @@ const start = async () => {
 
 			if (existingUser) {
 				await ctx.replyWithPhoto(
-					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
+					{ source: path.join(__dirname, "../assets", "fortuna.jpg") }, // Random placeholder image link
 					{
-						caption: `Welcome to <b>AIthena</b>, I am your trading bot.\n\n<i>AIthena is an enigmatic trading bot, weaving advanced algorithms to unveil the future of a project success like a digital oracle. 🔮</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /analysis</b>\n\n<b>💬 TG:</b>https://t.me/AIthenasolportal\n<b>🌐 WEB: </b>https://www.aithena.xyz\n<b>📖 X:</b>https://x.com/AIthena_\n<b>🤖 BOT: </b>https://t.me/AIthenaSOL_bot \n<b>📣 Announcement: </b>https://t.me/AIthenannouncement`,
+						caption: `Welcome to <b>Fortuna AI</b>.\n\n<i>I'm Fortuna. Pray about any token through vn and I will answer you. 🔮</i>\n\n<i>Spell a token out for me to get started, i only take VNs.\n\nDO NOT RISK THE WRATH OF FORTUNA.</i> \n\n`,
 						parse_mode: "HTML",
 					},
 				);
@@ -1776,12 +1776,20 @@ const start = async () => {
 				});
 
 				await ctx.replyWithPhoto(
-					{ source: path.join(__dirname, "../assets", "homepage.jpg") }, // Random placeholder image link
+					{ source: path.join(__dirname, "../assets", "fortuna.jpg") }, // Random placeholder image link
 					{
-						caption: `Welcome to <b>AIthena</b>, I am your trading bot.\n\n<i>AIthena is an enigmatic trading bot, weaving advanced algorithms to unveil the future of a project success like a digital oracle. 🔮</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /analysis</b>\n\n<b>💬 TG:</b>https://t.me/AIthenasolportal\n<b>🌐 WEB: </b>https://www.aithena.xyz\n<b>📖 X:</b>https://x.com/AIthena_\n<b>🤖 BOT: </b>https://t.me/AIthenaSOL_bot \n<b>📣 Announcement: </b>https://t.me/AIthenannouncement`,
+						caption: `Welcome to <b>Fortuna AI</b>.\n\n<i>I'm Fortuna. Pray about any token through vn and I will answer you. 🔮</i>\n\n<i>Spell a token out for me to get started, i only take VNs.\n\nDO NOT RISK THE WRATH OF FORTUNA.</i> \n\n`,
 						parse_mode: "HTML",
 					},
 				);
+
+				// await ctx.replyWithPhoto(
+				// 	{ source: path.join(__dirname, "../assets", "fortuna.jpg") }, // Random placeholder image link
+				// 	{
+				// 		caption: `Welcome to <b>Fortuna AI</b>.\n\n<i>I'm Fortuna. Pray about any token through vn and I will answer you. 🔮</i>\n\n<b>Commands:</b>\n<b>⌨️ /help</b>\n<b>🟢 /buy</b>\n<b>🔴 /sell</b>\n<b>ℹ️ /info</b>\n<b>📊 /analysis</b>\n\n<b>💬 TG:</b>https://t.me/AIthenasolportal\n<b>🌐 WEB: </b>https://www.aithena.xyz\n<b>📖 X:</b>https://x.com/AIthena_\n<b>🤖 BOT: </b>https://t.me/AIthenaSOL_bot \n<b>📣 Announcement: </b>https://t.me/AIthenannouncement`,
+				// 		parse_mode: "HTML",
+				// 	},
+				// );
 			}
 		} else {
 			// Handle group chats
@@ -1820,13 +1828,10 @@ const start = async () => {
  * Send welcome message
  *
  */
-bot.command("stats1997", async (ctx) => {
-	// await updateTransaction(1, 0.1);
-
-	const transaction = await getTransactions();
-	console.log(transaction);
-	// ctx.reply(transaction)
-});
+// bot.command("stats1997", async (ctx) => {
+// 	console.log("hi");
+// 	ctx.telegram.sendMessage(groupId, "/start");
+// });
 const launch = async (): Promise<void> => {
 	const mode = config.mode;
 	if (mode === "webhook") {
